@@ -1,4 +1,14 @@
 [nidaq]
+mode = "real"
+device = "Dev1"
+channel_sampling_rate = 50000
+buffer_duration_sec = 20
+
+[nidaq.fake]
+noise_std = 0.0008
+base_hz = 2.0
+hz_step = 0.6
+phase_step = 0.5
 
 
 [performance]

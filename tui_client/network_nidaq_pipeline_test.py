@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import sys
 import threading
 import time
 from collections import deque
@@ -10,7 +11,7 @@ from imgui.integrations.glfw import GlfwRenderer
 from OpenGL import GL
 
 # Graph rendering helpers: axes/labels/overlay drawing per graph cell.
-from graph_widgets import render_graph_cell
+from graph_widgets import render_graph_content
 # Network/data pipeline workers: socket ingest + fixed-N averaging thread.
 from network_pipeline import averaging_worker, network_receiver
 # Signal helpers: decimation for plotting, optional notch filtering, FFT worker process.
@@ -21,7 +22,6 @@ from tui_config import load_tui_config
 
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 900
-PLOT_WIDTH = 1080
 PLOT_HEIGHT = 220
 
 
@@ -58,6 +58,12 @@ def main() -> None:
 
     if not glfw.init():
         raise RuntimeError("Failed to initialize GLFW")
+    glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+    glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+    glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+    if sys.platform == "darwin":
+        # Required by macOS when requesting a core profile context.
+        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.TRUE)
     window = glfw.create_window(WINDOW_WIDTH, WINDOW_HEIGHT, "Network NI-DAQ Pipeline (Modular)", None, None)
     if not window:
         glfw.terminate()
@@ -108,76 +114,14 @@ def main() -> None:
                 last_avg_total = avg_total
                 last_metrics_t = now
 
-            # Global controls: stream rates + per-signal averaging + per-cell window duration.
-            imgui.set_next_window_position(20, 20, condition=imgui.ONCE)
-            imgui.set_next_window_size(1140, 220, condition=imgui.ONCE)
-            imgui.begin("Controls")
-            imgui.text(f"raw_sps={raw_sps:.1f} avg_sps={avg_sps:.1f}")
-            imgui.text(f"stream={stream_cfg.host}:{stream_cfg.port}")
-            for name in signal_cfgs:
-                changed, new_n = imgui.input_int(f"Avg N: {name}", int(avg_refs[name]["value"]), 1, 10)
-                if changed:
-                    avg_refs[name]["value"] = max(1, int(new_n))
-            for i, cell in enumerate(graph_cells):
-                changed_w, w = imgui.input_float(f"Window s: {cell.title}##{i}", float(cell.window_s), 10.0, 60.0, "%.1f")
-                if changed_w:
-                    cell.window_s = max(1.0, float(w))
-                    for s in cell.signals:
-                        if s in window_refs:
-                            window_refs[s]["value"] = cell.window_s
-
-            imgui.end()
-
-            y = 250
-            for cell in graph_cells:
-                # Per-cell FFT controls/state window.
+            y = 20
+            for cell_i, cell in enumerate(graph_cells):
                 st = cell_fft[cell.title]
+                wrapper_h = 370
                 imgui.set_next_window_position(20, y, condition=imgui.ONCE)
-                imgui.set_next_window_size(1140, 120, condition=imgui.ONCE)
-                imgui.begin(f"{cell.title} FFT")
-                options = [s for s in cell.signals if s in averaged]
-                if options:
-                    if st["target_signal"] not in options:
-                        st["target_signal"] = options[0]
-                    idx = options.index(st["target_signal"])
-                    changed_combo, new_idx = imgui.combo(f"FFT signal##{cell.title}", idx, options)
-                    if changed_combo:
-                        st["target_signal"] = options[new_idx]
-                changed_fft, new_win = imgui.input_float(f"FFT window (s)##{cell.title}", float(st["window_s"]), 1.0, 5.0, "%.2f")
-                if changed_fft:
-                    st["window_s"] = max(0.1, float(new_win))
-                if imgui.button(f"Run FFT##{cell.title}") and st["target_signal"] in averaged:
-                    with locks[st["target_signal"]]:
-                        vals = [v for _, v in averaged[st["target_signal"]]]
-                    n = int(max(8, st["window_s"] * max(1.0, avg_sps)))
-                    window_vals = vals[-n:] if len(vals) >= n else vals
-                    st["q"] = mp.Queue()
-                    st["proc"] = mp.Process(target=fft_worker, args=(window_vals, max(1.0, avg_sps), stream_cfg.fft_top_n, st["q"]), daemon=True)
-                    st["proc"].start()
-                    st["status"] = f"running n={len(window_vals)}"
-                imgui.same_line()
-                if imgui.button(f"Clear Filters##{cell.title}"):
-                    st["active_notches_hz"].clear()
-                if st["q"] is not None and not st["q"].empty():
-                    msg = st["q"].get()
-                    st["status"] = "done" if msg.get("ok") else f"error: {msg.get('error')}"
-                    st["peaks"] = msg.get("peaks", []) if msg.get("ok") else []
-                    if st["proc"] is not None:
-                        st["proc"].join(timeout=0.2)
-                    st["proc"] = None
-                    st["q"] = None
-                imgui.text(f"FFT status: {st['status']}")
-                for i, (f_hz, amp) in enumerate(st["peaks"][: stream_cfg.fft_top_n], start=1):
-                    if imgui.button(f"Filter {i}: {f_hz:.2f} Hz##{cell.title}"):
-                        if f_hz in st["active_notches_hz"]:
-                            st["active_notches_hz"].remove(f_hz)
-                        else:
-                            st["active_notches_hz"].append(f_hz)
-                    imgui.same_line()
-                    imgui.text(f"amp={amp:.4f}")
-                imgui.end()
+                imgui.set_next_window_size(WINDOW_WIDTH - 40, wrapper_h, condition=imgui.ONCE)
+                imgui.begin(f"{cell.title} Panel##{cell_i}")
 
-                y += 130
                 # Build per-signal series for this cell; never concatenate dissimilar signals.
                 series_map = {}
                 for s in cell.signals:
@@ -217,8 +161,88 @@ def main() -> None:
                 smax = tmax if tmax > smax else (smax * 0.98 + tmax * 0.02)
                 scale_state[cell.title] = (smin, smax)
 
-                render_graph_cell(cell.title, y, PLOT_WIDTH, PLOT_HEIGHT, plot_base, fft_overlay, smin, smax, cell.window_s, now_wall)
-                y += 340
+                avail_w = imgui.get_content_region_available()[0]
+                spacing = imgui.get_style().item_spacing.x
+                left_w = 250.0
+                right_w = 320.0
+                center_w = max(240.0, avail_w - left_w - right_w - (2.0 * spacing))
+                child_h = wrapper_h - 46.0
+
+                # Left panel: per-graph controls.
+                imgui.begin_child(f"controls##{cell.title}", left_w, child_h, border=True)
+                imgui.text(f"raw_sps={raw_sps:.1f} avg_sps={avg_sps:.1f}")
+                imgui.text(f"stream={stream_cfg.host}:{stream_cfg.port}")
+                changed_w, w = imgui.input_float(f"Window s##{cell.title}", float(cell.window_s), 10.0, 60.0, "%.1f")
+                if changed_w:
+                    cell.window_s = max(1.0, float(w))
+                    for s in cell.signals:
+                        if s in window_refs:
+                            window_refs[s]["value"] = cell.window_s
+                imgui.separator()
+                imgui.text("Signal averaging")
+                for s in cell.signals:
+                    if s not in avg_refs:
+                        continue
+                    changed_n, new_n = imgui.input_int(f"Avg N: {s}##{cell.title}", int(avg_refs[s]["value"]), 1, 10)
+                    if changed_n:
+                        avg_refs[s]["value"] = max(1, int(new_n))
+                imgui.end_child()
+
+                imgui.same_line()
+
+                # Center panel: graph.
+                imgui.begin_child(f"graph##{cell.title}", center_w, child_h, border=True)
+                render_graph_content(cell.title, center_w - 18.0, PLOT_HEIGHT, plot_base, fft_overlay, smin, smax, cell.window_s, now_wall)
+                imgui.end_child()
+
+                imgui.same_line()
+
+                # Right panel: per-graph FFT controls/state.
+                imgui.begin_child(f"fft##{cell.title}", right_w, child_h, border=True)
+                options = [s for s in cell.signals if s in averaged]
+                if options:
+                    if st["target_signal"] not in options:
+                        st["target_signal"] = options[0]
+                    idx = options.index(st["target_signal"])
+                    changed_combo, new_idx = imgui.combo(f"FFT signal##{cell.title}", idx, options)
+                    if changed_combo:
+                        st["target_signal"] = options[new_idx]
+                changed_fft, new_win = imgui.input_float(f"FFT window (s)##{cell.title}", float(st["window_s"]), 1.0, 5.0, "%.2f")
+                if changed_fft:
+                    st["window_s"] = max(0.1, float(new_win))
+                if imgui.button(f"Run FFT##{cell.title}") and st["target_signal"] in averaged:
+                    with locks[st["target_signal"]]:
+                        vals = [v for _, v in averaged[st["target_signal"]]]
+                    n = int(max(8, st["window_s"] * max(1.0, avg_sps)))
+                    window_vals = vals[-n:] if len(vals) >= n else vals
+                    st["q"] = mp.Queue()
+                    st["proc"] = mp.Process(target=fft_worker, args=(window_vals, max(1.0, avg_sps), stream_cfg.fft_top_n, st["q"]), daemon=True)
+                    st["proc"].start()
+                    st["status"] = f"running n={len(window_vals)}"
+                imgui.same_line()
+                if imgui.button(f"Clear##{cell.title}"):
+                    st["active_notches_hz"].clear()
+                if st["q"] is not None and not st["q"].empty():
+                    msg = st["q"].get()
+                    st["status"] = "done" if msg.get("ok") else f"error: {msg.get('error')}"
+                    st["peaks"] = msg.get("peaks", []) if msg.get("ok") else []
+                    if st["proc"] is not None:
+                        st["proc"].join(timeout=0.2)
+                    st["proc"] = None
+                    st["q"] = None
+                imgui.text(f"status: {st['status']}")
+                for peak_i, (f_hz, amp) in enumerate(st["peaks"][: stream_cfg.fft_top_n], start=1):
+                    if imgui.button(f"{peak_i}: {f_hz:.2f} Hz##{cell.title}"):
+                        if f_hz in st["active_notches_hz"]:
+                            st["active_notches_hz"].remove(f_hz)
+                        else:
+                            st["active_notches_hz"].append(f_hz)
+                    imgui.same_line()
+                    imgui.text(f"{amp:.4f}")
+                imgui.end_child()
+
+                imgui.end()
+                y += wrapper_h + 12
 
             imgui.render()
             fb_width, fb_height = glfw.get_framebuffer_size(window)

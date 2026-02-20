@@ -38,10 +38,7 @@ def draw_axes_overlay(draw_list, min_x, min_y, max_x, max_y, scale_min, scale_ma
         draw_list.add_text(x - 26, max_y - 18, text_color, time.strftime("%H:%M:%S", time.localtime(ts)))
 
 
-def render_graph_cell(title, y_pos, plot_w, plot_h, base_values, overlay_values, scale_min, scale_max, window_s, now_wall):
-    imgui.set_next_window_position(20, y_pos, condition=imgui.ONCE)
-    imgui.set_next_window_size(1140, 320, condition=imgui.ONCE)
-    imgui.begin(title)
+def render_graph_content(title, plot_w, plot_h, base_values, overlay_values, scale_min, scale_max, window_s, now_wall):
     latest = base_values[-1] if base_values else 0.0
     imgui.text(f"Latest: {latest:.6f} points={len(base_values)}")
     imgui.push_style_color(imgui.COLOR_FRAME_BACKGROUND, 0.01, 0.05, 0.01, 1.0)
@@ -62,4 +59,11 @@ def render_graph_cell(title, y_pos, plot_w, plot_h, base_values, overlay_values,
         red = imgui.get_color_u32_rgba(1.0, 0.2, 0.2, 0.95)
         draw_overlay_series(draw_list, min_x, min_y, max_x, max_y, overlay_values, scale_min, scale_max, red, 1.3)
     imgui.pop_style_color(3)
+
+
+def render_graph_cell(title, y_pos, plot_w, plot_h, base_values, overlay_values, scale_min, scale_max, window_s, now_wall):
+    imgui.set_next_window_position(20, y_pos, condition=imgui.ONCE)
+    imgui.set_next_window_size(1140, 320, condition=imgui.ONCE)
+    imgui.begin(title)
+    render_graph_content(title, plot_w, plot_h, base_values, overlay_values, scale_min, scale_max, window_s, now_wall)
     imgui.end()

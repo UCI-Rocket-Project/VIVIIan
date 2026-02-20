@@ -23,6 +23,12 @@ python .\nidaq_client\nidaq_quest_stream.py
 python .\tui_client\network_nidaq_pipeline_test.py
 ```
 
+Fake signal mode (for GUI testing without hardware):
+
+```powershell
+python .\nidaq_client\nidaq_quest_stream_fake.py
+```
+
 ## Notes
 - The TUI is config-driven; signal and graph-cell setup should be edited in `gse2_0.toml`.
 - Keep acquisition/network throughput decoupled from rendering throughput for smooth UI behavior.
