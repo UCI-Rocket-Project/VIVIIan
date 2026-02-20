@@ -53,10 +53,13 @@ def main() -> None:
     worker_key_by_cell_signal: dict[tuple[str, str], str] = {}
     raw_queues: dict[str, Queue] = {}
     averaged: dict[str, deque] = {}
-    raw_series: dict[str, deque] = {}
+    staging_ring: dict[str, deque] = {}
     locks: dict[str, threading.Lock] = {}
     avg_refs: dict[str, dict] = {}
     window_refs: dict[str, dict] = {}
+    avg_samples_by_worker: dict[str, int] = {}
+    raw_samples_by_worker: dict[str, int] = {}
+    stage_samples_by_worker: dict[str, int] = {}
     for cell in graph_cells:
         for s in cell.signals:
             cfg = signal_cfgs.get(s)
@@ -67,10 +70,13 @@ def main() -> None:
             source_column_by_signal[wk] = cfg.source_column
             raw_queues[wk] = Queue(maxsize=256)
             averaged[wk] = deque()
-            raw_series[wk] = deque()
+            staging_ring[wk] = deque()
             locks[wk] = threading.Lock()
             avg_refs[wk] = {"value": cfg.avg_n}
             window_refs[wk] = {"value": cell.window_s}
+            avg_samples_by_worker[wk] = 0
+            raw_samples_by_worker[wk] = 0
+            stage_samples_by_worker[wk] = 0
 
     threads = [
         threading.Thread(
@@ -83,7 +89,21 @@ def main() -> None:
         threads.append(
             threading.Thread(
                 target=averaging_worker,
-                args=(raw_queues[wk], averaged[wk], raw_series[wk], locks[wk], stop_event, stats, avg_refs[wk], window_refs[wk]),
+                args=(
+                    raw_queues[wk],
+                    averaged[wk],
+                    staging_ring[wk],
+                    locks[wk],
+                    stop_event,
+                    stats,
+                    avg_refs[wk],
+                    stream_cfg.raw_batch_points,
+                    window_refs[wk],
+                    wk,
+                    avg_samples_by_worker,
+                    raw_samples_by_worker,
+                    stage_samples_by_worker,
+                ),
                 daemon=True,
             )
         )
@@ -128,8 +148,12 @@ def main() -> None:
     last_metrics_t = time.monotonic()
     last_raw_total = 0
     last_avg_total = 0
+    last_raw_total_by_worker = {wk: 0 for wk in raw_queues}
+    last_avg_total_by_worker = {wk: 0 for wk in raw_queues}
     raw_sps = 0.0
     avg_sps = 0.0
+    raw_sps_by_worker = {wk: 0.0 for wk in raw_queues}
+    avg_sps_by_worker = {wk: 0.0 for wk in raw_queues}
     scale_state = {}  # per cell title -> (min,max)
 
     try:
@@ -148,6 +172,13 @@ def main() -> None:
                 avg_sps = (avg_total - last_avg_total) / dt
                 last_raw_total = raw_total
                 last_avg_total = avg_total
+                for wk in raw_queues:
+                    raw_total_wk = raw_samples_by_worker.get(wk, 0)
+                    total_wk = avg_samples_by_worker.get(wk, 0)
+                    raw_sps_by_worker[wk] = (raw_total_wk - last_raw_total_by_worker.get(wk, 0)) / dt
+                    avg_sps_by_worker[wk] = (total_wk - last_avg_total_by_worker.get(wk, 0)) / dt
+                    last_raw_total_by_worker[wk] = raw_total_wk
+                    last_avg_total_by_worker[wk] = total_wk
                 last_metrics_t = now
 
             y = 20
@@ -161,12 +192,17 @@ def main() -> None:
 
                 # Build per-signal series for this cell; each graph+signal has independent buffers/state.
                 series_map = {}
+                graph_buffer_payload_bytes = 0
                 for s in cell.signals:
                     wk = worker_key_by_cell_signal.get((cell.title, s))
                     if wk is None:
                         continue
                     with locks[wk]:
-                        vals = [v for _, v in averaged[wk]]
+                        avg_pairs = list(averaged[wk])
+                        stage_len = len(staging_ring[wk])
+                    vals = [v for _, v in avg_pairs]
+                    # Approximate payload bytes only: averaged (timestamp,value) + staging raw values.
+                    graph_buffer_payload_bytes += (len(avg_pairs) * 16) + (stage_len * 8)
                     series_map[s] = downsample_for_plot(vals, stream_cfg.plot_points) if vals else []
                 # Primary series is the first configured signal in the cell.
                 primary = cell.signals[0] if cell.signals else ""
@@ -225,6 +261,7 @@ def main() -> None:
                 # Left panel: per-graph controls.
                 imgui.begin_child(f"controls##{cell.title}", left_w, child_h, border=True)
                 imgui.text(f"raw_sps={raw_sps:.1f} avg_sps={avg_sps:.1f}")
+                imgui.text(f"buffer={graph_buffer_payload_bytes / (1024.0 * 1024.0):.3f} MB")
                 imgui.text(f"stream={stream_cfg.host}:{stream_cfg.port}")
                 changed_w, w = imgui.input_float(f"Window s##{cell.title}", float(cell.window_s), 10.0, 60.0, "%.1f")
                 if changed_w:
@@ -239,6 +276,7 @@ def main() -> None:
                     wk = worker_key_by_cell_signal.get((cell.title, s))
                     if wk is None:
                         continue
+                    imgui.text(f"{s} avg_sps={avg_sps_by_worker.get(wk, 0.0):.1f}")
                     changed_n, new_n = imgui.input_int(f"Avg N: {s}##{cell.title}", int(avg_refs[wk]["value"]), 1, 10)
                     if changed_n:
                         avg_refs[wk]["value"] = max(1, int(new_n))
@@ -302,12 +340,8 @@ def main() -> None:
                 wk_target = worker_key_by_cell_signal.get((cell.title, st["target_signal"]))
                 if imgui.button(f"Run FFT##{cell.title}") and wk_target is not None:
                     with locks[wk_target]:
-                        raw_pairs = list(raw_series[wk_target])
-                    vals = [v for _, v in raw_pairs]
-                    sr_est = max(1.0, avg_sps)
-                    if len(raw_pairs) > 1:
-                        dt = max(1e-6, raw_pairs[-1][0] - raw_pairs[0][0])
-                        sr_est = max(1.0, len(raw_pairs) / dt)
+                        vals = list(staging_ring[wk_target])
+                    sr_est = max(1.0, raw_sps_by_worker.get(wk_target, raw_sps))
                     n = int(max(8, tstate["window_s"] * sr_est))
                     window_vals = vals[-n:] if len(vals) >= n else vals
                     tstate["q"] = mp.Queue()

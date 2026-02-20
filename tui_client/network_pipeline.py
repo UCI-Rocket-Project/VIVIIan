@@ -48,40 +48,56 @@ def network_receiver(raw_queues: dict[str, Queue], source_column_by_signal: dict
 def averaging_worker(
     raw_q: Queue,
     averaged: deque,
-    raw_series: deque,
+    staging_ring: deque,
     lock: threading.Lock,
     stop_event: threading.Event,
     stats: dict,
     avg_n_ref: dict,
+    network_batch_points: int,
     window_ref: dict | None = None,
+    worker_key: str | None = None,
+    avg_samples_by_worker: dict[str, int] | None = None,
+    raw_samples_by_worker: dict[str, int] | None = None,
+    stage_samples_by_worker: dict[str, int] | None = None,
 ) -> None:
-    pending: list[float] = []
+    batch_points = max(1, int(network_batch_points))
     while not stop_event.is_set():
         try:
             vals = raw_q.get(timeout=0.1)
         except Empty:
             continue
-        pending.extend(vals)
         avg_n = max(1, int(avg_n_ref["value"]))
         window_s = max(1.0, float(window_ref["value"])) if window_ref is not None else None
+        # Keep only the minimal unaveraged staging ring needed for robust chunking across batch/avg boundaries.
+        ring_cap = max(
+            avg_n + (batch_points % avg_n),
+            batch_points + (avg_n % batch_points),
+        )
         with lock:
-            now_t = time.time()
-            # Preserve unaveraged samples for FFT/range filtering in this graph+signal pipeline.
-            for v in vals:
-                raw_series.append((now_t, float(v)))
-            if window_s is not None:
-                cutoff = now_t - window_s
-                while raw_series and raw_series[0][0] < cutoff:
-                    raw_series.popleft()
-        while len(pending) >= avg_n:
-            chunk = pending[:avg_n]
-            del pending[:avg_n]
-            avg = float(sum(chunk) / len(chunk))
+            staging_ring.extend(float(v) for v in vals)
+            while len(staging_ring) > ring_cap:
+                staging_ring.popleft()
+            if worker_key is not None and stage_samples_by_worker is not None:
+                stage_samples_by_worker[worker_key] = len(staging_ring)
+        if worker_key is not None and raw_samples_by_worker is not None:
+            raw_samples_by_worker[worker_key] = raw_samples_by_worker.get(worker_key, 0) + len(vals)
+
+        while True:
             with lock:
+                if len(staging_ring) < avg_n:
+                    break
+                acc = 0.0
+                for _ in range(avg_n):
+                    acc += staging_ring.popleft()
+                avg = float(acc / avg_n)
                 now_t = time.time()
                 averaged.append((now_t, avg))
                 if window_s is not None:
                     cutoff = now_t - window_s
                     while averaged and averaged[0][0] < cutoff:
                         averaged.popleft()
+                if worker_key is not None and stage_samples_by_worker is not None:
+                    stage_samples_by_worker[worker_key] = len(staging_ring)
             stats["avg_samples"] += 1
+            if worker_key is not None and avg_samples_by_worker is not None:
+                avg_samples_by_worker[worker_key] = avg_samples_by_worker.get(worker_key, 0) + 1
