@@ -1,0 +1,5 @@
+Docker Command for Quest DB
+docker run -p 9000:9000 -p 8812:8812 -p 9003:9003 questdb/questdb:9.3.2
+
+
+

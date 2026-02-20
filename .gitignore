@@ -1,0 +1,37 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build/distribution artifacts
+build/
+dist/
+*.egg-info/
+
+# Test/coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime/log/config-local artifacts
+*.log
+imgui.ini
