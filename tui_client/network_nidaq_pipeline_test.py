@@ -192,7 +192,8 @@ def main() -> None:
 
                 # Build per-signal series for this cell; each graph+signal has independent buffers/state.
                 series_map = {}
-                graph_buffer_payload_bytes = 0
+                graph_display_len = 0
+                graph_stage_len = 0
                 for s in cell.signals:
                     wk = worker_key_by_cell_signal.get((cell.title, s))
                     if wk is None:
@@ -201,8 +202,8 @@ def main() -> None:
                         avg_pairs = list(averaged[wk])
                         stage_len = len(staging_ring[wk])
                     vals = [v for _, v in avg_pairs]
-                    # Approximate payload bytes only: averaged (timestamp,value) + staging raw values.
-                    graph_buffer_payload_bytes += (len(avg_pairs) * 16) + (stage_len * 8)
+                    graph_display_len += len(avg_pairs)
+                    graph_stage_len += stage_len
                     series_map[s] = downsample_for_plot(vals, stream_cfg.plot_points) if vals else []
                 # Primary series is the first configured signal in the cell.
                 primary = cell.signals[0] if cell.signals else ""
@@ -261,7 +262,11 @@ def main() -> None:
                 # Left panel: per-graph controls.
                 imgui.begin_child(f"controls##{cell.title}", left_w, child_h, border=True)
                 imgui.text(f"raw_sps={raw_sps:.1f} avg_sps={avg_sps:.1f}")
-                imgui.text(f"buffer={graph_buffer_payload_bytes / (1024.0 * 1024.0):.3f} MB")
+                display_mb = (graph_display_len * 16) / (1024.0 * 1024.0)
+                total_mb = ((graph_display_len * 16) + (graph_stage_len * 8)) / (1024.0 * 1024.0)
+                imgui.text(f"display_buffer={display_mb:.3f} MB")
+                imgui.text(f"intermediate_buffer_len={graph_stage_len}")
+                imgui.text(f"total_buffer={total_mb:.3f} MB")
                 imgui.text(f"stream={stream_cfg.host}:{stream_cfg.port}")
                 changed_w, w = imgui.input_float(f"Window s##{cell.title}", float(cell.window_s), 10.0, 60.0, "%.1f")
                 if changed_w:
