@@ -38,14 +38,23 @@ def network_receiver(raw_queues: dict[str, Queue], source_column_by_signal: dict
                         if values.size > raw_batch_points:
                             values = values[-raw_batch_points:]
                         vals = values.tolist()
+                        stats["raw_samples"] += len(vals)
                         for sig in signals:
                             raw_queues[sig].put(vals)
-                            stats["raw_samples"] += len(vals)
         except Exception:
             time.sleep(0.1)
 
 
-def averaging_worker(raw_q: Queue, averaged: deque, lock: threading.Lock, stop_event: threading.Event, stats: dict, avg_n_ref: dict, window_ref: dict) -> None:
+def averaging_worker(
+    raw_q: Queue,
+    averaged: deque,
+    raw_series: deque,
+    lock: threading.Lock,
+    stop_event: threading.Event,
+    stats: dict,
+    avg_n_ref: dict,
+    window_ref: dict | None = None,
+) -> None:
     pending: list[float] = []
     while not stop_event.is_set():
         try:
@@ -54,7 +63,16 @@ def averaging_worker(raw_q: Queue, averaged: deque, lock: threading.Lock, stop_e
             continue
         pending.extend(vals)
         avg_n = max(1, int(avg_n_ref["value"]))
-        window_s = max(1.0, float(window_ref["value"]))
+        window_s = max(1.0, float(window_ref["value"])) if window_ref is not None else None
+        with lock:
+            now_t = time.time()
+            # Preserve unaveraged samples for FFT/range filtering in this graph+signal pipeline.
+            for v in vals:
+                raw_series.append((now_t, float(v)))
+            if window_s is not None:
+                cutoff = now_t - window_s
+                while raw_series and raw_series[0][0] < cutoff:
+                    raw_series.popleft()
         while len(pending) >= avg_n:
             chunk = pending[:avg_n]
             del pending[:avg_n]
@@ -62,7 +80,8 @@ def averaging_worker(raw_q: Queue, averaged: deque, lock: threading.Lock, stop_e
             with lock:
                 now_t = time.time()
                 averaged.append((now_t, avg))
-                cutoff = now_t - window_s
-                while averaged and averaged[0][0] < cutoff:
-                    averaged.popleft()
+                if window_s is not None:
+                    cutoff = now_t - window_s
+                    while averaged and averaged[0][0] < cutoff:
+                        averaged.popleft()
             stats["avg_samples"] += 1

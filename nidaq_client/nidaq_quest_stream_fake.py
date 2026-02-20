@@ -176,10 +176,28 @@ def stream_fake_to_network(rt: RuntimeConfig) -> None:
             t = np.arange(n, dtype=np.float64) / max(1.0, sampling_rate)
             data_buffer = np.empty((num_channels, n), dtype=np.float64)
             for i in range(num_channels):
-                wave = 0.01 * np.sin(2.0 * np.pi * freqs[i] * t + phase[i])
-                harm = 0.004 * np.sin(2.0 * np.pi * (freqs[i] * 0.27 + 0.8) * t + 0.5 * phase[i])
-                noise = rng.normal(0.0, rt.noise_std, size=n)
-                data_buffer[i, :] = wave + harm + noise
+                ch_name = rt.channel_names[i].strip().lower()
+                if "load" in ch_name:
+                    # Slow, smoother load-cell-like motion with low-frequency drift.
+                    wave = 0.015 * np.sin(2.0 * np.pi * 1.2 * t + phase[i])
+                    drift = 0.004 * np.sin(2.0 * np.pi * 0.12 * t + 0.5 * phase[i])
+                    noise = rng.normal(0.0, rt.noise_std * 0.6, size=n)
+                    data_buffer[i, :] = wave + drift + noise
+                elif "pts" in ch_name:
+                    # Sharper, higher-frequency structure for pressure/PTS-like behavior.
+                    wave = 0.006 * np.sin(2.0 * np.pi * 9.0 * t + phase[i])
+                    harm = 0.005 * np.sin(2.0 * np.pi * 22.0 * t + 0.3 * phase[i])
+                    saw_phase = ((1.8 * t + (phase[i] / (2.0 * np.pi))) % 1.0)
+                    saw = (2.0 * saw_phase) - 1.0
+                    burst = 0.003 * saw
+                    noise = rng.normal(0.0, rt.noise_std * 1.3, size=n)
+                    data_buffer[i, :] = wave + harm + burst + noise
+                else:
+                    # Fallback synthetic profile.
+                    wave = 0.01 * np.sin(2.0 * np.pi * freqs[i] * t + phase[i])
+                    harm = 0.004 * np.sin(2.0 * np.pi * (freqs[i] * 0.27 + 0.8) * t + 0.5 * phase[i])
+                    noise = rng.normal(0.0, rt.noise_std, size=n)
+                    data_buffer[i, :] = wave + harm + noise
             phase = (phase + (2.0 * np.pi * freqs * (n / max(1.0, sampling_rate)))) % (2.0 * np.pi)
 
             timestamps = make_timestamps(n, sampling_rate)
