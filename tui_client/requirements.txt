@@ -2,3 +2,4 @@ imgui
 glfw
 PyOpenGL
 pyarrow
+numpy

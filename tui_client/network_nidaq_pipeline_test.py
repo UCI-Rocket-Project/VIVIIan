@@ -17,7 +17,16 @@ from network_pipeline import averaging_worker, network_receiver
 # Signal helpers: decimation for plotting, optional notch filtering, FFT worker process.
 from signal_processing import apply_notch_filters, downsample_for_plot, fft_worker
 # TOML-driven runtime config for stream endpoint, signals, and graph-cell layout.
-from tui_config import load_tui_config
+
+import sys
+from pathlib import Path
+
+# Add shared_config to sys.path so we can import config_parser
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from shared_config.config_parser import load_toml_config
 
 
 WINDOW_WIDTH = 1200
@@ -26,7 +35,7 @@ PLOT_HEIGHT = 220
 
 
 def main() -> None:
-    stream_cfg, signal_cfgs, graph_cells = load_tui_config("../gse2_0.toml")
+    nidaq_cfg, db_cfg, stream_cfg, signal_cfgs, graph_cells = load_toml_config(str(ROOT_DIR / "gse2_0.toml"))
 
     stop_event = threading.Event()
     stats = {"raw_samples": 0, "avg_samples": 0}
