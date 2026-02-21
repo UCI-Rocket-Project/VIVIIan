@@ -168,7 +168,7 @@ def stream_fake_to_network() -> None:
     POLLING_FREQ = nidaq_cfg.polling_freq
     
     # Database configs
-    QUESTDB_CONF = db_cfg.questdb_conf
+    QUESTDB_CONF = f"http::addr={db_cfg.server}:9009;"
     QUESTDB_TABLE = db_cfg.questdb_table
 
     sampling_rate = CHANNEL_SAMPLING_RATE * num_channels
@@ -225,12 +225,12 @@ def stream_fake_to_network() -> None:
             t = np.arange(n, dtype=np.float64) / max(1.0, sampling_rate)
             data_buffer = np.empty((num_channels, n), dtype=np.float64)
             for i in range(num_channels):
-                ch_name = rt.channel_names[i].strip().lower()
+                ch_name = nidaq_channels[i].strip().lower()
                 if "load" in ch_name:
                     # Slow, smoother load-cell-like motion with low-frequency drift.
                     wave = 0.015 * np.sin(2.0 * np.pi * 1.2 * t + phase[i])
                     drift = 0.004 * np.sin(2.0 * np.pi * 0.12 * t + 0.5 * phase[i])
-                    noise = rng.normal(0.0, rt.noise_std * 0.6, size=n)
+                    noise = rng.normal(0.0, noise_std * 0.6, size=n)
                     data_buffer[i, :] = wave + drift + noise
                 elif "pts" in ch_name:
                     # Sharper, higher-frequency structure for pressure/PTS-like behavior.
@@ -239,7 +239,7 @@ def stream_fake_to_network() -> None:
                     saw_phase = ((1.8 * t + (phase[i] / (2.0 * np.pi))) % 1.0)
                     saw = (2.0 * saw_phase) - 1.0
                     burst = 0.003 * saw
-                    noise = rng.normal(0.0, rt.noise_std * 1.3, size=n)
+                    noise = rng.normal(0.0, noise_std * 1.3, size=n)
                     data_buffer[i, :] = wave + harm + burst + noise
                 else:
                     # Fallback synthetic profile.
