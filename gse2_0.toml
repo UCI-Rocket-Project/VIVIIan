@@ -40,7 +40,7 @@ timestamp_column = "timestamp"
 value_column = "PTS"
 
 [nidaq_stream]
-host = "127.0.0.1"
+host = "192.168.1.67"
 port = 50100
 raw_batch_points = 200
 plot_points = 1200
