@@ -354,8 +354,12 @@ def main() -> None:
                 wk_target = worker_key_by_cell_signal.get((cell.title, st["target_signal"]))
                 if imgui.button(f"Run FFT##{cell.title}") and wk_target is not None:
                     with locks[wk_target]:
-                        vals = list(staging_ring[wk_target])
-                    sr_est = max(1.0, raw_sps_by_worker.get(wk_target, raw_sps))
+                        avg_pairs = list(averaged[wk_target])
+                    vals = [v for _, v in avg_pairs]
+                    sr_est = max(1.0, avg_sps_by_worker.get(wk_target, avg_sps))
+                    if len(avg_pairs) > 1:
+                        dt = max(1e-6, avg_pairs[-1][0] - avg_pairs[0][0])
+                        sr_est = max(1.0, len(avg_pairs) / dt)
                     n = int(max(8, tstate["window_s"] * sr_est))
                     window_vals = vals[-n:] if len(vals) >= n else vals
                     tstate["q"] = mp.Queue()
