@@ -263,8 +263,8 @@ def stream_nidaq_to_network() -> None:
                     physical_channel=physical_channel,
                     name_to_assign_to_channel=channel_name,
                     terminal_config=TerminalConfiguration.DIFF,
-                    min_val=-0.02,
-                    max_val=0.02,
+                    min_val=-5,
+                    max_val=5,
                 )
 
             task.timing.cfg_samp_clk_timing(

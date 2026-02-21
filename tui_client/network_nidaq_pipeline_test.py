@@ -33,6 +33,7 @@ from shared_config.config_parser import load_toml_config
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 900
 PLOT_HEIGHT = 220
+SIGNAL_STALE_TIMEOUT_S = 1.0
 
 
 def make_signal_fft_state() -> dict:
@@ -201,19 +202,48 @@ def main() -> None:
 
                 # Build per-signal series for this cell; each graph+signal has independent buffers/state.
                 series_map = {}
+                signal_errored: dict[str, bool] = {}
+                signal_age_s: dict[str, float] = {}
                 graph_display_len = 0
                 graph_stage_len = 0
                 for s in cell.signals:
                     wk = worker_key_by_cell_signal.get((cell.title, s))
                     if wk is None:
+                        signal_errored[s] = True
+                        signal_age_s[s] = float("inf")
+                        series_map[s] = [0.0]
                         continue
                     with locks[wk]:
                         avg_pairs = list(averaged[wk])
                         stage_len = len(staging_ring[wk])
+                        last_ts = avg_pairs[-1][0] if avg_pairs else None
+                        age_s = (now_wall - last_ts) if last_ts is not None else float("inf")
+                        is_errored = age_s > SIGNAL_STALE_TIMEOUT_S
+                        if is_errored and avg_pairs:
+                            # No fresh samples for this signal: clear stale points so plot falls back to 0.
+                            averaged[wk].clear()
+                            avg_pairs = []
+                    signal_errored[s] = is_errored
+                    signal_age_s[s] = age_s
                     vals = [v for _, v in avg_pairs]
                     graph_display_len += len(avg_pairs)
                     graph_stage_len += stage_len
-                    series_map[s] = downsample_for_plot(vals, stream_cfg.plot_points) if vals else []
+                    if is_errored:
+                        series_map[s] = [0.0]
+                        sig_st = st["signals"].setdefault(s, make_signal_fft_state())
+                        if sig_st["proc"] is not None and sig_st["proc"].is_alive():
+                            sig_st["proc"].terminate()
+                            sig_st["proc"].join(timeout=0.2)
+                        sig_st["proc"] = None
+                        sig_st["q"] = None
+                        sig_st["status"] = "error: no signal data"
+                        sig_st["peaks"] = []
+                        sig_st["freqs_plot"] = []
+                        sig_st["amps_plot"] = []
+                        sig_st["freq_max"] = 0.0
+                        sig_st["select_start_hz"] = None
+                    else:
+                        series_map[s] = downsample_for_plot(vals, stream_cfg.plot_points) if vals else [0.0]
                 series_items = []
                 for s in cell.signals:
                     vals = series_map.get(s, [])
@@ -223,6 +253,8 @@ def main() -> None:
                 filtered_map = {}
                 for s in cell.signals:
                     s_state = st["signals"].setdefault(s, make_signal_fft_state())
+                    if signal_errored.get(s, False):
+                        continue
                     if not vis["filtered_signals"].get(s, True):
                         continue
                     src_vals = series_map.get(s, [])
@@ -283,7 +315,23 @@ def main() -> None:
                     wk = worker_key_by_cell_signal.get((cell.title, s))
                     if wk is None:
                         continue
-                    imgui.text(f"{s} avg_sps={avg_sps_by_worker.get(wk, 0.0):.1f}")
+                    avg_rate = avg_sps_by_worker.get(wk, 0.0)
+                    if signal_errored.get(s, False):
+                        age_s = signal_age_s.get(s, float("inf"))
+                        age_txt = "n/a" if age_s == float("inf") else f"{age_s:.1f}s"
+                        imgui.text_colored(
+                            f"{s} avg_sps={avg_rate:.1f} status=ERROR stale={age_txt}",
+                            1.0,
+                            0.35,
+                            0.35,
+                        )
+                    else:
+                        imgui.text_colored(
+                            f"{s} avg_sps={avg_rate:.1f} status=ok",
+                            0.35,
+                            1.0,
+                            0.35,
+                        )
                     changed_n, new_n = imgui.input_int(f"Avg N: {s}##{cell.title}", int(avg_refs[wk]["value"]), 1, 10)
                     if changed_n:
                         avg_refs[wk]["value"] = max(1, int(new_n))
@@ -337,30 +385,38 @@ def main() -> None:
                     if st["target_signal"] not in options:
                         st["target_signal"] = options[0]
                     idx = options.index(st["target_signal"])
-                    changed_combo, new_idx = imgui.combo(f"FFT signal##{cell.title}", idx, options)
+                    option_labels = [f"{s} [ERR]" if signal_errored.get(s, False) else s for s in options]
+                    changed_combo, new_idx = imgui.combo(f"FFT signal##{cell.title}", idx, option_labels)
                     if changed_combo:
                         st["target_signal"] = options[new_idx]
-                tstate = st["signals"].setdefault(st["target_signal"], make_signal_fft_state())
-                changed_fft, new_win = imgui.input_float(f"FFT window (s)##{cell.title}", float(tstate["window_s"]), 1.0, 5.0, "%.2f")
-                if changed_fft:
-                    tstate["window_s"] = max(0.1, float(new_win))
+                tstate = st["signals"].setdefault(st["target_signal"], make_signal_fft_state()) if st["target_signal"] else make_signal_fft_state()
+                target_errored = signal_errored.get(st["target_signal"], True)
+                if not target_errored and st["target_signal"]:
+                    changed_fft, new_win = imgui.input_float(f"FFT window (s)##{cell.title}", float(tstate["window_s"]), 1.0, 5.0, "%.2f")
+                    if changed_fft:
+                        tstate["window_s"] = max(0.1, float(new_win))
+                else:
+                    imgui.text_colored("target signal has no fresh data; FFT disabled", 1.0, 0.35, 0.35)
                 wk_target = worker_key_by_cell_signal.get((cell.title, st["target_signal"]))
-                if imgui.button(f"Run FFT##{cell.title}") and wk_target is not None:
-                    with locks[wk_target]:
-                        avg_pairs = list(averaged[wk_target])
-                    vals = [v for _, v in avg_pairs]
-                    sr_est = max(1.0, avg_sps_by_worker.get(wk_target, avg_sps))
-                    if len(avg_pairs) > 1:
-                        dt = max(1e-6, avg_pairs[-1][0] - avg_pairs[0][0])
-                        sr_est = max(1.0, len(avg_pairs) / dt)
-                    n = int(max(8, tstate["window_s"] * sr_est))
-                    window_vals = vals[-n:] if len(vals) >= n else vals
-                    tstate["q"] = mp.Queue()
-                    tstate["proc"] = mp.Process(target=fft_worker, args=(window_vals, sr_est, stream_cfg.fft_top_n, tstate["q"]), daemon=True)
-                    tstate["proc"].start()
-                    tstate["status"] = f"running n={len(window_vals)}"
+                if imgui.button(f"Run FFT##{cell.title}"):
+                    if (not target_errored) and wk_target is not None and st["target_signal"]:
+                        with locks[wk_target]:
+                            avg_pairs = list(averaged[wk_target])
+                        vals = [v for _, v in avg_pairs]
+                        sr_est = max(1.0, avg_sps_by_worker.get(wk_target, avg_sps))
+                        if len(avg_pairs) > 1:
+                            dt = max(1e-6, avg_pairs[-1][0] - avg_pairs[0][0])
+                            sr_est = max(1.0, len(avg_pairs) / dt)
+                        n = int(max(8, tstate["window_s"] * sr_est))
+                        window_vals = vals[-n:] if len(vals) >= n else vals
+                        tstate["q"] = mp.Queue()
+                        tstate["proc"] = mp.Process(target=fft_worker, args=(window_vals, sr_est, stream_cfg.fft_top_n, tstate["q"]), daemon=True)
+                        tstate["proc"].start()
+                        tstate["status"] = f"running n={len(window_vals)}"
+                    elif st["target_signal"]:
+                        tstate["status"] = "error: no signal data"
                 imgui.same_line()
-                if imgui.button(f"Clear##{cell.title}"):
+                if imgui.button(f"Clear##{cell.title}") and st["target_signal"]:
                     tstate["active_notch_ranges_hz"].clear()
                     tstate["select_start_hz"] = None
                 for sig_name in options:
@@ -376,9 +432,17 @@ def main() -> None:
                             sig_st["proc"].join(timeout=0.2)
                         sig_st["proc"] = None
                         sig_st["q"] = None
-                imgui.text(f"status ({st['target_signal']}): {tstate['status']}")
+                if st["target_signal"] and target_errored:
+                    imgui.text_colored(f"status ({st['target_signal']}): error: no signal data", 1.0, 0.35, 0.35)
+                else:
+                    imgui.text(f"status ({st['target_signal']}): {tstate['status']}")
 
-                visible_fft = [s for s in options if st["signals"].setdefault(s, make_signal_fft_state())["visible_fft"]]
+                visible_fft = [
+                    s
+                    for s in options
+                    if (not signal_errored.get(s, False))
+                    and st["signals"].setdefault(s, make_signal_fft_state())["visible_fft"]
+                ]
                 amps_plot = []
                 if visible_fft:
                     amps_plot = st["signals"][visible_fft[0]]["amps_plot"]
