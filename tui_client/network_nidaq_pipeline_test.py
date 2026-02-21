@@ -214,18 +214,11 @@ def main() -> None:
                     graph_display_len += len(avg_pairs)
                     graph_stage_len += stage_len
                     series_map[s] = downsample_for_plot(vals, stream_cfg.plot_points) if vals else []
-                # Primary series is the first configured signal in the cell.
-                primary = cell.signals[0] if cell.signals else ""
-                plot_base = series_map.get(primary, []) if primary else []
-                if not plot_base:
-                    plot_base = [0.0]
                 series_items = []
                 for s in cell.signals:
                     vals = series_map.get(s, [])
                     if vals and vis["signals"].get(s, True):
                         series_items.append((s, vals))
-                if not series_items:
-                    series_items = [(primary or "signal", plot_base)]
                 # Per-signal filtered overlays: can show any subset, based on each signal's FFT notch ranges.
                 filtered_map = {}
                 for s in cell.signals:

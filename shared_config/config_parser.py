@@ -15,11 +15,13 @@ class NidaqConfig:
 class DatabaseConfig:
     server: str
     http_port: int
+    ingress_protocol: str
+    ingress_port: int
     questdb_table: str
     
     @property
     def questdb_conf(self) -> str:
-        return f"http::addr={self.server}:{self.http_port};"
+        return f"{self.ingress_protocol}::addr={self.server}:{self.ingress_port};"
 
 
 @dataclass
@@ -56,7 +58,7 @@ def load_toml_config(path: str = "gse2_0.toml") -> tuple[NidaqConfig, DatabaseCo
         device=str(nq.get("device", "Dev1")),
         channel_sampling_rate=int(nq.get("channel_sampling_rate", 50000)),
         buffer_duration_sec=int(nq.get("buffer_duration_sec", 20)),
-        polling_freq=int(nq.get("polling_freq", 1))
+        polling_freq=int(nq.get("polling_freq", 100))
     )
 
     # Database Config
@@ -69,9 +71,20 @@ def load_toml_config(path: str = "gse2_0.toml") -> tuple[NidaqConfig, DatabaseCo
         logging.warning("No table found in query_model.default.streams, defaulting to LOAD_CELL")
         pass
 
+    if "ingress_protocol" in db:
+        ingress_protocol = str(db.get("ingress_protocol", "tcp")).strip().lower()
+    else:
+        # Backward compatibility: if only http_port is configured, assume HTTP;
+        # otherwise default to ILP TCP for higher ingestion throughput.
+        ingress_protocol = "http" if "http_port" in db else "tcp"
+    default_ingress_port = 9000 if ingress_protocol == "http" else 9009
+    ingress_port = int(db.get("ingress_port", db.get("http_port", default_ingress_port)))
+
     db_cfg = DatabaseConfig(
         server=str(db.get("server", "localhost")),
         http_port=int(db.get("http_port", 9000)),
+        ingress_protocol=ingress_protocol,
+        ingress_port=ingress_port,
         questdb_table=str(qdb_table)
     )
 

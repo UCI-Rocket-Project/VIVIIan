@@ -9,7 +9,6 @@ import numpy as np
 import pyarrow as pa
 from nidaqmx.constants import AcquisitionType, TerminalConfiguration
 from nidaqmx.stream_readers import AnalogMultiChannelReader
-import pandas as pd
 from questdb.ingress import Sender, IngressError
 
 import sys
@@ -30,6 +29,8 @@ STREAM_HOST = "0.0.0.0"
 STREAM_PORT = 50100
 IDLE_SLEEP_S = 0.00001
 STREAM_QUEUE_MAX_BATCHES = 128
+QUESTDB_FLUSH_ROWS = 5000
+QUESTDB_FLUSH_INTERVAL_S = 0.05
 
 
 class ArrowBatchStreamServer:
@@ -56,10 +57,10 @@ class ArrowBatchStreamServer:
             return
 
     def send_table(self, table: pa.Table) -> None:
-        logger.info("server.send_table: try_accept/start rows=%d", table.num_rows)
+        logger.debug("server.send_table: try_accept/start rows=%d", table.num_rows)
         self._try_accept()
         if self._client is None:
-            logger.info("server.send_table: no client connected, skip")
+            logger.debug("server.send_table: no client connected, skip")
             return
         sink = pa.BufferOutputStream()
         with pa.ipc.new_stream(sink, table.schema) as writer:
@@ -68,7 +69,7 @@ class ArrowBatchStreamServer:
         frame = len(payload).to_bytes(4, "big") + payload
         try:
             self._client.sendall(frame)
-            logger.info("server.send_table: sent bytes=%d rows=%d", len(frame), table.num_rows)
+            logger.debug("server.send_table: sent bytes=%d rows=%d", len(frame), table.num_rows)
         except OSError:
             try:
                 self._client.close()
@@ -94,7 +95,7 @@ def start_stream_sender(server: ArrowBatchStreamServer, stop_event: threading.Ev
                 table = send_q.get(timeout=0.05)
             except queue.Empty:
                 continue
-            logger.info("sender_loop: dequeued rows=%d qsize=%d", table.num_rows, send_q.qsize())
+            logger.debug("sender_loop: dequeued rows=%d qsize=%d", table.num_rows, send_q.qsize())
             server.send_table(table)
             stats["sent_batches"] += 1
             stats["sent_rows"] += table.num_rows
@@ -104,33 +105,90 @@ def start_stream_sender(server: ArrowBatchStreamServer, stop_event: threading.Ev
     return send_q, t, stats
 
 
-def start_questdb_sender(stop_event: threading.Event, QUESTDB_CONF: str, QUESTDB_TABLE: str):
+def start_questdb_sender(
+    stop_event: threading.Event,
+    QUESTDB_CONF: str,
+    QUESTDB_TABLE: str,
+    flush_rows: int = QUESTDB_FLUSH_ROWS,
+    flush_interval_s: float = QUESTDB_FLUSH_INTERVAL_S,
+):
     questdb_q: queue.Queue[pa.Table] = queue.Queue(maxsize=STREAM_QUEUE_MAX_BATCHES)
-    stats = {"sent_batches": 0, "sent_rows": 0, "errors": 0}
+    stats = {
+        "sent_batches": 0,
+        "sent_rows": 0,
+        "errors": 0,
+        "flush_calls": 0,
+        "flush_ms_total": 0.0,
+        "encode_ms_total": 0.0,
+    }
 
     def sender_loop() -> None:
         logger.info("questdb_loop: started")
         try:
             with Sender.from_conf(QUESTDB_CONF) as sender:
+                pending_tables: list[pa.Table] = []
+                pending_rows = 0
+                last_flush_t = time.monotonic()
+
+                def flush_pending() -> None:
+                    nonlocal pending_rows, last_flush_t
+                    if pending_rows <= 0:
+                        return
+                    try:
+                        if len(pending_tables) == 1:
+                            table = pending_tables[0]
+                        else:
+                            table = pa.concat_tables(pending_tables)
+                        t0 = time.perf_counter()
+                        df = table.to_pandas()
+                        sender.dataframe(df, table_name=QUESTDB_TABLE, at="timestamps")
+                        t1 = time.perf_counter()
+                        sender.flush()
+                        t2 = time.perf_counter()
+                        stats["sent_batches"] += 1
+                        stats["sent_rows"] += pending_rows
+                        stats["flush_calls"] += 1
+                        stats["encode_ms_total"] += (t1 - t0) * 1000.0
+                        stats["flush_ms_total"] += (t2 - t1) * 1000.0
+                    finally:
+                        pending_tables.clear()
+                        pending_rows = 0
+                        last_flush_t = time.monotonic()
+
                 while not stop_event.is_set():
                     try:
-                        table = questdb_q.get(timeout=0.05)
+                        elapsed = time.monotonic() - last_flush_t
+                        timeout_s = max(0.0, flush_interval_s - elapsed) if pending_rows > 0 else 0.05
+                        timeout_s = min(0.05, timeout_s)
+                        table = questdb_q.get(timeout=timeout_s)
+                        pending_tables.append(table)
+                        pending_rows += table.num_rows
                     except queue.Empty:
-                        continue
+                        pass
 
-                    # logger.info("questdb_loop: dequeued rows=%d qsize=%d", table.num_rows, questdb_q.qsize())
+                    should_flush = (
+                        pending_rows >= max(1, int(flush_rows))
+                        or (pending_rows > 0 and (time.monotonic() - last_flush_t) >= max(0.001, float(flush_interval_s)))
+                    )
+                    if not should_flush:
+                        continue
                     try:
-                        df = table.to_pandas()
-                        sender.dataframe(df, table_name=QUESTDB_TABLE, at='timestamps')
-                        sender.flush()
-                        stats["sent_batches"] += 1
-                        stats["sent_rows"] += table.num_rows
+                        flush_pending()
                     except IngressError as e:
                         stats["errors"] += 1
-                        logger.error(f"QuestDB Ingress Error: {e}")
+                        logger.error("QuestDB Ingress Error: %s", e)
                     except Exception as e:
                         stats["errors"] += 1
-                        logger.error(f"QuestDB General Error: {e}")
+                        logger.error("QuestDB General Error: %s", e)
+                if pending_rows > 0:
+                    try:
+                        flush_pending()
+                    except IngressError as e:
+                        stats["errors"] += 1
+                        logger.error("QuestDB Ingress Error (final flush): %s", e)
+                    except Exception as e:
+                        stats["errors"] += 1
+                        logger.error("QuestDB General Error (final flush): %s", e)
         except Exception as e:
             logger.error(f"QuestDB connection failed: {e}")
 
@@ -189,7 +247,13 @@ def stream_nidaq_to_network() -> None:
     stream_server = ArrowBatchStreamServer(STREAM_HOST, STREAM_PORT)
     stop_event = threading.Event()
     send_q, sender_thread, send_stats = start_stream_sender(stream_server, stop_event)
-    questdb_q, questdb_thread, questdb_stats = start_questdb_sender(stop_event, QUESTDB_CONF, QUESTDB_TABLE)
+    questdb_q, questdb_thread, questdb_stats = start_questdb_sender(
+        stop_event,
+        QUESTDB_CONF,
+        QUESTDB_TABLE,
+        flush_rows=max(QUESTDB_FLUSH_ROWS, GUI_TX_BUFFER_LEN),
+        flush_interval_s=QUESTDB_FLUSH_INTERVAL_S,
+    )
     
     try:
         with nidaqmx.Task() as task:
@@ -219,16 +283,16 @@ def stream_nidaq_to_network() -> None:
             }
 
             while True:
-                logger.info("acquire_loop: begin")
+                logger.debug("acquire_loop: begin")
                 samples_available = task.in_stream.avail_samp_per_chan
-                logger.info("acquire_loop: samples_available=%d", samples_available)
+                logger.debug("acquire_loop: samples_available=%d", samples_available)
                 if samples_available <= 0:
-                    logger.warning("aquire_loop: 0 samples available after %ds", 1 / POLLING_FREQ)
+                    logger.debug("acquire_loop: 0 samples available after %.5fs", 1 / POLLING_FREQ)
                     time.sleep(1 / POLLING_FREQ)
                     continue
 
                 data_buffer = np.empty((num_channels, samples_available), dtype=np.float64)
-                logger.info("acquire_loop: reading NI-DAQ (%d samples available)", samples_available)
+                logger.debug("acquire_loop: reading NI-DAQ (%d samples available)", samples_available)
                 reader.read_many_sample(
                     data=data_buffer,
                     number_of_samples_per_channel=samples_available,
@@ -236,12 +300,12 @@ def stream_nidaq_to_network() -> None:
                 )
                 stats["read_rows"] += samples_available
                 timestamps = make_timestamps(samples_available, sampling_rate)
-                logger.info("acquire_loop: read samples")
+                logger.debug("acquire_loop: read samples")
 
                 # Send network chunks in fixed-size batches to keep latency predictable.
                 for start in range(0, samples_available, GUI_TX_BUFFER_LEN):
                     end = min(start + GUI_TX_BUFFER_LEN, samples_available)
-                    logger.info("chunk_loop: start=%d end=%d", start, end)
+                    logger.debug("chunk_loop: start=%d end=%d", start, end)
 
                     table = chunk_table(timestamps, data_buffer, start, end, nidaq_channels)
                     # Never block acquisition on network I/O: queue + drop-oldest policy.
@@ -262,10 +326,14 @@ def stream_nidaq_to_network() -> None:
 
                 now = time.monotonic()
                 if now - last_metrics >= 1.0:
+                    flush_calls = max(1, int(questdb_stats.get("flush_calls", 0)))
+                    avg_flush_ms = float(questdb_stats.get("flush_ms_total", 0.0)) / flush_calls
+                    avg_encode_ms = float(questdb_stats.get("encode_ms_total", 0.0)) / flush_calls
                     logging.info(
                         "perf read_rows/s=%d stream_q=%d quest_q=%d drops=%d "
                         "stream_batches/s=%d stream_rows/s=%d "
-                        "quest_batches/s=%d quest_rows/s=%d quest_errs=%d",
+                        "quest_batches/s=%d quest_rows/s=%d quest_errs=%d "
+                        "quest_avg_encode_ms=%.2f quest_avg_flush_ms=%.2f",
                         stats["read_rows"],
                         send_q.qsize(),
                         questdb_q.qsize(),
@@ -274,7 +342,9 @@ def stream_nidaq_to_network() -> None:
                         send_stats["sent_rows"],
                         questdb_stats["sent_batches"],
                         questdb_stats["sent_rows"],
-                        questdb_stats.get("errors", 0)
+                        questdb_stats.get("errors", 0),
+                        avg_encode_ms,
+                        avg_flush_ms,
                     )
                     stats = {"read_rows": 0, "drops": 0}
                     send_stats["sent_batches"] = 0
@@ -282,6 +352,9 @@ def stream_nidaq_to_network() -> None:
                     questdb_stats["sent_batches"] = 0
                     questdb_stats["sent_rows"] = 0
                     questdb_stats["errors"] = 0
+                    questdb_stats["flush_calls"] = 0
+                    questdb_stats["flush_ms_total"] = 0.0
+                    questdb_stats["encode_ms_total"] = 0.0
                     last_metrics = now
 
                 time.sleep(1 / POLLING_FREQ)
