@@ -9,8 +9,18 @@ import numpy as np
 import pyarrow as pa
 from nidaqmx.constants import AcquisitionType, TerminalConfiguration
 from nidaqmx.stream_readers import AnalogMultiChannelReader
+import pandas as pd
+from questdb.ingress import Sender, IngressError
 
-from config import *
+import sys
+from pathlib import Path
+
+# Add shared_config to sys.path so we can import config_parser
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from shared_config.config_parser import load_toml_config
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -18,9 +28,8 @@ logger = logging.getLogger("nidaq_stream")
 
 STREAM_HOST = "0.0.0.0"
 STREAM_PORT = 50100
-STREAM_BATCH_SAMPLES = 200  # Match network_sine_pipeline_test RAW_BATCH_POINTS.
-STREAM_QUEUE_MAX_BATCHES = 128
 IDLE_SLEEP_S = 0.00001
+STREAM_QUEUE_MAX_BATCHES = 128
 
 
 class ArrowBatchStreamServer:
@@ -95,6 +104,41 @@ def start_stream_sender(server: ArrowBatchStreamServer, stop_event: threading.Ev
     return send_q, t, stats
 
 
+def start_questdb_sender(stop_event: threading.Event, QUESTDB_CONF: str, QUESTDB_TABLE: str):
+    questdb_q: queue.Queue[pa.Table] = queue.Queue(maxsize=STREAM_QUEUE_MAX_BATCHES)
+    stats = {"sent_batches": 0, "sent_rows": 0, "errors": 0}
+
+    def sender_loop() -> None:
+        logger.info("questdb_loop: started")
+        try:
+            with Sender.from_conf(QUESTDB_CONF) as sender:
+                while not stop_event.is_set():
+                    try:
+                        table = questdb_q.get(timeout=0.05)
+                    except queue.Empty:
+                        continue
+
+                    # logger.info("questdb_loop: dequeued rows=%d qsize=%d", table.num_rows, questdb_q.qsize())
+                    try:
+                        df = table.to_pandas()
+                        sender.dataframe(df, table_name=QUESTDB_TABLE, at='timestamps')
+                        sender.flush()
+                        stats["sent_batches"] += 1
+                        stats["sent_rows"] += table.num_rows
+                    except IngressError as e:
+                        stats["errors"] += 1
+                        logger.error(f"QuestDB Ingress Error: {e}")
+                    except Exception as e:
+                        stats["errors"] += 1
+                        logger.error(f"QuestDB General Error: {e}")
+        except Exception as e:
+            logger.error(f"QuestDB connection failed: {e}")
+
+    t = threading.Thread(target=sender_loop, daemon=True)
+    t.start()
+    return questdb_q, t, stats
+
+
 def make_timestamps(samples_available: int, sampling_rate: float) -> np.ndarray:
     period_ns = (1.0 / sampling_rate) * 1_000_000_000
     duration_ns = (samples_available - 1) * period_ns
@@ -104,17 +148,36 @@ def make_timestamps(samples_available: int, sampling_rate: float) -> np.ndarray:
     return timestamps_ns.astype("datetime64[ns]")
 
 
-def chunk_table(timestamps: np.ndarray, data_buffer: np.ndarray, start: int, end: int) -> pa.Table:
+def chunk_table(timestamps: np.ndarray, data_buffer: np.ndarray, start: int, end: int, nidaq_channels: list[str]) -> pa.Table:
     cols = {"timestamps": pa.array(timestamps[start:end])}
-    for i, name in enumerate(NIDAQ_CHANNELS):
-        cols[name] = pa.array(data_buffer[i, start:end], type=pa.float64())
+    for i, channel_name in enumerate(nidaq_channels):
+        cols[channel_name] = pa.array(data_buffer[i, start:end], type=pa.float64())
     return pa.table(cols)
 
 
 def stream_nidaq_to_network() -> None:
-    num_channels = len(NIDAQ_CHANNELS)
+    nidaq_cfg, db_cfg, stream_cfg, signal_cfgs, graph_cells = load_toml_config(str(ROOT_DIR / "gse2_0.toml"))
+    
+    nidaq_channels = [cfg.source_column for cfg in signal_cfgs.values()]
+    num_channels = len(nidaq_channels)
+    
+    # Nidaq Stream configs
+    STREAM_HOST = stream_cfg.host
+    STREAM_PORT = stream_cfg.port
+    GUI_TX_BUFFER_LEN = stream_cfg.raw_batch_points
+    
+    # Nidaq params
+    NIDAQ_DEVICE = nidaq_cfg.device
+    CHANNEL_SAMPLING_RATE = nidaq_cfg.channel_sampling_rate
+    POLLING_FREQ = nidaq_cfg.polling_freq
+    NIDAQ_BUFFER_DURATION_SEC = nidaq_cfg.buffer_duration_sec
+    
+    # Database configs
+    QUESTDB_CONF = db_cfg.questdb_conf
+    QUESTDB_TABLE = db_cfg.questdb_table
+
     sampling_rate = CHANNEL_SAMPLING_RATE * num_channels
-    buffer_size_samples = int(sampling_rate * BUFFER_DURATION_SEC)
+    buffer_size_samples = int(sampling_rate * NIDAQ_BUFFER_DURATION_SEC)
 
     logging.info(
         "Configuring NIDAQ: %d channels @ %d Hz (%d Hz total)",
@@ -126,9 +189,11 @@ def stream_nidaq_to_network() -> None:
     stream_server = ArrowBatchStreamServer(STREAM_HOST, STREAM_PORT)
     stop_event = threading.Event()
     send_q, sender_thread, send_stats = start_stream_sender(stream_server, stop_event)
+    questdb_q, questdb_thread, questdb_stats = start_questdb_sender(stop_event, QUESTDB_CONF, QUESTDB_TABLE)
+    
     try:
         with nidaqmx.Task() as task:
-            for i, channel_name in enumerate(NIDAQ_CHANNELS):
+            for i, channel_name in enumerate(nidaq_channels):
                 physical_channel = f"{NIDAQ_DEVICE}/ai{i}"
                 task.ai_channels.add_ai_voltage_chan(
                     physical_channel=physical_channel,
@@ -158,11 +223,12 @@ def stream_nidaq_to_network() -> None:
                 samples_available = task.in_stream.avail_samp_per_chan
                 logger.info("acquire_loop: samples_available=%d", samples_available)
                 if samples_available <= 0:
-                    time.sleep(IDLE_SLEEP_S)
+                    logger.warning("aquire_loop: 0 samples available after %ds", 1 / POLLING_FREQ)
+                    time.sleep(1 / POLLING_FREQ)
                     continue
 
                 data_buffer = np.empty((num_channels, samples_available), dtype=np.float64)
-                logger.info("acquire_loop: reading NI-DAQ")
+                logger.info("acquire_loop: reading NI-DAQ (%d samples available)", samples_available)
                 reader.read_many_sample(
                     data=data_buffer,
                     number_of_samples_per_channel=samples_available,
@@ -170,48 +236,59 @@ def stream_nidaq_to_network() -> None:
                 )
                 stats["read_rows"] += samples_available
                 timestamps = make_timestamps(samples_available, sampling_rate)
-                logger.info("acquire_loop: read complete rows=%d", samples_available)
+                logger.info("acquire_loop: read samples")
 
                 # Send network chunks in fixed-size batches to keep latency predictable.
-                for start in range(0, samples_available, STREAM_BATCH_SAMPLES):
-                    end = min(start + STREAM_BATCH_SAMPLES, samples_available)
+                for start in range(0, samples_available, GUI_TX_BUFFER_LEN):
+                    end = min(start + GUI_TX_BUFFER_LEN, samples_available)
                     logger.info("chunk_loop: start=%d end=%d", start, end)
 
-                    table = chunk_table(timestamps, data_buffer, start, end)
+                    table = chunk_table(timestamps, data_buffer, start, end, nidaq_channels)
                     # Never block acquisition on network I/O: queue + drop-oldest policy.
-                    if send_q.full():
+                    for target_q, q_name in [(send_q, "stream"), (questdb_q, "questdb")]:
+                        if target_q.full():
+                            try:
+                                target_q.get_nowait()
+                                stats["drops"] += 1
+                            except queue.Empty:
+                                pass
                         try:
-                            send_q.get_nowait()
+                            target_q.put_nowait(table)
+                            logger.debug("chunk_loop: %s queued rows=%d qsize=%d", q_name, table.num_rows, target_q.qsize())
+                        except queue.Full:
                             stats["drops"] += 1
-                        except queue.Empty:
+                            logger.info("chunk_loop: %s queue full drop rows=%d", q_name, table.num_rows)
                             pass
-                    try:
-                        send_q.put_nowait(table)
-                        logger.info("chunk_loop: queued rows=%d qsize=%d", table.num_rows, send_q.qsize())
-                    except queue.Full:
-                        stats["drops"] += 1
-                        logger.info("chunk_loop: queue full drop rows=%d", table.num_rows)
-                        pass
 
                 now = time.monotonic()
                 if now - last_metrics >= 1.0:
                     logging.info(
-                        "perf read_rows/s=%d queue=%d drops=%d sent_batches/s=%d sent_rows/s=%d",
+                        "perf read_rows/s=%d stream_q=%d quest_q=%d drops=%d "
+                        "stream_batches/s=%d stream_rows/s=%d "
+                        "quest_batches/s=%d quest_rows/s=%d quest_errs=%d",
                         stats["read_rows"],
                         send_q.qsize(),
+                        questdb_q.qsize(),
                         stats["drops"],
                         send_stats["sent_batches"],
                         send_stats["sent_rows"],
+                        questdb_stats["sent_batches"],
+                        questdb_stats["sent_rows"],
+                        questdb_stats.get("errors", 0)
                     )
                     stats = {"read_rows": 0, "drops": 0}
                     send_stats["sent_batches"] = 0
                     send_stats["sent_rows"] = 0
+                    questdb_stats["sent_batches"] = 0
+                    questdb_stats["sent_rows"] = 0
+                    questdb_stats["errors"] = 0
                     last_metrics = now
 
-                time.sleep(IDLE_SLEEP_S)
+                time.sleep(1 / POLLING_FREQ)
     finally:
         stop_event.set()
         sender_thread.join(timeout=1.0)
+        questdb_thread.join(timeout=1.0)
         stream_server.close()
 
 
