@@ -5,7 +5,7 @@ import pyarrow as pa
 
 
 class SharedProcessRingBuffer: 
-    """Process-Safe ring buffer for pyarrow data, designed in a pub-sub arhitecture in order for reads and processing to occure"""
+    """Process-Safe ring buffer for pyarrow data, designed in a producer-consumer arhitecture in order for reads and processing to occure"""
 
     def __init__(self, num_slots, slot_size, name): 
         self.name = name
@@ -33,8 +33,5 @@ class SharedProcessRingBuffer:
 
 
     
-
-        
-
-
-class 
+class RingBuffer: 
+     
