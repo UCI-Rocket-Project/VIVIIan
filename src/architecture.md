@@ -111,3 +111,12 @@ This section describes the preferred dataflow for a better version of the client
 
 The current system may differ from the target architecture above.
 This document's dataflow section is the preferred design direction: network-delivered `pyarrow` data, Arrow-native validation/buffering, asynchronous persistence, and a UI fed from snapshots instead of direct process coupling.
+
+
+
+
+
+
+
+
+
