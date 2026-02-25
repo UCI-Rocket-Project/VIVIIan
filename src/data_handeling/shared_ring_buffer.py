@@ -21,17 +21,19 @@ class SharedProcessRingBuffer:
         self.lock = Lock()
     
 
-    def publish(self, batch: pa.RecordBatch):
-        sink = pa.BufferOutputStream()
-        with pa.ipc.new_stream(sink, batch.schema) as w: 
-            w.write_batch(batch)
-        buf = sink.getvalue()
+    # def publish(self, batch: pa.RecordBatch):
+    #     sink = pa.BufferOutputStream()
+    #     with pa.ipc.new_stream(sink, batch.schema) as w: 
+    #         w.write_batch(batch)
+    #     buf = sink.getvalue()
 
 
-        if buf.size > self.slot
+    #     if buf.size > self.slot
 
 
-
+#passed to remove errors but not really used for anything as of now//library seems performant enought with multiprocessing.queue or threading queue
     
 class RingBuffer: 
-     
+     pass
+
+

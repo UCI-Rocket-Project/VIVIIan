@@ -73,6 +73,13 @@ class NetworkReader:
             if got == 0:
                 raise ConnectionError("socket closed or no read on socket")
             pos += got
+
+    def overwrite_membufs_cols(self, values, membufs_range:range) -> None:
+        for i in membufs_range:
+            membuf = self.membufs[i]
+            # Copy list-like inputs so membufs do not share the same mutable object.
+            membuf.data_set = list(values)
+
         
     def start_reading(self) -> None: 
         while True: 
@@ -93,6 +100,8 @@ class NetworkReader:
                 logging.exception(e)
                 pass
 
+    
+
 
 
 
@@ -102,5 +111,4 @@ class NetworkReader:
         
 
     
-
 

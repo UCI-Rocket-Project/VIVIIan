@@ -384,6 +384,13 @@ class NetworkReaderTests(unittest.TestCase):
     INTEGRATION_BENCH_REPEATS = 3
     INTEGRATION_CASE_SECONDS = 5.0
 
+    @staticmethod
+    def _fmt_size_mb_or_kb(num_bytes):
+        mb = num_bytes / (1024 * 1024)
+        if mb >= 0.1:
+            return f"{mb:>8.2f} MB"
+        return f"{num_bytes / 1024:>8.1f} KB"
+
     def _make_reader(self, sock=None):
         sock = sock or FakeSocket()
         schema = pa.schema([("a", pa.int64()), ("b", pa.string())])
@@ -451,6 +458,7 @@ class NetworkReaderTests(unittest.TestCase):
         for nrows in batch_sizes:
             for ncols in column_counts:
                 with self.subTest(nrows=nrows, ncols=ncols):
+                    build_t0 = time.perf_counter()
                     arrays = []
                     names = []
                     for c in range(ncols):
@@ -464,6 +472,7 @@ class NetworkReaderTests(unittest.TestCase):
                             arrays.append(pa.array([f"v{i % 100}" for i in range(nrows)], type=pa.string()))
 
                     batch = pa.record_batch(arrays, names=names)
+                    build_t1 = time.perf_counter()
 
                     write_total_s = 0.0
                     read_total_s = 0.0
@@ -495,20 +504,22 @@ class NetworkReaderTests(unittest.TestCase):
                     roundtrip_s = max(roundtrip_total_s / self.BENCH_REPEATS, 1e-12)
                     payload_mb = len(payload) / (1024 * 1024)
                     results.append(
-                        {
-                            "nrows": nrows,
-                            "ncols": ncols,
-                            "repeats": self.BENCH_REPEATS,
-                            "bytes": len(payload),
+                            {
+                                "nrows": nrows,
+                                "ncols": ncols,
+                                "repeats": self.BENCH_REPEATS,
+                                "bytes": len(payload),
                             "payload_mb": payload_mb,
+                            "build_s": (build_t1 - build_t0),
                             "write_rps": nrows / write_s,
                             "read_rps": nrows / read_s,
                             "roundtrip_rps": nrows / roundtrip_s,
                             "write_mbps": payload_mb / write_s,
-                            "read_mbps": payload_mb / read_s,
-                            "roundtrip_mbps": payload_mb / roundtrip_s,
-                        }
-                    )
+                                "read_mbps": payload_mb / read_s,
+                                "roundtrip_mbps": payload_mb / roundtrip_s,
+                                "build_rps": nrows / max((build_t1 - build_t0), 1e-12),
+                            }
+                        )
 
         # Compact matrix-style summary for quick human scanning.
         print(
@@ -517,19 +528,19 @@ class NetworkReaderTests(unittest.TestCase):
         for nrows in batch_sizes:
             row_results = [r for r in results if r["nrows"] == nrows]
             print(f"batch={nrows} rows")
-            print("  cols | payload | write MB/s | read MB/s | roundtrip MB/s | roundtrip rows/s")
+            print("  cols |    payload | build ms | build rows/s | write rows/s | read rows/s | roundtrip rows/s | roundtrip MB/s")
             for r in row_results:
-                payload_str = (
-                    f"{r['payload_mb']:.2f} MB" if r["payload_mb"] >= 0.1 else f"{r['bytes'] / 1024:.1f} KB"
-                )
+                payload_str = self._fmt_size_mb_or_kb(r["bytes"])
                 print(
                     "  "
                     f"{r['ncols']:>4} | "
-                    f"{payload_str:>7} | "
-                    f"{r['write_mbps']:>10.2f} | "
-                    f"{r['read_mbps']:>9.2f} | "
-                    f"{r['roundtrip_mbps']:>14.2f} | "
-                    f"{r['roundtrip_rps']:>16.0f}"
+                    f"{payload_str} | "
+                    f"{r['build_s'] * 1e3:>7.2f} | "
+                    f"{r['build_rps']:>11.0f} | "
+                    f"{r['write_rps']:>12.0f} | "
+                    f"{r['read_rps']:>11.0f} | "
+                    f"{r['roundtrip_rps']:>16.0f} | "
+                    f"{r['roundtrip_mbps']:>13.2f}"
                 )
 
     def test_integration_socket_sender_network_reader_and_membuf_consumer(self):
@@ -629,6 +640,9 @@ class NetworkReaderTests(unittest.TestCase):
                         wire_total_bytes = 0
                         rows_total = 0
                         windows = 0
+                        sender_wait_total = 0.0
+                        reader_wait_total = 0.0
+                        consumer_wait_total = 0.0
 
                         # Warm-up one unmeasured case.
                         warm_case_id = case_id
@@ -661,8 +675,11 @@ class NetworkReaderTests(unittest.TestCase):
                             sender_control_queue.put(cmd)
                             reader_control_queue.put(cmd)
 
+                            tw0 = time.perf_counter()
                             sender_stats = sender_stats_queue.get(timeout=60)
+                            tw1 = time.perf_counter()
                             reader_status = reader_status_queue.get(timeout=60)
+                            tw2 = time.perf_counter()
                             consumer_result = consumer_result_queue.get(timeout=60)
                             t1 = time.perf_counter()
 
@@ -677,11 +694,21 @@ class NetworkReaderTests(unittest.TestCase):
                             self.assertEqual(consumer_result["final_value"], expected_rows - 1)
 
                             elapsed_total += (t1 - t0)
+                            sender_wait_total += (tw1 - tw0)
+                            reader_wait_total += (tw2 - tw1)
+                            consumer_wait_total += (t1 - tw2)
                             payload_total_bytes += sender_stats["payload_bytes"]
                             wire_total_bytes += sender_stats["wire_bytes"]
                             rows_total += expected_rows
                             windows += 1
 
+                        stage_totals = {
+                            "sender_wait": sender_wait_total,
+                            "reader_wait": reader_wait_total,
+                            "consumer_wait": consumer_wait_total,
+                        }
+                        longest_stage = max(stage_totals, key=stage_totals.get)
+                        downstream_elapsed_total = max(reader_wait_total + consumer_wait_total, 1e-12)
                         avg_elapsed_s = max(elapsed_total / max(windows, 1), 1e-12)
                         avg_payload_bytes = payload_total_bytes / max(windows, 1)
                         avg_wire_bytes = wire_total_bytes / max(windows, 1)
@@ -695,9 +722,17 @@ class NetworkReaderTests(unittest.TestCase):
                                 "avg_case_s": avg_elapsed_s,
                                 "payload_mb": avg_payload_bytes / (1024 * 1024),
                                 "wire_mb": avg_wire_bytes / (1024 * 1024),
-                                "rows_per_s": rows_total / max(elapsed_total, 1e-12),
-                                "payload_mbps": (payload_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
-                                "wire_mbps": (wire_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
+                                "rows_per_s_downstream": rows_total / downstream_elapsed_total,
+                                "payload_mbps_downstream": (payload_total_bytes / (1024 * 1024)) / downstream_elapsed_total,
+                                "wire_mbps_downstream": (wire_total_bytes / (1024 * 1024)) / downstream_elapsed_total,
+                                "rows_per_s_full": rows_total / max(elapsed_total, 1e-12),
+                                "payload_mbps_full": (payload_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
+                                "wire_mbps_full": (wire_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
+                                "longest_stage": longest_stage,
+                                "sender_wait_pct": (sender_wait_total / max(elapsed_total, 1e-12)) * 100.0,
+                                "reader_wait_pct": (reader_wait_total / max(elapsed_total, 1e-12)) * 100.0,
+                                "consumer_wait_pct": (consumer_wait_total / max(elapsed_total, 1e-12)) * 100.0,
+                                "downstream_pct": (downstream_elapsed_total / max(elapsed_total, 1e-12)) * 100.0,
                             }
                         )
         finally:
@@ -715,22 +750,27 @@ class NetworkReaderTests(unittest.TestCase):
         )
         for nrows in batch_sizes:
             print(f"batch={nrows} rows x {n_batches_per_case} batches/case")
-            print("  cols | payload/run | wire/run | end2end MB/s(payload) | end2end MB/s(wire) | end2end rows/s")
+            print("  cols | payload/run |   wire/run | full rows/s | rd+cons rows/s | full MB/s | rd+cons MB/s | longest")
             for r in [x for x in results if x["nrows"] == nrows]:
-                payload_str = (
-                    f"{r['payload_mb']:.2f} MB" if r["payload_mb"] >= 0.1 else f"{r['payload_mb'] * 1024:.1f} KB"
-                )
-                wire_str = (
-                    f"{r['wire_mb']:.2f} MB" if r["wire_mb"] >= 0.1 else f"{r['wire_mb'] * 1024:.1f} KB"
-                )
+                payload_str = self._fmt_size_mb_or_kb(int(r["payload_mb"] * 1024 * 1024))
+                wire_str = self._fmt_size_mb_or_kb(int(r["wire_mb"] * 1024 * 1024))
                 print(
                     "  "
                     f"{r['ncols']:>4} | "
-                    f"{payload_str:>10} | "
-                    f"{wire_str:>8} | "
-                    f"{r['payload_mbps']:>18.2f} | "
-                    f"{r['wire_mbps']:>15.2f} | "
-                    f"{r['rows_per_s']:>13.0f}"
+                    f"{payload_str} | "
+                    f"{wire_str} | "
+                    f"{r['rows_per_s_full']:>10.0f} | "
+                    f"{r['rows_per_s_downstream']:>13.0f} | "
+                    f"{r['wire_mbps_full']:>9.2f} | "
+                    f"{r['wire_mbps_downstream']:>12.2f} | "
+                    f"{r['longest_stage']}"
+                )
+                print(
+                    "       stage share: "
+                    f"sender={r['sender_wait_pct']:.0f}% "
+                    f"reader={r['reader_wait_pct']:.0f}% "
+                    f"consumer={r['consumer_wait_pct']:.0f}% "
+                    f"(downstream={r['downstream_pct']:.0f}%)"
                 )
 
     def test_benchmark_threaded_socket_to_reader_to_queue_consumer(self):
@@ -781,6 +821,9 @@ class NetworkReaderTests(unittest.TestCase):
                         wire_total_bytes = 0
                         rows_total = 0
                         windows = 0
+                        sender_wait_total = 0.0
+                        reader_wait_total = 0.0
+                        consumer_wait_total = 0.0
 
                         warm_case_id = case_id
                         case_id += 1
@@ -811,8 +854,11 @@ class NetworkReaderTests(unittest.TestCase):
                             t0 = time.perf_counter()
                             sender_control_queue.put(cmd)
                             reader_control_queue.put(cmd)
+                            tw0 = time.perf_counter()
                             sender_stats = sender_stats_queue.get(timeout=60)
+                            tw1 = time.perf_counter()
                             reader_status = reader_status_queue.get(timeout=60)
+                            tw2 = time.perf_counter()
                             consumer_result = consumer_result_queue.get(timeout=60)
                             t1 = time.perf_counter()
 
@@ -827,11 +873,21 @@ class NetworkReaderTests(unittest.TestCase):
                             self.assertEqual(consumer_result["final_value"], expected_rows - 1)
 
                             elapsed_total += (t1 - t0)
+                            sender_wait_total += (tw1 - tw0)
+                            reader_wait_total += (tw2 - tw1)
+                            consumer_wait_total += (t1 - tw2)
                             payload_total_bytes += sender_stats["payload_bytes"]
                             wire_total_bytes += sender_stats["wire_bytes"]
                             rows_total += expected_rows
                             windows += 1
 
+                        stage_totals = {
+                            "sender_wait": sender_wait_total,
+                            "reader_wait": reader_wait_total,
+                            "consumer_wait": consumer_wait_total,
+                        }
+                        longest_stage = max(stage_totals, key=stage_totals.get)
+                        downstream_elapsed_total = max(reader_wait_total + consumer_wait_total, 1e-12)
                         results.append(
                             {
                                 "nrows": nrows,
@@ -840,9 +896,17 @@ class NetworkReaderTests(unittest.TestCase):
                                 "windows": windows,
                                 "payload_mb": (payload_total_bytes / max(windows, 1)) / (1024 * 1024),
                                 "wire_mb": (wire_total_bytes / max(windows, 1)) / (1024 * 1024),
-                                "rows_per_s": rows_total / max(elapsed_total, 1e-12),
-                                "payload_mbps": (payload_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
-                                "wire_mbps": (wire_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
+                                "rows_per_s_downstream": rows_total / downstream_elapsed_total,
+                                "payload_mbps_downstream": (payload_total_bytes / (1024 * 1024)) / downstream_elapsed_total,
+                                "wire_mbps_downstream": (wire_total_bytes / (1024 * 1024)) / downstream_elapsed_total,
+                                "rows_per_s_full": rows_total / max(elapsed_total, 1e-12),
+                                "payload_mbps_full": (payload_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
+                                "wire_mbps_full": (wire_total_bytes / (1024 * 1024)) / max(elapsed_total, 1e-12),
+                                "longest_stage": longest_stage,
+                                "sender_wait_pct": (sender_wait_total / max(elapsed_total, 1e-12)) * 100.0,
+                                "reader_wait_pct": (reader_wait_total / max(elapsed_total, 1e-12)) * 100.0,
+                                "consumer_wait_pct": (consumer_wait_total / max(elapsed_total, 1e-12)) * 100.0,
+                                "downstream_pct": (downstream_elapsed_total / max(elapsed_total, 1e-12)) * 100.0,
                             }
                         )
         finally:
@@ -858,22 +922,27 @@ class NetworkReaderTests(unittest.TestCase):
         )
         for nrows in batch_sizes:
             print(f"batch={nrows} rows x {n_batches_per_case} batches/case")
-            print("  cols | payload/run | wire/run | end2end MB/s(payload) | end2end MB/s(wire) | end2end rows/s")
+            print("  cols | payload/run |   wire/run | full rows/s | rd+cons rows/s | full MB/s | rd+cons MB/s | longest")
             for r in [x for x in results if x["nrows"] == nrows]:
-                payload_str = (
-                    f"{r['payload_mb']:.2f} MB" if r["payload_mb"] >= 0.1 else f"{r['payload_mb'] * 1024:.1f} KB"
-                )
-                wire_str = (
-                    f"{r['wire_mb']:.2f} MB" if r["wire_mb"] >= 0.1 else f"{r['wire_mb'] * 1024:.1f} KB"
-                )
+                payload_str = self._fmt_size_mb_or_kb(int(r["payload_mb"] * 1024 * 1024))
+                wire_str = self._fmt_size_mb_or_kb(int(r["wire_mb"] * 1024 * 1024))
                 print(
                     "  "
                     f"{r['ncols']:>4} | "
-                    f"{payload_str:>10} | "
-                    f"{wire_str:>8} | "
-                    f"{r['payload_mbps']:>18.2f} | "
-                    f"{r['wire_mbps']:>15.2f} | "
-                    f"{r['rows_per_s']:>13.0f}"
+                    f"{payload_str} | "
+                    f"{wire_str} | "
+                    f"{r['rows_per_s_full']:>10.0f} | "
+                    f"{r['rows_per_s_downstream']:>13.0f} | "
+                    f"{r['wire_mbps_full']:>9.2f} | "
+                    f"{r['wire_mbps_downstream']:>12.2f} | "
+                    f"{r['longest_stage']}"
+                )
+                print(
+                    "       stage share: "
+                    f"sender={r['sender_wait_pct']:.0f}% "
+                    f"reader={r['reader_wait_pct']:.0f}% "
+                    f"consumer={r['consumer_wait_pct']:.0f}% "
+                    f"(downstream={r['downstream_pct']:.0f}%)"
                 )
 
 
