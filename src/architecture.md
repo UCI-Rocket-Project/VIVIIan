@@ -119,4 +119,7 @@ This document's dataflow section is the preferred design direction: network-deli
 
 
 
+## Ammends
 
+the manager for the netoworked and processor shared queues is going to be a thread on the display thread, should have minimal interaction until the gui requests a change
+this way they can care the same space and will both refresh upon rendered frames or gui interactions 
