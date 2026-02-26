@@ -35,7 +35,7 @@ class SharedRingBuffer(shared_memory.SharedMemory):
         format_string = "<QdQQQQ" + (num_consumers * "QbQ")
         return format_string
 
-    def __init__(self, name, create, size, track, num_consumers, reader:int):
+    def __init__(self, name, create, size, num_consumers, reader:int):
         self.format = self._struct_creation_string(num_consumers=num_consumers)
         self.header_size = struct.calcsize(self.format) #calculated in bytes
         self.shared_mem_size = size + self.header_size
@@ -46,7 +46,7 @@ class SharedRingBuffer(shared_memory.SharedMemory):
         self.num_readers_offset = struct.calcsize("<QdQQQ")
         self.payload_size = size
         self.num_consumers = num_consumers
-        super().__init__(name=name, create=create, size=self.shared_mem_size, track=track)
+        super().__init__(name=name, create=create, size=self.shared_mem_size)
         if create:
             self.buf[0:self.header_size] = b"\x00" * self.header_size
             struct.pack_into("<Q", self.buf, 0, self.payload_size)
@@ -176,7 +176,6 @@ class SharedRingBuffer(shared_memory.SharedMemory):
         return self.write_pos
 
     def update_header_writer(self):
-        self.calculate_pressure()
         return self.write_pos
 
     def update_header_reader(self):
