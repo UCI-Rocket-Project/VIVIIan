@@ -1,3 +1,6 @@
+"""run with python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput"""
+
+
 import multiprocessing as mp
 import time
 from typing import Any
@@ -157,8 +160,9 @@ def run_consumer(
     bytes_read = 0
     checksum = 0
     selected_columns = split_sensor_columns(columns=columns, num_consumers=num_readers, reader_id=reader_id)
-    bytes_per_batch = num_rows * (columns + 1) * np.dtype(np.int64).itemsize
-    pending = bytearray()
+    bytes_per_frame = num_rows * (columns + 1) * np.dtype(np.int64).itemsize
+    frame_buf = np.empty(bytes_per_frame, dtype=np.uint8)
+    frame_fill = 0
     frames_processed = 0
     fft_calls = 0
     fft_accum = 0.0
@@ -188,20 +192,25 @@ def run_consumer(
                     bytes_read += got
                     # Tiny reduction so the read loop does real work even before FFT framing.
                     checksum = (checksum + int(dst[0])) & 0xFFFFFFFF
-                    pending.extend(dst.tobytes())
 
-                    # Decode full batches and run FFT on the consumer's assigned columns.
-                    while len(pending) >= bytes_per_batch:
-                        frame = memoryview(pending)[:bytes_per_batch]
-                        mat = np.frombuffer(frame, dtype=np.int64).reshape(num_rows, columns + 1)
-                        if selected_columns:
-                            selected = mat[:, selected_columns].astype(np.float64, copy=False)
-                            fft_vals = np.fft.rfft(selected, axis=0)
-                            fft_calls += 1
-                            # Keep a small scalar reduction to prevent accidental dead code.
-                            fft_accum += float(np.abs(fft_vals[0]).sum())
-                        frames_processed += 1
-                        del pending[:bytes_per_batch]
+                    # Assemble fixed-size frames and run FFT on assigned columns.
+                    src_off = 0
+                    while src_off < got:
+                        take = min(bytes_per_frame - frame_fill, got - src_off)
+                        frame_buf[frame_fill:frame_fill + take] = dst[src_off:src_off + take]
+                        frame_fill += take
+                        src_off += take
+
+                        if frame_fill == bytes_per_frame:
+                            mat = frame_buf.view(np.int64).reshape(num_rows, columns + 1)
+                            if selected_columns:
+                                selected = mat[:, selected_columns]
+                                fft_vals = np.fft.rfft(selected, axis=0)
+                                fft_calls += 1
+                                # Keep a small scalar reduction to prevent accidental dead code.
+                                fft_accum += float(np.abs(fft_vals[0]).sum())
+                            frames_processed += 1
+                            frame_fill = 0
 
                 rmv[0].release()
                 if rmv[1] is not None:
@@ -225,7 +234,7 @@ def run_consumer(
                 "frames_processed": frames_processed,
                 "fft_calls": fft_calls,
                 "fft_accum": fft_accum,
-                "pending_tail_bytes": len(pending),
+                "pending_tail_bytes": frame_fill,
             }
         )
     finally:
@@ -233,11 +242,11 @@ def run_consumer(
 
 
 def run_benchmark(
-    total_bytes_target: int = 40 * 1024 * 1024 * 1024,
-    ring_size: int = 6 * 1024 * 1024 * 1024,
-    num_rows: int = 20000,
+    total_bytes_target: int = 5 * 1024 * 1024 * 1024,
+    ring_size: int = 1024 * 1024 * 1024,
+    num_rows: int = 10000,
     columns: int = 8,
-    num_consumers: int = 2,
+    num_consumers: int = 3,
     join_timeout_s: float = 60,
 ) -> dict[str, Any]:
     """
@@ -264,22 +273,6 @@ def run_benchmark(
         done_event = ctx.Event()
         final_write_pos = ctx.Value("Q", 0)
         result_q = ctx.Queue()
-
-        producer = ctx.Process(
-            target=run_producer,
-            args=(
-                total_bytes_target,
-                num_rows,
-                shm_name,
-                ring_size,
-                num_consumers,
-                columns,
-                done_event,
-                final_write_pos,
-                result_q,
-            ),
-            daemon=True,
-        )
 
         producer = ctx.Process(
             target=run_producer,
