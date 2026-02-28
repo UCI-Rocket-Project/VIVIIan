@@ -1,7 +1,10 @@
 """run with python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput"""
 
 
+import argparse
+import itertools
 import multiprocessing as mp
+import statistics
 import time
 from typing import Any
 
@@ -63,6 +66,68 @@ def _close_ring(ring: SharedRingBuffer) -> None:
     except Exception:
         pass
     ring.close()
+
+
+def _build_fft_executor(backend: str, torch_device: str = "auto"):
+    """
+    Return (fft_executor, backend_used).
+
+    fft_executor accepts a 2D numpy array shaped [num_rows, selected_channels]
+    and returns a scalar reduction from the FFT result.
+    """
+    requested = backend.strip().lower()
+    if requested not in {"auto", "numpy", "torch", "jax"}:
+        raise ValueError(f"unsupported fft backend '{backend}'")
+
+    def _numpy_exec(selected: np.ndarray) -> float:
+        fft_vals = np.fft.rfft(selected, axis=0)
+        return float(np.abs(fft_vals[0]).sum())
+
+    if requested == "numpy":
+        return _numpy_exec, "numpy"
+
+    if requested in {"auto", "torch"}:
+        try:
+            import torch
+
+            device = torch_device.strip().lower()
+            if device == "auto":
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+            elif device == "cuda" and not torch.cuda.is_available():
+                device = "cpu"
+            elif device not in {"cpu", "cuda"}:
+                raise ValueError(f"unsupported torch device '{torch_device}'")
+
+            def _torch_exec(selected: np.ndarray) -> float:
+                t = torch.as_tensor(selected, dtype=torch.float32, device=device)
+                fft_vals = torch.fft.rfft(t, dim=0)
+                return float(torch.abs(fft_vals[0]).sum().item())
+
+            return _torch_exec, f"torch:{device}"
+        except Exception as exc:
+            if requested == "torch":
+                raise RuntimeError(f"requested torch backend but initialization failed: {exc}") from exc
+
+    if requested in {"auto", "jax"}:
+        try:
+            import jax
+            import jax.numpy as jnp
+
+            @jax.jit
+            def _jax_rfft(x):
+                return jnp.fft.rfft(x, axis=0)
+
+            def _jax_exec(selected: np.ndarray) -> float:
+                x = jnp.asarray(selected, dtype=jnp.float32)
+                fft_vals = _jax_rfft(x)
+                return float(jnp.abs(fft_vals[0]).sum().item())
+
+            return _jax_exec, "jax"
+        except Exception as exc:
+            if requested == "jax":
+                raise RuntimeError(f"requested jax backend but initialization failed: {exc}") from exc
+
+    return _numpy_exec, "numpy"
 
 
 def run_producer(
@@ -147,6 +212,8 @@ def run_consumer(
     sample_rate_hz: float = 1000.0,
     max_chunk_bytes: int = 1 << 20,
     poll_sleep_s: float = 0.0002,
+    fft_backend: str = "auto",
+    torch_device: str = "auto",
 ) -> None:
     """
     Consumer drains bytes from the ring using its own reader slot.
@@ -160,12 +227,16 @@ def run_consumer(
     bytes_read = 0
     checksum = 0
     selected_columns = split_sensor_columns(columns=columns, num_consumers=num_readers, reader_id=reader_id)
+    selected_channel_count = len(selected_columns)
     bytes_per_frame = num_rows * (columns + 1) * np.dtype(np.int64).itemsize
     frame_buf = np.empty(bytes_per_frame, dtype=np.uint8)
     frame_fill = 0
     frames_processed = 0
     fft_calls = 0
     fft_accum = 0.0
+    fft_input_samples = 0
+    fft_input_bytes = 0
+    fft_execute, fft_backend_used = _build_fft_executor(backend=fft_backend, torch_device=torch_device)
 
     # Precompute bins once per consumer; useful sanity metric and avoids per-frame setup.
     _ = np.fft.rfftfreq(num_rows, d=1.0 / sample_rate_hz)
@@ -205,10 +276,11 @@ def run_consumer(
                             mat = frame_buf.view(np.int64).reshape(num_rows, columns + 1)
                             if selected_columns:
                                 selected = mat[:, selected_columns]
-                                fft_vals = np.fft.rfft(selected, axis=0)
                                 fft_calls += 1
+                                fft_input_samples += int(selected.size)
+                                fft_input_bytes += int(selected.nbytes)
                                 # Keep a small scalar reduction to prevent accidental dead code.
-                                fft_accum += float(np.abs(fft_vals[0]).sum())
+                                fft_accum += fft_execute(selected)
                             frames_processed += 1
                             frame_fill = 0
 
@@ -231,9 +303,14 @@ def run_consumer(
                 "bytes": bytes_read,
                 "checksum": checksum,
                 "selected_columns": selected_columns,
+                "selected_channel_count": selected_channel_count,
                 "frames_processed": frames_processed,
                 "fft_calls": fft_calls,
                 "fft_accum": fft_accum,
+                "fft_input_samples": fft_input_samples,
+                "fft_input_bytes": fft_input_bytes,
+                "fft_backend_requested": fft_backend,
+                "fft_backend_used": fft_backend_used,
                 "pending_tail_bytes": frame_fill,
             }
         )
@@ -242,12 +319,15 @@ def run_consumer(
 
 
 def run_benchmark(
-    total_bytes_target: int = 5 * 1024 * 1024 * 1024,
-    ring_size: int = 1024 * 1024 * 1024,
+    total_bytes_target: int =  1024 * 1024 * 1024,
+    ring_size: int = 128 * 1024 * 1024,
     num_rows: int = 10000,
     columns: int = 8,
-    num_consumers: int = 3,
+    num_consumers: int = 2,
     join_timeout_s: float = 60,
+    print_summary: bool = True,
+    fft_backend: str = "auto",
+    torch_device: str = "auto",
 ) -> dict[str, Any]:
     """
     Start one producer and N consumers, then report throughput stats.
@@ -303,6 +383,11 @@ def run_benchmark(
                     done_event,
                     final_write_pos,
                     result_q,
+                    1000.0,
+                    1 << 20,
+                    0.0002,
+                    fft_backend,
+                    torch_device,
                 ),
                 daemon=True,
             )
@@ -364,8 +449,12 @@ def run_benchmark(
         consumer_stats = sorted((x for x in results if x["role"].startswith("consumer-")), key=lambda x: x["reader_id"])
 
         producer_mib_s = (producer_stats["bytes"] / (1024 * 1024)) / max(producer_stats["elapsed_s"], 1e-12)
-        consumer_mib_s = [
+        consumer_drain_mib_s = [
             (c["bytes"] / (1024 * 1024)) / max(c["elapsed_s"], 1e-12)
+            for c in consumer_stats
+        ]
+        consumer_fft_mib_s = [
+            (c["fft_input_bytes"] / (1024 * 1024)) / max(c["elapsed_s"], 1e-12)
             for c in consumer_stats
         ]
 
@@ -379,27 +468,36 @@ def run_benchmark(
             "producer": producer_stats,
             "consumers": consumer_stats,
             "producer_mib_s": producer_mib_s,
-            "consumer_mib_s": consumer_mib_s,
+            # Throughput by bytes actually FFT'd per consumer (depends on assigned channels).
+            "consumer_mib_s": consumer_fft_mib_s,
+            "consumer_drain_mib_s": consumer_drain_mib_s,
+            "consumer_fft_mib_s": consumer_fft_mib_s,
             "final_write_pos": int(final_write_pos.value),
+            "fft_backend": fft_backend,
+            "torch_device": torch_device,
         }
 
-        print("BENCH shared ring throughput")
-        print(
-            f"ring={ring_size / (1024 * 1024):.1f} MiB  target={target_bytes_effective / (1024 * 1024):.1f} MiB  "
-            f"rows={num_rows}  cols={columns + 1}  consumers={num_consumers}"
-        )
-        print(
-            f"producer: {producer_stats['bytes'] / (1024 * 1024):.2f} MiB in "
-            f"{producer_stats['elapsed_s']:.3f}s -> {producer_mib_s:.2f} MiB/s"
-        )
-        for c in consumer_stats:
-            rate = (c["bytes"] / (1024 * 1024)) / max(c["elapsed_s"], 1e-12)
+        if print_summary:
+            print("BENCH shared ring throughput")
             print(
-                f"consumer[{c['reader_id']}]: {c['bytes'] / (1024 * 1024):.2f} MiB in "
-                f"{c['elapsed_s']:.3f}s -> {rate:.2f} MiB/s  checksum={c['checksum']}  "
-                f"fft_calls={c['fft_calls']}  cols={c['selected_columns']}"
+                f"ring={ring_size / (1024 * 1024):.1f} MiB  target={target_bytes_effective / (1024 * 1024):.1f} MiB  "
+                f"rows={num_rows}  cols={columns + 1}  consumers={num_consumers}"
             )
-        print(f"wall: {elapsed_total:.3f}s")
+            print(
+                f"producer: {producer_stats['bytes'] / (1024 * 1024):.2f} MiB in "
+                f"{producer_stats['elapsed_s']:.3f}s -> {producer_mib_s:.2f} MiB/s"
+            )
+            for c in consumer_stats:
+                drain_rate = (c["bytes"] / (1024 * 1024)) / max(c["elapsed_s"], 1e-12)
+                fft_rate = (c["fft_input_bytes"] / (1024 * 1024)) / max(c["elapsed_s"], 1e-12)
+                print(
+                    f"consumer[{c['reader_id']}]: {c['bytes'] / (1024 * 1024):.2f} MiB in "
+                    f"{c['elapsed_s']:.3f}s -> drain={drain_rate:.2f} MiB/s, fft={fft_rate:.2f} MiB/s  "
+                    f"checksum={c['checksum']}  fft_calls={c['fft_calls']}  "
+                    f"fft_input={c['fft_input_bytes'] / (1024 * 1024):.2f} MiB  "
+                    f"backend={c['fft_backend_used']}  cols={c['selected_columns']}"
+                )
+            print(f"wall: {elapsed_total:.3f}s")
         return summary
     finally:
         try:
@@ -411,5 +509,177 @@ def run_benchmark(
                 pass
 
 
+def _parse_int_csv(value: str) -> list[int]:
+    parts = [x.strip() for x in value.split(",") if x.strip()]
+    if not parts:
+        raise ValueError("expected at least one integer")
+    out = [int(x) for x in parts]
+    if any(x <= 0 for x in out):
+        raise ValueError("all values must be > 0")
+    return out
+
+
+def run_benchmark_search(
+    total_bytes_target: int,
+    columns: int,
+    consumer_options: list[int],
+    ring_size_options: list[int],
+    num_rows_options: list[int],
+    repeats: int = 5,
+    join_timeout_s: float = 60,
+    top_k: int = 5,
+    fft_backend: str = "auto",
+    torch_device: str = "auto",
+) -> dict[str, Any]:
+    """
+    Sweep combinations and report the best config by median total FFT throughput.
+    """
+    if repeats < 1:
+        raise ValueError("repeats must be >= 1")
+
+    combos = list(itertools.product(consumer_options, ring_size_options, num_rows_options))
+    total_trials = len(combos) * repeats
+    trial_idx = 0
+    rows: list[dict[str, Any]] = []
+
+    print(
+        f"SEARCH shared ring throughput: combos={len(combos)} repeats={repeats} "
+        f"total_trials={total_trials} backend={fft_backend}"
+    )
+
+    for num_consumers, ring_size, num_rows in combos:
+        fft_totals: list[float] = []
+        wall_times: list[float] = []
+        errors: list[str] = []
+
+        for rep in range(repeats):
+            trial_idx += 1
+            print(
+                f"[{trial_idx}/{total_trials}] consumers={num_consumers} "
+                f"ring={ring_size // (1024 * 1024)}MiB rows={num_rows} run={rep + 1}/{repeats}"
+            )
+            try:
+                summary = run_benchmark(
+                    total_bytes_target=total_bytes_target,
+                    ring_size=ring_size,
+                    num_rows=num_rows,
+                    columns=columns,
+                    num_consumers=num_consumers,
+                    join_timeout_s=join_timeout_s,
+                    print_summary=False,
+                    fft_backend=fft_backend,
+                    torch_device=torch_device,
+                )
+                fft_total_mib_s = float(sum(summary["consumer_fft_mib_s"]))
+                fft_totals.append(fft_total_mib_s)
+                wall_times.append(float(summary["total_wall_s"]))
+                print(f"  -> fft_total={fft_total_mib_s:.2f} MiB/s wall={summary['total_wall_s']:.3f}s")
+            except Exception as exc:
+                errors.append(str(exc))
+                print(f"  -> ERROR: {exc}")
+
+        valid_runs = len(fft_totals)
+        if valid_runs == 0:
+            row = {
+                "num_consumers": num_consumers,
+                "ring_size_bytes": ring_size,
+                "num_rows": num_rows,
+                "valid_runs": 0,
+                "failed_runs": repeats,
+                "errors": errors,
+                "median_fft_mib_s": float("-inf"),
+                "mean_fft_mib_s": float("-inf"),
+                "median_wall_s": float("inf"),
+            }
+        else:
+            row = {
+                "num_consumers": num_consumers,
+                "ring_size_bytes": ring_size,
+                "num_rows": num_rows,
+                "valid_runs": valid_runs,
+                "failed_runs": repeats - valid_runs,
+                "errors": errors,
+                "median_fft_mib_s": float(statistics.median(fft_totals)),
+                "mean_fft_mib_s": float(statistics.fmean(fft_totals)),
+                "median_wall_s": float(statistics.median(wall_times)),
+            }
+        rows.append(row)
+
+    ranked = sorted(
+        rows,
+        key=lambda r: (r["median_fft_mib_s"], -r["median_wall_s"], r["valid_runs"]),
+        reverse=True,
+    )
+    best = ranked[0] if ranked else None
+    top = ranked[:max(top_k, 1)]
+
+    print("\nSEARCH results (top configs)")
+    for i, r in enumerate(top, start=1):
+        print(
+            f"{i}. consumers={r['num_consumers']} ring={r['ring_size_bytes'] // (1024 * 1024)}MiB "
+            f"rows={r['num_rows']} median_fft={r['median_fft_mib_s']:.2f} MiB/s "
+            f"median_wall={r['median_wall_s']:.3f}s valid={r['valid_runs']}/{repeats}"
+        )
+
+    if best is not None:
+        print("\nBEST configuration")
+        print(
+            f"consumers={best['num_consumers']}  ring_size={best['ring_size_bytes'] // (1024 * 1024)} MiB  "
+            f"num_rows={best['num_rows']}  median_fft={best['median_fft_mib_s']:.2f} MiB/s"
+        )
+
+    return {
+        "best": best,
+        "ranked": ranked,
+        "repeats": repeats,
+        "columns": columns,
+        "target_bytes": total_bytes_target,
+        "fft_backend": fft_backend,
+        "torch_device": torch_device,
+    }
+
+
 if __name__ == "__main__":
-    run_benchmark()
+    parser = argparse.ArgumentParser(description="Shared ring benchmark + parameter search")
+    parser.add_argument("--mode", choices=("search", "single"), default="search")
+    parser.add_argument("--columns", type=int, default=8)
+    parser.add_argument("--target-mib", type=int, default=512)
+    parser.add_argument("--join-timeout-s", type=float, default=60.0)
+    parser.add_argument("--fft-backend", choices=("auto", "numpy", "torch", "jax"), default="auto")
+    parser.add_argument("--torch-device", choices=("auto", "cpu", "cuda"), default="auto")
+    parser.add_argument("--consumers", type=str, default="1,2,4,8")
+    parser.add_argument("--ring-mib", type=str, default="64,128,256,512")
+    parser.add_argument("--rows", type=str, default="4096,8192,16384")
+    parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument("--single-consumers", type=int, default=2)
+    parser.add_argument("--single-ring-mib", type=int, default=128)
+    parser.add_argument("--single-rows", type=int, default=10000)
+    args = parser.parse_args()
+
+    total_bytes_target = int(args.target_mib) * 1024 * 1024
+    if args.mode == "single":
+        run_benchmark(
+            total_bytes_target=total_bytes_target,
+            ring_size=int(args.single_ring_mib) * 1024 * 1024,
+            num_rows=int(args.single_rows),
+            columns=int(args.columns),
+            num_consumers=int(args.single_consumers),
+            join_timeout_s=float(args.join_timeout_s),
+            print_summary=True,
+            fft_backend=str(args.fft_backend),
+            torch_device=str(args.torch_device),
+        )
+    else:
+        run_benchmark_search(
+            total_bytes_target=total_bytes_target,
+            columns=int(args.columns),
+            consumer_options=_parse_int_csv(args.consumers),
+            ring_size_options=[x * 1024 * 1024 for x in _parse_int_csv(args.ring_mib)],
+            num_rows_options=_parse_int_csv(args.rows),
+            repeats=int(args.repeats),
+            join_timeout_s=float(args.join_timeout_s),
+            top_k=int(args.top_k),
+            fft_backend=str(args.fft_backend),
+            torch_device=str(args.torch_device),
+        )
