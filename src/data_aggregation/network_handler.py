@@ -2,6 +2,7 @@ import socket
 import multiprocessing as mp
 import logging
 from dataclasses import dataclass
+from data_handeling import shared_ring_buffer
 
 import pyarrow as pa
 
@@ -11,9 +12,9 @@ DEFAULT_BUFFER_SIZE = 1 << 20  # 1 megabyte
 
 
 @dataclass
-class Membufs: 
+class Membuf: 
     data_set: list
-    queue: mp.Queue
+    queue: shared_ring_buffer
 
 
 
@@ -43,13 +44,13 @@ class NetworkReader:
                 raise ConnectionError(f"No batch size received for {self.name}")
             pos += got
         
-    def _split_columns_on_membufs(self, membuf:Membufs, batch:pa.RecordBatch):
+    def _split_columns_on_membufs(self, membuf:Membuf, batch:pa.RecordBatch):
         cols = batch.select(membuf.data_set)
         sink = pa.BufferOutputStream()
         with pa.ipc.new_stream(sink, cols.schema) as stream:
             stream.write_batch(cols)
 
-        membuf.queue.put(sink.getvalue().to_pybytes())
+        membuf.queue.write(sink.getvalue().to_pybytes())
         
 
     # come back and add memory error handling
