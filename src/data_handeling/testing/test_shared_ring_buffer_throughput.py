@@ -1,4 +1,14 @@
-"""run with python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput"""
+"""
+Run with:
+python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput
+
+Examples:
+python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend numpy
+python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend torch --torch-device cuda
+python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend jax
+python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode search --columns 8 --target-mib 512 --consumers 1,2,4,8 --ring-mib 64,128,256,512 --rows 4096,8192,16384 --repeats 5 --top-k 5 --fft-backend auto
+python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode generator --columns 8 --generator-rows 10000 --generator-repeats 200
+"""
 
 
 import argparse
@@ -639,9 +649,93 @@ def run_benchmark_search(
     }
 
 
+def run_generator_benchmark(
+    columns: int,
+    num_rows: int,
+    repeats: int = 100,
+    print_summary: bool = True,
+) -> dict[str, Any]:
+    """
+    Measure pure numpy synthetic data generation throughput (no ring IO, no FFT).
+    """
+    if repeats < 1:
+        raise ValueError("repeats must be >= 1")
+    if columns < 1:
+        raise ValueError("columns must be >= 1")
+    if num_rows < 1:
+        raise ValueError("num_rows must be >= 1")
+
+    times_s: list[float] = []
+    batch_nbytes = 0
+    checksum = 0
+    for _ in range(repeats):
+        t0 = time.perf_counter()
+        batch = generator(columns=columns, size=num_rows)
+        dt = time.perf_counter() - t0
+        times_s.append(dt)
+        if batch_nbytes == 0:
+            batch_nbytes = int(batch.nbytes)
+        # Tiny reduction to ensure generated data is consumed.
+        checksum = (checksum + int(batch[0, 0])) & 0xFFFFFFFF
+
+    median_s = float(statistics.median(times_s))
+    mean_s = float(statistics.fmean(times_s))
+    min_s = float(min(times_s))
+    max_s = float(max(times_s))
+    p90_s = float(sorted(times_s)[int(0.90 * (len(times_s) - 1))])
+
+    batch_mib = batch_nbytes / (1024 * 1024)
+    median_mib_s = batch_mib / max(median_s, 1e-12)
+    mean_mib_s = batch_mib / max(mean_s, 1e-12)
+    p90_mib_s = batch_mib / max(p90_s, 1e-12)
+    total_bytes = batch_nbytes * repeats
+    total_elapsed_s = float(sum(times_s))
+    aggregate_mib_s = (total_bytes / (1024 * 1024)) / max(total_elapsed_s, 1e-12)
+
+    summary = {
+        "columns": columns,
+        "num_rows": num_rows,
+        "repeats": repeats,
+        "batch_nbytes": batch_nbytes,
+        "batch_mib": batch_mib,
+        "timing_s": {
+            "median": median_s,
+            "mean": mean_s,
+            "p90": p90_s,
+            "min": min_s,
+            "max": max_s,
+            "total": total_elapsed_s,
+        },
+        "throughput_mib_s": {
+            "median": median_mib_s,
+            "mean": mean_mib_s,
+            "p90": p90_mib_s,
+            "aggregate": aggregate_mib_s,
+        },
+        "checksum": checksum,
+    }
+
+    if print_summary:
+        print("BENCH generator throughput (numpy only)")
+        print(
+            f"rows={num_rows} cols={columns + 1} batch={batch_mib:.3f} MiB repeats={repeats}"
+        )
+        print(
+            f"latency: median={median_s * 1e3:.3f} ms mean={mean_s * 1e3:.3f} ms "
+            f"p90={p90_s * 1e3:.3f} ms min={min_s * 1e3:.3f} ms max={max_s * 1e3:.3f} ms"
+        )
+        print(
+            f"throughput: median={median_mib_s:.2f} MiB/s mean={mean_mib_s:.2f} MiB/s "
+            f"p90={p90_mib_s:.2f} MiB/s aggregate={aggregate_mib_s:.2f} MiB/s"
+        )
+        print(f"checksum={checksum}")
+
+    return summary
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Shared ring benchmark + parameter search")
-    parser.add_argument("--mode", choices=("search", "single"), default="search")
+    parser.add_argument("--mode", choices=("search", "single", "generator"), default="search")
     parser.add_argument("--columns", type=int, default=8)
     parser.add_argument("--target-mib", type=int, default=512)
     parser.add_argument("--join-timeout-s", type=float, default=60.0)
@@ -655,10 +749,19 @@ if __name__ == "__main__":
     parser.add_argument("--single-consumers", type=int, default=2)
     parser.add_argument("--single-ring-mib", type=int, default=128)
     parser.add_argument("--single-rows", type=int, default=10000)
+    parser.add_argument("--generator-rows", type=int, default=10000)
+    parser.add_argument("--generator-repeats", type=int, default=200)
     args = parser.parse_args()
 
     total_bytes_target = int(args.target_mib) * 1024 * 1024
-    if args.mode == "single":
+    if args.mode == "generator":
+        run_generator_benchmark(
+            columns=int(args.columns),
+            num_rows=int(args.generator_rows),
+            repeats=int(args.generator_repeats),
+            print_summary=True,
+        )
+    elif args.mode == "single":
         run_benchmark(
             total_bytes_target=total_bytes_target,
             ring_size=int(args.single_ring_mib) * 1024 * 1024,
