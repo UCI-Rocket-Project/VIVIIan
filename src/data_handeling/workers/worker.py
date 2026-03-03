@@ -4,7 +4,8 @@ from typing import Any
 import numpy as np
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
+import logging
 
 
 """ Give me Vectors and Tables or give me Death""" 
@@ -26,15 +27,16 @@ from enum import Enum
     """
 
 
-class WorkerReturnState(Enum): 
-    ERRORED = 1
+class WorkerReturnState(IntEnum): 
     SUCCESS = 0
-    
+    ERROR = 1
+
+
 
     
 
 
-class CallType(Enum):
+class CallType(IntEnum):
     TIME = 0
     DATA = 1
     ONETIME = 2
@@ -47,56 +49,31 @@ class AbstractWorker:
         data_in:        the buffer that takes in data from
         data_out:       the buffer to write data out to
         proc_function:  main function run by worker on data
-        call_type:      by what metric will the proc_function be called ie:time intervale, data amount, onetime
-        call_value:     the value of the metric for the call_type
-        metrics:        tabular array of metrics from the function, related to function peformance, not intended to move large amounts of data
-        metric_calc:    function generating the tabular data
-        metric_buf:     where are we writing the metrics to
     """
         
-    data_in:       np.ndarray   = None
-    data_reader:   callable = None
-    data_avaliable:callable = None
-    data_out:      np.ndarray   = None
-    data_writer:   callable = None
-    data_free:     callable = None
-    proc_func:     callable = None
-    call_type:     CallType = None
-    call_value:    float|callable    = None
-    metrics:       np.ndarray   = None
-    metric_calc:   callable = None
-    metric_buf:    np.ndarray   = None
-    
-
+    data_in:       np.ndarray   
+    data_out:      np.ndarray  
+    proc_func:     callable 
     
     def __post_init__(self):
         if self.proc_func is None:
             raise ValueError("proc_func must be provided")
-        if self.call_type is None:
-            raise ValueError("call_type must be provided")
-        if self.call_value is None and self.call_type != CallType.ONETIME:
-            raise ValueError("call_value required for TIME and DATA call types")
         self.last_run = None
         
-    
-    def _determine_run(self):
-        pass
-
-
-        
-    def run_worker(self):
-        while True:
-            if self._determine_run():
-                self.proc_func(self.data_in, self.data_out)
-            if self.call_type == CallType.ONETIME: 
-                return 
-    
-            
-        
+    def run(self): 
+        try: 
+            self.proc_func(self.data_in, self.data_out)
+            return WorkerReturnState(0)
+        except Exception as e:
+            logging.error(e)
+            return 1
 
     
 
 
+@dataclass
+class ManagedWorker(AbstractWorker):
+    
 
 
 
