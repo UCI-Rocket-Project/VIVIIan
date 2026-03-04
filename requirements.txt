@@ -1,0 +1,5 @@
+pyarrow
+nidaqmx
+numpy
+toml
+scipy
