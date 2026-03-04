@@ -1,6 +1,6 @@
 from ..shared_ring_buffer import SharedRingBuffer
 from ..workers import AbstractWorker, ManagedWorker, WorkerState
-import multiprocessing
+import multiprocessing as mp
 import os 
 import threading
 import asyncio
@@ -10,11 +10,48 @@ import select
 from dataclasses import dataclass
 import socket
 
-@dataclass
-class WorkerSockets:
-    pass
-    
 
+
+class Gate: 
+    """quick access and human-readable interface over multiprocessing.Event"""
+
+    """
+         Parameters
+    ----------
+    name          : human-readable identifier
+    initially_open: if True the gate starts signalled (useful for breaking
+                    cycles — open exactly one gate in the cycle).
+    """
+
+    __slots__ = ("name", "_event")
+
+    def __init__(self, name: str, initial_state:bool = False):
+        self.name = name
+        self._event = mp.Event()
+        if initial_state: 
+            self._event.set()
+
+    @property
+    def event(self):
+        return self._event
+    
+    def signal(self) -> None:
+        """Open this gate (wake all waiting workers)."""
+        self._event.set()
+
+    def reset(self) -> None:
+        """Close this gate (re-arm for a new round)."""
+        self._event.clear()
+
+    def wait(self, timeout: Optional[float] = None) -> bool:
+        return self._event.wait(timeout)
+
+    def is_open(self) -> bool:
+        return self._event.is_set()
+
+    def __repr__(self) -> str:
+        state = "OPEN" if self.is_open() else "CLOSED"
+        return f"<Gate '{self.name}' [{state}]>"
 
 
 
