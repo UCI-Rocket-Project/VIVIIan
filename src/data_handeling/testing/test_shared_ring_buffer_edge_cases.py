@@ -18,7 +18,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependency
 @unittest.skipIf(np is None or SharedRingBuffer is None, "numpy/shared_ring_buffer dependencies are required")
 class SharedRingBufferEdgeCaseTests(unittest.TestCase):
     def _make_name(self) -> str:
-        return f"rb_edge_{uuid.uuid4().hex}"
+        return f"re{uuid.uuid4().hex[:10]}"
 
     def _make_ring(self, *, size=16, num_readers=1, reader=0):
         name = self._make_name()
@@ -250,4 +250,3 @@ class SharedRingBufferEdgeCaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

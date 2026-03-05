@@ -24,9 +24,23 @@ class SharedRingBuffer(shared_memory.SharedMemory):
             #   reader_position = Q (uint64, monotonic logical position)
             #   reader_dead = Q (uint64, 0/1)
             #   reader_last_seen_ns = Q (uint64, time.time_ns())
+        
+        # cache_allign determines if it is aligned on 64 bytes, this means there might be wasted memory between last
+        # header data and first data avaliable byte in ring buffer, usually inconsiquential 
+        # size of the cache is determined by cache_size
 
-    def __init__(self, name, create, size, num_readers, reader:int):
-        self.header_size = 8* (6 + num_readers * 3) #8 byte uint64 times the number of readers *3 and all 6 statics values
+    def __init__(self, name, create, size, num_readers, reader:int, cache_allign:bool = False, cache_size:int = 64):
+        self.cache_allign = cache_allign
+        if self.cache_allign:
+            if cache_size <= 0:
+                raise ValueError("cache_size must be > 0 when cache_allign is True")
+            if cache_size & (cache_size - 1):
+                raise ValueError("cache_size must be a power of two when cache_allign is True")
+        if self.cache_allign: 
+            self.header_size = (8* (6 + num_readers * 3) + cache_size -1) & ~(cache_size-1)
+        else: 
+            self.header_size = 8* (6 + num_readers * 3) #8 byte uint64 times the number of readers *3 and all 6 statics values
+
         self.shared_mem_size = size + self.header_size
         self.max_amount_writable_index = 4
         self.write_pos_index = 3
@@ -46,7 +60,8 @@ class SharedRingBuffer(shared_memory.SharedMemory):
         self.reader_pos = 0
         self.write_pos = 0
         self.max_amount_writable = self.ring_buffer_size
-        self.ring_buffer = memoryview(self.buf[self.header_size:])
+        # Restrict payload view to logical ring size; shared memory may be page-rounded.
+        self.ring_buffer = memoryview(self.buf[self.header_size:self.header_size + self.ring_buffer_size])
         # min-reader cache: avoids O(num_readers) scans on every write-path query.
         # Stale cache is conservative (smaller writable), never optimistic.
         self._min_reader_pos_refresh_interval = 64
@@ -143,7 +158,7 @@ class SharedRingBuffer(shared_memory.SharedMemory):
 
     def expose_writer_mem_view(self, size) -> tuple[memoryview, memoryview | None, int, bool]:
         """method returning the memory view for a write to write directly to, up to the max allowalbe size"""
-        """avl-size is the real size avaliable"""
+        """size_writeable is the real size avaliable"""
         """bool represents wrap-around ie: if memview2 needs to be used"""
         # Recompute every call; cached writable becomes stale after position updates.
         self.compute_max_amount_writable()
@@ -166,7 +181,7 @@ class SharedRingBuffer(shared_memory.SharedMemory):
 
     def expose_reader_mem_view(self, size) -> tuple[memoryview, memoryview | None, int, bool]:
         """method returning the memory view for a read to read directly from, up to the max allowalbe size"""
-        """avl-size is the real size avaliable"""
+        """size_readable is the real size avaliable"""
         """bool represents wrap-around ie: if memview2 needs to be used"""
         write_pos = int(self.header[self.write_pos_index])
         read_pos = int(self.header[self.reader_pos_index])

@@ -16,6 +16,7 @@ import itertools
 import multiprocessing as mp
 import statistics
 import time
+import uuid
 from typing import Any
 
 import numpy as np
@@ -159,7 +160,15 @@ def run_producer(
     - final_write_pos.value is set to the last committed write position
     - done_event is set after producer completes
     """
-    ring = SharedRingBuffer(name=name, create=False, size=ring_size, num_readers=num_readers, reader=0)
+    ring = SharedRingBuffer(
+        name=name,
+        create=False,
+        size=ring_size,
+        num_readers=num_readers,
+        reader=0,
+        cache_allign=True,
+        cache_size=64,
+    )
     t0 = time.perf_counter()
     bytes_written = 0
     try:
@@ -232,7 +241,15 @@ def run_consumer(
     - producer signaled done_event, and
     - this reader position reached final_write_pos
     """
-    ring = SharedRingBuffer(name=name, create=False, size=ring_size, num_readers=num_readers, reader=reader_id)
+    ring = SharedRingBuffer(
+        name=name,
+        create=False,
+        size=ring_size,
+        num_readers=num_readers,
+        reader=reader_id,
+        cache_allign=True,
+        cache_size=64,
+    )
     t0 = time.perf_counter()
     bytes_read = 0
     checksum = 0
@@ -346,7 +363,7 @@ def run_benchmark(
         raise ValueError("num_consumers must be >= 1")
 
     ctx = mp.get_context("spawn")
-    shm_name = f"rb_throughput_{int(time.time() * 1e6)}"
+    shm_name = f"rt{uuid.uuid4().hex[:10]}"
     bytes_per_batch = num_rows * (columns + 1) * np.dtype(np.int64).itemsize
     target_bytes_effective = (total_bytes_target // bytes_per_batch) * bytes_per_batch
     if target_bytes_effective == 0:
@@ -358,6 +375,8 @@ def run_benchmark(
         size=ring_size,
         num_readers=num_consumers,
         reader=0,
+        cache_allign=True,
+        cache_size=64,
     )
     try:
         done_event = ctx.Event()

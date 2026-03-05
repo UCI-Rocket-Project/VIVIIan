@@ -9,7 +9,7 @@ import multiprocessing as mp
 import asyncio
 from multiprocessing.reduction import send_handle, recv_handle
 import select
-
+from ..shared_ring_buffer import SharedRingBuffer
 
 
 """ Give me Vectors and Tables or give me Death""" 
@@ -53,9 +53,10 @@ class AbstractWorker:
         name:           name of the worker, this is a unique string assigned to each worker
     """
         
-    data_in:       np.ndarray   
-    data_out:      np.ndarray  
+    data_in:       list   
+    data_out:      list  
     proc_func:     callable 
+    shd_mem_init:  callable
     wait_events:   list
     signal_events: list
     args:          tuple
@@ -71,6 +72,9 @@ class AbstractWorker:
         fn: callable,
         wait_events: list,
         signal_events: list,
+        data_in:list,
+        data_out:list,
+        shd_mem_init:callable,
         args: tuple,
         kwargs: dict,
     ) -> None:
@@ -81,19 +85,114 @@ class AbstractWorker:
         3. Signal all output gates.
         """
         pid = os.getpid()
-        logging.log(f"[{name}] pid={pid}  waiting on {len(wait_events)} gate(s)...")
+        opened_in = []
+        opened_out = []
 
-        for ev in wait_events:
-            ev.wait()          # pure OS-level block — zero CPU spin
+        def _event_reset(ev):
+            if hasattr(ev, "reset"):
+                ev.reset()
+            elif hasattr(ev, "clear"):
+                ev.clear()
 
-        logging.log(f"[{name}] pid={pid}  gates open → running")
-        fn(*args, **kwargs)
-        logging.log(f"[{name}] pid={pid}  done → signalling {len(signal_events)} gate(s)")
+        def _event_signal(ev):
+            if hasattr(ev, "signal"):
+                ev.signal()
+            elif hasattr(ev, "set"):
+                ev.set()
 
-        for ev in signal_events:
-            ev.set()
+        def _cleanup_ring(ring):
+            try:
+                ring.ring_buffer.release()
+            except Exception:
+                pass
+            try:
+                del ring.ring_buffer
+            except Exception:
+                pass
+            try:
+                ring.header = None
+            except Exception:
+                pass
+            try:
+                del ring.header
+            except Exception:
+                pass
+            try:
+                ring.close()
+            except Exception:
+                pass
+
+        try:
+            for spec in data_in:
+                opened_in.append(shd_mem_init(**spec))
+            for spec in data_out:
+                opened_out.append(shd_mem_init(**spec))
+
+            if args:
+                runtime_args = args
+            elif opened_out:
+                runtime_args = (opened_out,)
+            elif opened_in:
+                runtime_args = (opened_in,)
+            else:
+                runtime_args = tuple()
+
+            while True:
+                logging.info(f"[{name}] pid={pid} waiting on {len(wait_events)} gate(s)...")
+                for ev in wait_events:
+                    ev.wait()
+                    _event_reset(ev)
+
+                logging.info(f"[{name}] pid={pid} gates open -> running")
+                fn(*runtime_args, **kwargs)
+                logging.info(f"[{name}] pid={pid} done -> signalling {len(signal_events)} gate(s)")
+                for ev in signal_events:
+                    _event_signal(ev)
+        finally:
+            for ring in opened_in:
+                _cleanup_ring(ring)
+            for ring in opened_out:
+                _cleanup_ring(ring)
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -124,10 +223,6 @@ class ManagedWorker(AbstractWorker):
 
     async def async_worker(conn, name): 
         pass
-
-
-
-    self
         
 
     
@@ -137,8 +232,6 @@ class ManagedWorker(AbstractWorker):
 
         
     
-
-
 
 
 

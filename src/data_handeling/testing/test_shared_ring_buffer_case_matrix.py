@@ -29,7 +29,7 @@ def _hex_bytes(data: bytes, group=2) -> str:
 @unittest.skipIf(np is None or SharedRingBuffer is None, "numpy/shared_ring_buffer dependencies are required")
 class SharedRingBufferCaseMatrixTests(unittest.TestCase):
     def _make_name(self) -> str:
-        return f"rb_case_{uuid.uuid4().hex}"
+        return f"rc{uuid.uuid4().hex[:10]}"
 
     def _make_ring(self, *, size=16, num_readers=1, reader=0):
         name = self._make_name()

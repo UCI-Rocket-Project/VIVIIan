@@ -27,7 +27,7 @@ class SharedRingBufferBasicTests(unittest.TestCase):
                 pass
 
     def _make_name(self) -> str:
-        return f"rb_basic_{uuid.uuid4().hex}"
+        return f"rb{uuid.uuid4().hex[:10]}"
 
     def _make_ring(self, *, size=32, num_readers=1, reader=0):
         name = self._make_name()
@@ -80,6 +80,64 @@ class SharedRingBufferBasicTests(unittest.TestCase):
         self.assertEqual(int(ring.header[0]), 64)
         self.assertEqual(int(ring.header[ring.num_readers_index]), 2)
         self.assertEqual(len(ring.ring_buffer), 64)
+
+    def test_header_size_cache_aligned_rounds_up(self):
+        name = self._make_name()
+        ring = SharedRingBuffer(
+            name=name,
+            create=True,
+            size=64,
+            num_readers=2,
+            reader=0,
+            cache_allign=True,
+            cache_size=64,
+        )
+        self.addCleanup(self._cleanup_ring, ring)
+
+        raw_header_size = 8 * (6 + 2 * 3)  # 96
+        self.assertEqual(ring.header_size, 128)
+        self.assertEqual(ring.header_size % 64, 0)
+        self.assertGreaterEqual(ring.header_size, raw_header_size)
+        self.assertEqual(len(ring.ring_buffer), 64)
+
+    def test_header_size_cache_aligned_already_aligned(self):
+        name = self._make_name()
+        ring = SharedRingBuffer(
+            name=name,
+            create=True,
+            size=64,
+            num_readers=2,
+            reader=0,
+            cache_allign=True,
+            cache_size=32,
+        )
+        self.addCleanup(self._cleanup_ring, ring)
+
+        self.assertEqual(ring.header_size, 96)
+        self.assertEqual(ring.header_size % 32, 0)
+        self.assertEqual(len(ring.ring_buffer), 64)
+
+    def test_cache_aligned_invalid_cache_size_raises(self):
+        with self.assertRaises(ValueError):
+            SharedRingBuffer(
+                name=self._make_name(),
+                create=True,
+                size=64,
+                num_readers=1,
+                reader=0,
+                cache_allign=True,
+                cache_size=48,
+            )
+        with self.assertRaises(ValueError):
+            SharedRingBuffer(
+                name=self._make_name(),
+                create=True,
+                size=64,
+                num_readers=1,
+                reader=0,
+                cache_allign=True,
+                cache_size=0,
+            )
 
     def test_update_and_increment_positions(self):
         ring = self._make_ring(size=64, num_readers=1, reader=0)
