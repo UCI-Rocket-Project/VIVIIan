@@ -612,6 +612,7 @@ def run_manager_benchmark_search(
         cache_size,
     ) in combos:
         fft_totals: list[float] = []
+        writer_totals: list[float] = []
         wall_times: list[float] = []
         errors: list[str] = []
 
@@ -640,9 +641,14 @@ def run_manager_benchmark_search(
                     print_summary=False,
                 )
                 fft_total = float(summary["sum_consumer_fft_mib_s"])
+                writer_total = float(summary["sum_writer_mib_s"])
                 fft_totals.append(fft_total)
+                writer_totals.append(writer_total)
                 wall_times.append(float(summary["total_wall_s"]))
-                print(f"  -> fft_total={fft_total:.2f} MiB/s wall={summary['total_wall_s']:.3f}s")
+                print(
+                    f"  -> writer_total={writer_total:.2f} MiB/s "
+                    f"fft_total={fft_total:.2f} MiB/s wall={summary['total_wall_s']:.3f}s"
+                )
             except Exception as exc:
                 errors.append(str(exc))
                 print(f"  -> ERROR: {exc}")
@@ -660,6 +666,8 @@ def run_manager_benchmark_search(
                 "valid_runs": 0,
                 "failed_runs": repeats,
                 "errors": errors,
+                "median_writer_mib_s": float("-inf"),
+                "mean_writer_mib_s": float("-inf"),
                 "median_fft_mib_s": float("-inf"),
                 "mean_fft_mib_s": float("-inf"),
                 "median_wall_s": float("inf"),
@@ -676,6 +684,8 @@ def run_manager_benchmark_search(
                 "valid_runs": valid_runs,
                 "failed_runs": repeats - valid_runs,
                 "errors": errors,
+                "median_writer_mib_s": float(statistics.median(writer_totals)),
+                "mean_writer_mib_s": float(statistics.fmean(writer_totals)),
                 "median_fft_mib_s": float(statistics.median(fft_totals)),
                 "mean_fft_mib_s": float(statistics.fmean(fft_totals)),
                 "median_wall_s": float(statistics.median(wall_times)),
@@ -696,6 +706,7 @@ def run_manager_benchmark_search(
             f"{i}. writers={r['writer_workers']} rings={r['num_rings']} consumers/ring={r['consumers_per_ring']} "
             f"ring={r['ring_size_bytes'] // (1024 * 1024)}MiB rows={r['rows']} "
             f"cache_allign={r['cache_allign']} cache_size={r['cache_size']} "
+            f"median_writer={r['median_writer_mib_s']:.2f} MiB/s "
             f"median_fft={r['median_fft_mib_s']:.2f} MiB/s median_wall={r['median_wall_s']:.3f}s "
             f"valid={r['valid_runs']}/{repeats}"
         )
@@ -706,6 +717,7 @@ def run_manager_benchmark_search(
             f"writers={best['writer_workers']} rings={best['num_rings']} consumers/ring={best['consumers_per_ring']} "
             f"ring={best['ring_size_bytes'] // (1024 * 1024)}MiB rows={best['rows']} "
             f"cache_allign={best['cache_allign']} cache_size={best['cache_size']} "
+            f"median_writer={best['median_writer_mib_s']:.2f} MiB/s "
             f"median_fft={best['median_fft_mib_s']:.2f} MiB/s"
         )
 
