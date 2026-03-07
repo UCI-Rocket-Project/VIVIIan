@@ -154,79 +154,101 @@ class AbstractWorker:
             for ring in opened_out:
                 _cleanup_ring(ring)
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@dataclass
-class ManagedWorker(AbstractWorker):
-    """
-        blocks:             the file descriptors to decriment and block this worker on
-        signals:            the file descriptors to increment and signal completion to other functions on 
-        metrics_shm         the shared memory where metrics will be writen to
-        calc_metrics:       the function to calculate the metrics, this wraps the proc_function and uses its return
-        WorkerState:        current state of the worker idealy, created off of blocking by worker signals
-    """
-
-    block: any
-    signal: any
-
-    def __post_init__(self):
-        return super().__post_init__()
 
     @staticmethod
-    def signal(signal):
-        os.write(signal, b'\x01')
-    
+    def default_cleanup_ring(ring):
+        try:
+            ring.ring_buffer.release()
+        except Exception:
+            pass
+        try:
+            del ring.ring_buffer
+        except Exception:
+            pass
+        try:
+            ring.header = None
+        except Exception:
+            pass
+        try:
+            del ring.header
+        except Exception:
+            pass
+        try:
+            ring.close()
+        except Exception:
+            pass
+
     @staticmethod
-    def wait(block):
-        select.select([block], [], [])
-        os.read(block, 1)
+    def default_event_reset(ev):
+        if hasattr(ev, "reset"):
+            ev.reset()
+        elif hasattr(ev, "clear"):
+            ev.clear()
 
-    async def async_worker(conn, name): 
-        pass
-        
+    @staticmethod
+    def default_event_signal(ev):
+        if hasattr(ev, "signal"):
+            ev.signal()
+        elif hasattr(ev, "set"):
+            ev.set()
 
-    
+    @staticmethod
+    def default_make_bootstrap(
+        name: str,
+        fn: callable,
+        wait_events: list,
+        signal_events: list,
+        data_in:list,
+        data_out:list,
+        shd_mem_init:callable,
+        args: tuple,
+        kwargs: dict,
+        cleanup_ring: callable|None = default_cleanup_ring,
+        event_reset: callable|None = default_event_reset,
+        event_signal:callable|None = default_event_signal,
 
+    ) -> None:
+        """
+        Launched inside every child process.
+        1. Block until ALL required gates are open.
+        2. Execute the user function.
+        3. Signal all output gates.
+        """
+        pid = os.getpid()
+        opened_in = []
+        opened_out = []
+
+        try:
+            for spec in data_in:
+                opened_in.append(shd_mem_init(**spec))
+            for spec in data_out:
+                opened_out.append(shd_mem_init(**spec))
+
+            if args:
+                runtime_args = args
+            elif opened_out:
+                runtime_args = (opened_out,)
+            elif opened_in:
+                runtime_args = (opened_in,)
+            else:
+                runtime_args = tuple()
+
+            while True:
+                logging.info(f"[{name}] pid={pid} waiting on {len(wait_events)} gate(s)...")
+                for ev in wait_events:
+                    ev.wait()
+                    event_reset(ev)
+
+                logging.info(f"[{name}] pid={pid} gates open -> running")
+                fn(*runtime_args, **kwargs)
+                logging.info(f"[{name}] pid={pid} done -> signalling {len(signal_events)} gate(s)")
+                for ev in signal_events:
+                    event_signal(ev)
+        finally:
+            for ring in opened_in:
+                cleanup_ring(ring)
+            for ring in opened_out:
+                cleanup_ring(ring)
 
     
 
