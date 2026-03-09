@@ -1,15 +1,11 @@
-from typing import Any
-import numpy as np
 from dataclasses import dataclass
 from enum import IntEnum
 import logging
 import os
-import threading 
-import multiprocessing as mp
-import asyncio
-from multiprocessing.reduction import send_handle, recv_handle
-import select
-from ..shared_ring_buffer import SharedRingBuffer
+from ..shared_ring_buffer import SharedMemorySpec
+import logging
+from  signal import signal
+from __future__ import annotations
 
 
 """ Give me Vectors and Tables or give me Death""" 
@@ -43,6 +39,202 @@ class CallType(IntEnum):
     ONETIME = 2
     INF = 3
     ONTRUE = 4    
+
+
+
+
+
+@dataclass(frozen=True)
+class EventSpec:
+    name:          str
+    initial_state: bool = False
+
+    def __repr__(self):
+        state = "OPEN" if self.initial_state else "CLOSED"
+        return f"EventSpec(name={self.name!r}, initial_state={state})"
+
+
+@dataclass(frozen=True)
+class TaskSpec: 
+    """ one logical process, these are the building blocks of workers and the main point of 
+        computation. Tasks are meant to be used across workers and serve as the smallest
+        unit of execution inside of a process, a worker can have one or more Tasks    
+    """
+    name:           str
+    fn:      callable
+    events:         tuple[str, ...]
+    rings:          tuple[str, ...]
+    reading_rings:  tuple[str, ...]
+    args:           tuple = ()
+    kwargs:         dict = None
+
+    def __post_init__(self): 
+        object.__setattr__(self, 'kwargs', self.kwargs or {})
+
+    def __repr__(self):
+        return f"TaskSpec(fn={self.fn.__name__!r}, events={self.events}, rings={self.rings})"
+
+
+
+
+
+@dataclass(frozen=True)
+class WorkerSpec:
+    name:           str
+    rings:          tuple[SharedMemorySpec, ...]
+    events:         tuple[EventSpec, ...]
+    tasks:          tuple[TaskSpec, ...] = []
+    args:           tuple =()
+    kwargs:         dict = None
+
+
+    def __post_init__(self):
+        if len(self.tasks) == 0:
+            raise ValueError(f"WorkerSpec '{self.name}': please provide at least one Task")
+        object.__setattr__(self, 'kwargs', self.kwargs or {}) 
+
+    def __repr__(self): 
+        return f"WorkerSpec(name={self.name!r}, Tasks={len(self.tasks)})"
+    
+
+
+class Worker:
+    """
+    One process. One loop. One function.
+    Manager composes everything before handing it here.
+    """
+
+    # Registry for subclasses that need a genuinely different execution loop —
+    # for example an asyncio-based worker or one that polls instead of blocking.
+    # For all normal cases plain Worker is the right choice.
+    # Populates automatically when a subclass is defined:
+    #
+    #   class AsyncWorker(Worker, worker_type="async"):
+    #       def __call__(self): ...   # custom loop
+    _registry: dict[str, type[Worker]] = {}
+
+    def __init_subclass__(cls, worker_type: str = None, **kw):
+        super().__init_subclass__(**kw)
+        if worker_type:
+            Worker._registry[worker_type] = cls
+
+    def __init__(self, fn: callable):
+        self._fn = fn   # composed by Manager — one opaque callable
+
+    def __call__(self) -> None:
+        """
+        The process target.
+        SIGTERM raises SystemExit which exits the loop cleanly.
+
+        NOTE: on Windows proc.terminate() calls TerminateProcess which
+        is equivalent to SIGKILL — the process dies immediately and the
+        signal handler never runs. This is a Windows platform limitation.
+        Document this for users; do not complicate the code to work around it.
+        Shared memory cleanup is still handled by weakref.finalize on each
+        SharedRingBuffer and by Manager.close() on the parent side.
+        """
+        def _handle_sigterm(*_):
+            raise SystemExit(0)
+
+        signal.signal(signal.SIGTERM, _handle_sigterm)
+
+        while True:
+            self._fn()
+
+    def __repr__(self):
+        return f"<Worker fn={self._fn.__name__}>"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 
 @dataclass
 class AbstractWorker:

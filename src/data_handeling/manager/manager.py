@@ -1,18 +1,9 @@
-from ..shared_ring_buffer import SharedRingBuffer
-from ..workers import AbstractWorker, ManagedWorker, WorkerState
+from ..shared_ring_buffer import SharedRingBuffer, SharedMemorySpec
+from ..workers import Worker, TaskSpec, WorkerSpec, EventSpec
 import multiprocessing as mp
-import os
-import threading
-import asyncio
-from multiprocessing.reduction import send_handle, recv_handle
-import logging
-import select
-from dataclasses import dataclass
-import socket
 from typing import Optional, Dict, Any
 from enum import IntEnum
-import numpy as np
-
+from __future__ import annotations
 
 class InitialState(IntEnum):
     OPEN = 1
@@ -61,27 +52,74 @@ class WorkerEvent:
         return f"<Gate '{self.name}' [{state}]>"
 
 
-@dataclass(frozen=True)
-class SharedMemorySpec:
-    name: str
-    size: int
-    num_readers: int
-    cache_allign: bool = True
-    cache_size: int = 64
 
-    def to_kwargs(self, *, create: bool, reader: int) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "create": create,
-            "size": self.size,
-            "num_readers": self.num_readers,
-            "reader": reader,
-            "cache_allign": self.cache_allign,
-            "cache_size": self.cache_size,
-        }
 
 
 class Manager:
+
+    def __init__(self, mp_context:str = "spawn"):
+        # not using spawn on linux creates issues with shared memory but improves performance
+        self._ctx           = mp.get_context(mp_context)
+        self._ring_specs:   dict[str, SharedMemorySpec] = {}
+        self._rings:        dict[str, SharedRingBuffer] = {}  # strong refs: Manager owns
+        self._events:       dict[str, WorkerEvent]      = {}
+        self._worker_specs: dict[str, WorkerSpec]       = {}
+        self._processes:    dict[str, mp.Process]       = {}
+
+
+
+    # apis for creating objects, user can call them in order to make ring memory, workers, or events
+
+
+    def create_ring(self, spec: SharedMemorySpec) -> Manager:
+        self._ring_specs[spec.name] = spec
+        self._rings[spec.name] = SharedRingBuffer(**spec.to_kwargs(create=True, reader=0))
+        return self
+
+    def create_worker(self, spec: WorkerSpec) -> Manager:
+        self._worker_specs[spec.name] = spec
+        return self
+
+    def create_event(self, spec: EventSpec) -> Manager:
+        self._events[spec.name] = WorkerEvent(name=spec.name, initial_state=spec.initial_state)
+        return self
+    
+
+
+    # api for launching one worker
+
+
+    def _calc_reader_number(self, ring_name:str, spec: TaskSpec):
+        """ if the task is reading, make sure to increment the number in the ring spec"""
+        if ring_name in spec.reading_rings: 
+            return self._ring_specs[ring_name].reader +  1
+        else: 
+            return self._ring_specs[ring_name].reader
+
+
+        
+
+    def start(self, name:str): 
+        try: 
+            spec = self._worker_specs[name]
+        except KeyError as K: 
+            raise ValueError(f"Start Failed: Worker: {name} isn't registered with manager")
+        
+        rings = []
+        for ring in spec.rings:
+            self._ring_specs[ring].reader = self._calc_reader_number(ring, spec)
+            rings.append(SharedRingBuffer())    
+
+        
+
+
+
+
+
+
+class depManager:
+
+
     def __init__(self):
         self._worker_events: dict[str, WorkerEvent] = {}
         self._workers: dict[str, AbstractWorker] = {}

@@ -1,7 +1,8 @@
 from multiprocessing import shared_memory
 import time
 import numpy as np
-
+import weakref
+from dataclasses import dataclass
 
 #Pressure Def: here pressure is a measure of the free space of the writer. It is defined as the
 #complement of the total free space to write in the buffer as a percentage of the total buffer size
@@ -10,6 +11,36 @@ import numpy as np
 #this is then by the  process managers to be able determine metrics for process process interaction
 # usefull for detecting hangs due to slow readers or slow producers 
 
+
+@dataclass(frozen=True)
+class SharedMemorySpec:
+    name: str
+    size: int
+    num_readers: int
+    reader: int = -1
+    cache_allign: bool = True
+    cache_size: int = 64
+    
+
+    def __post_init__(self):               
+        if self.size <= 0:
+            raise ValueError(f"RingSpec '{self.name}': size must be > 0")
+        if self.num_readers < 1:
+            raise ValueError(f"RingSpec '{self.name}': need at least 1 reader")
+        if self.cache_align and (self.cache_size & (self.cache_size - 1)):
+            raise ValueError("cache_size must be a power of two")
+
+
+    def to_kwargs(self, *, create: bool, reader: int) -> dict:
+        return dict(
+            name=self.name, create=create, size=self.size,
+            num_readers=self.num_readers, reader=reader,
+            cache_align=self.cache_align, cache_size=self.cache_size,
+        )
+    
+    
+    def __repr__(self):                        
+        return f"RingSpec(name={self.name!r}, size={self.size}, readers={self.num_readers})"
 
 
 class SharedRingBuffer(shared_memory.SharedMemory):
@@ -72,6 +103,41 @@ class SharedRingBuffer(shared_memory.SharedMemory):
         self._reader_positions_dirty = False
         self._min_reader_pos_cache = self._scan_min_reader_pos()
         self._last_min_scan_t = time.perf_counter()
+        weakref.finalize(
+            self,
+            SharedRingBuffer._finalizer_cleanup,
+            self.name,
+            create,         # only the creator unlinks
+        )
+
+    #cleanup guards and linking closes, also added support for context managing
+    #for auto garbage collection
+    @staticmethod
+    def _finalizer_cleanup(name: str, is_creator: bool) -> None:
+        """Called by GC or interpreter shutdown. Must be a static/free function."""
+        try:
+            shm = shared_memory.SharedMemory(name=name)
+            shm.close()
+            if is_creator: #only unlinks the memmory if it was allocated by this process, otherwise just close sharedmemory
+                shm.unlink()
+        except FileNotFoundError:
+            pass
+
+    # Context manager: the PREFERRED cleanup path (explicit > GC)
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.ring_buffer.release()
+        self.close()
+        if self._is_creator:
+            try:
+                self.unlink()
+            except FileNotFoundError:
+                pass
+
+
+
 
     def calculate_pressure(self) ->int:
         size = self.compute_max_amount_writable(force_rescan=True)
