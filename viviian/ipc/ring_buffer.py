@@ -368,3 +368,39 @@ class SharedRingBuffer(shared_memory.SharedMemory):
         if mv2 is not None and bytes_to_copy > first_copy:
             second_copy = bytes_to_copy - first_copy
             dst_mv[first_copy:first_copy + second_copy] = mv2[:second_copy]
+
+    def write_array(self, arr: np.ndarray) -> int:
+        """
+        Zero-copy write of a numpy array into the ring as raw bytes.
+        Returns bytes written, or 0 if insufficient space  caller decides.
+        arr is any numpy array. dtype and shape are the caller's concern.
+        The ring only moves bytes.
+        """
+        src = memoryview(arr).cast("B")
+        nbytes = src.nbytes
+        mv1, mv2, size_writeable, wrap_around = self.expose_writer_mem_view(nbytes)
+        if size_writeable < nbytes:
+            return 0
+        self.simple_write((mv1, mv2, size_writeable, wrap_around), src)
+        self.inc_writer_pos(nbytes)
+        return nbytes
+
+    def read_array(self, nbytes: int, dtype: np.dtype) -> np.ndarray:
+        """
+        Read nbytes from the ring and interpret them as dtype.
+        Returns an empty array of the correct dtype if insufficient data.
+        Wrap-around case copies into a contiguous buffer first because
+        np.frombuffer requires contiguous memory.
+        dtype and shape are the caller's concern  the ring only moves bytes.
+        """
+        mv1, mv2, size_readable, wrap_around = self.expose_reader_mem_view(nbytes)
+        if size_readable < nbytes:
+            return np.empty(0, dtype=dtype)
+        if not wrap_around:
+            arr = np.frombuffer(mv1, dtype=dtype)
+        else:
+            buf = bytearray(size_readable)
+            self.simple_read((mv1, mv2, size_readable, wrap_around), memoryview(buf))
+            arr = np.frombuffer(buf, dtype=dtype)
+        self.inc_reader_pos(size_readable)
+        return arr

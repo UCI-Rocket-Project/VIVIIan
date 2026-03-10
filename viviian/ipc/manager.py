@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import logging
 import multiprocessing as mp
+import threading
+import time
+import psutil
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import Optional
 
-from ..shared_ring_buffer import SharedRingBuffer, RingSpec
-from ..workers import Worker, TaskSpec, WorkerSpec, EventSpec
+from .ring_buffer import SharedRingBuffer, RingSpec
+from .worker import Worker, TaskSpec, EventSpec
 
 
 __all__ = [
@@ -15,7 +19,6 @@ __all__ = [
     "SharedRingBuffer",
     "Worker",
     "TaskSpec",
-    "WorkerSpec",
     "EventSpec",
 ]
 
@@ -61,6 +64,33 @@ class WorkerEvent:
         return f"<WorkerEvent '{self.name}' [{state}]>"
 
 
+@dataclass
+class ProcessMetrics:
+    """
+    Snapshot of a worker process's resource usage and ring pressure.
+    Collected by the monitor thread and stored in Manager._metrics
+    so the user can query it at any time.
+
+    Fields:
+        name          : task name this process is running
+        pid           : OS process id
+        cpu_percent   : CPU usage % since last sample (psutil)
+        memory_rss_mb : resident set size in megabytes
+        nice          : current nice value
+        ring_pressure : dict of ring_name -> pressure % for every
+                        ring this task reads or writes. Empty if the
+                        task has no rings registered in _rings.
+        sampled_at    : time.perf_counter() timestamp of this sample
+    """
+    name:          str
+    pid:           int
+    cpu_percent:   float
+    memory_rss_mb: float
+    nice:          int
+    ring_pressure: dict[str, int]
+    sampled_at:    float
+
+
 # ------------------------------------------------------------------ #
 # Manager                                                             #
 # ------------------------------------------------------------------ #
@@ -90,23 +120,22 @@ class Manager:
         self._event_specs:  dict[str, EventSpec]    = {}
         self._events:       dict[str, WorkerEvent]  = {}
         self._task_specs:   dict[str, TaskSpec]     = {}
-        self._worker_specs: dict[str, WorkerSpec]   = {}
         self._processes:    dict[str, mp.Process]   = {}
         # Tracks how many reader slots have been assigned per ring so each
         # reader process gets a unique index matching the header layout.
         self._ring_reader_counters: dict[str, int]  = {}
+        self._tasks_started: dict[str, bool] = {}
+        self._metrics: dict[str, ProcessMetrics] = {}
 
     # ------------------------------------------------------------------ #
     # Registration                                                       #
     # ------------------------------------------------------------------ #
 
-    def create_ring(self, spec:RingSpec) -> Manager:
-        """Register a ring spec, open the creator-side writer handle"""
+    def create_ring(self, spec: RingSpec) -> Manager:
         self._ring_specs[spec.name] = spec
-        return self
-    
-    def add_ring(self, spec:RingSpec) -> None: 
         self._rings[spec.name] = SharedRingBuffer(**spec.to_kwargs(create=True, reader=-1))
+        self._ring_reader_counters[spec.name] = 0
+        return self
 
     def create_event(self, spec: EventSpec) -> Manager:
         """Register an event spec and create the live WorkerEvent."""
@@ -122,30 +151,8 @@ class Manager:
         if spec.name in self._task_specs:
             raise ValueError(f"Task '{spec.name}' is already registered")
         self._task_specs[spec.name] = spec
-        
+        self._tasks_started[spec.name] = False
         return self
-
-    def create_worker(self, spec: WorkerSpec) -> Manager:
-        """
-        Register a worker group. spec.tasks must be names of already-registered
-        tasks. Manager validates this at start() time, not here, so create_task
-        and create_worker calls can appear in any order during setup.
-        """
-        if spec.name in self._worker_specs:
-            raise ValueError(f"Worker '{spec.name}' is already registered")
-        self._worker_specs[spec.name] = spec
-        return self
-    
-    def _update_ring_counts(self) -> None: 
-        for task in self._task_specs.values(): 
-            for reading_ring in task.reading_rings():
-                self._ring_specs[reading_ring].num_readers += 1
-
-
-    # ------------------------------------------------------------------ #
-    # Start            --continute checking here                         #
-    # ------------------------------------------------------------------ #
-
 
     def _create_ring_kwargs(self, tasks:list[TaskSpec]) -> tuple[dict[str, dict], dict[str, dict]]:
         reading_ring_kwargs: dict[str, dict] = {}
@@ -183,51 +190,7 @@ class Manager:
         return (reading_ring_kwargs, writing_ring_kwargs)
 
 
-
-
-
-
-    def start(self, name: str) -> mp.Process:
-        """
-        Start a named worker group or a named task.
-
-        If `name` matches a WorkerSpec, the grouped tasks run together in
-        one process. If `name` matches a TaskSpec, that task runs alone in
-        its own process. Either way the execution model is identical.
-        """
-        if name in self._worker_specs:
-            task_names = self._worker_specs[name].tasks
-        elif name in self._task_specs:
-            task_names = (name,)
-        else:
-            raise KeyError(
-                f"'{name}' is not a registered worker or task. "
-                f"Workers: {list(self._worker_specs)}. "
-                f"Tasks: {list(self._task_specs)}."
-            )
-
-        # Resolve task names → TaskSpec objects and validate
-        tasks:list[TaskSpec] = []
-        for tname in task_names:
-            if tname not in self._task_specs:
-                raise KeyError(
-                    f"Worker '{name}' references unknown task '{tname}'. "
-                    f"Register it with create_task() first."
-                )
-            tasks.append(self._task_specs[tname])
-
-        # Validate all rings are registered and assign reader slots.
-        # Reading rings get a unique monotonically assigned reader index per ring.
-        # Writing rings open with reader=-1 (writer handle).
-        # A ring may appear as a writing_ring in one task and reading_ring in
-        # ring may appear as reading in the same task that is writing, this is bad practice but possible
-        # another within the same group — each role gets its own handle.
-        reading_ring_kwargs: dict[str, dict] = {}
-        writing_ring_kwargs: dict[str, dict] = {}
-
-        reading_ring_kwargs, writing_ring_kwargs = self._create_ring_kwargs(tasks = tasks)
-        # Derive WorkerEvent objects for this group. mp.Event crosses the
-        # process boundary safely via multiprocessing internals.
+    def _create_events(self, tasks: list[TaskSpec]) -> dict[str, WorkerEvent]:
         events: dict[str, WorkerEvent] = {}
         for task in tasks:
             for ename in task.events:
@@ -237,98 +200,19 @@ class Manager:
                         f"Call create_event() first."
                     )
                 events[ename] = self._events[ename]
+        return events
+    
 
-        WorkerClass = Worker._registry.get(
-            getattr(self._worker_specs.get(name), 'worker_type', None), Worker
-        )
-
-        # _bootstrap runs entirely inside the child process.
-        # Opens ring handles in the child's address space with the correct
-        # reader/writer role, then composes and runs the Worker loop.
-        # Manager is NOT captured — it must never cross the boundary.
-        def _bootstrap(
-            tasks=tasks,
-            reading_ring_kwargs=reading_ring_kwargs,
-            writing_ring_kwargs=writing_ring_kwargs,
-            events=events,
-        ):
-            reading_rings = {rname: SharedRingBuffer(**kw) for rname, kw in reading_ring_kwargs.items()}
-            writing_rings = {rname: SharedRingBuffer(**kw) for rname, kw in writing_ring_kwargs.items()}
-            for ring in reading_rings.values():
-                ring.__enter__()
-            try:
-                composed = Manager._compose_tasks_static(
-                    name, tasks, reading_rings, writing_rings, events
-                )
-                WorkerClass(fn=composed)()
-            finally:
-                # reading_rings mark themselves dead in __exit__ via the alive flag.
-                # writing_rings have no slot to clear (reader=-1) but still need closing.
-                for ring in reading_rings.values():
-                    ring.__exit__(None, None, None)
-                for ring in writing_rings.values():
-                    ring.__exit__(None, None, None)
-
-        _bootstrap.__name__ = f"{name}_bootstrap"
-        proc = self._ctx.Process(target=_bootstrap, name=name, daemon=True)
-        proc.start()
-        self._processes[name] = proc
-        return proc
-
-    # ------------------------------------------------------------------ #
-    # Composition — static: must not reference Manager or any live object #
-    # ------------------------------------------------------------------ #
-
-    @staticmethod
-    def _compose_tasks_static(
-        group_name: str,
-        tasks: list[TaskSpec],
-        reading_rings: dict[str, SharedRingBuffer],
-        writing_rings: dict[str, SharedRingBuffer],
-        events: dict[str, WorkerEvent],
-    ) -> callable:
-        """
-        Turn a list of TaskSpecs into one callable.
-        Runs inside the child — must be static, no Manager reference.
-
-        reading_rings and writing_rings are the child-local handles opened
-        by _bootstrap with the correct reader slot / writer role respectively.
-        All resolution happens here, once, before the hot loop starts.
-        """
-        resolved = []
-        for task in tasks:
-            task_readers = [reading_rings[n] for n in task.reading_rings if n in reading_rings]
-            task_writers = [writing_rings[n] for n in task.writing_rings if n in writing_rings]
-            task_events  = [events[n] for n in task.events if n in events]
-            wrapped_fn   = Manager._wrap_fn_static(
-                task.fn, label=f"{group_name}/{task.fn.__name__}"
-            )
-            if task.args:
-                effective_args = task.args
-            else:
-                # Pass readers and writers as separate positional arguments so fn
-                # always knows which list is which:  fn(readers, writers, ...)
-                # If a task only reads or only writes, the empty list is still passed
-                # so fn signatures stay consistent.
-                effective_args = (task_readers, task_writers)
-                if task_events:
-                    effective_args = effective_args + (task_events,)
-            resolved.append((wrapped_fn, effective_args, task.kwargs))
-
-        def _composed():
-            for fn, args, kwargs in resolved:
-                fn(*args, **kwargs)
-
-        _composed.__name__ = f"{group_name}_composed"
-        return _composed
-
+    def _validate_task(self, name:str) -> TaskSpec: 
+        # make sure task exists and if so return task
+        task = self._task_specs.get(name, None)
+        if task: 
+            return task
+        else: 
+            raise ValueError(f"TaskSpec of {name} is not registered with manager")
+        
     @staticmethod
     def _wrap_fn_static(fn: callable, label: str) -> callable:
-        """
-        Inject per-task debug logging transparently.
-        label is "group_name/task_fn_name" — visible in logs automatically.
-        Must be static for the same reason as _compose_tasks_static.
-        """
         @wraps(fn)
         def _logged(*args, **kwargs):
             logging.debug("[%s] start", label)
@@ -336,6 +220,47 @@ class Manager:
             logging.debug("[%s] end", label)
             return result
         return _logged
+
+
+    def _task_bootstrap(self, name: str) -> callable:
+        task = self._validate_task(name=name)
+        reading_ring_kwargs, writing_ring_kwargs = self._create_ring_kwargs([task])
+        events = self._create_events([task])
+        wrapped_fn = Manager._wrap_fn_static(task.fn, label=name)
+
+        def _bootstrap(
+            reading_ring_kwargs=reading_ring_kwargs,
+            writing_ring_kwargs=writing_ring_kwargs,
+            events=events,
+        ):
+            from contextlib import ExitStack
+            from viviian import context
+
+            reading_rings = {n: SharedRingBuffer(**kw) for n, kw in reading_ring_kwargs.items()}
+            writing_rings = {n: SharedRingBuffer(**kw) for n, kw in writing_ring_kwargs.items()}
+
+            with ExitStack() as stack:
+                for ring in {**reading_rings, **writing_rings}.values():
+                    stack.enter_context(ring)
+                context._install(reading_rings, writing_rings, events)
+                Worker(fn=wrapped_fn)()
+
+        _bootstrap.__name__ = f"{name}_bootstrap"
+        return _bootstrap
+    
+
+    def start(self, name: str) -> mp.Process:
+        if name not in self._task_specs:
+            raise KeyError(
+                f"'{name}' is not a registered task. "
+                f"Registered tasks: {list(self._task_specs)}"
+            )
+        bootstrap = self._task_bootstrap(name)
+        proc = self._ctx.Process(target=bootstrap, name=name, daemon=True)
+        proc.start()
+        self._processes[name] = proc
+        self._tasks_started[name] = True
+        return proc
 
     # ------------------------------------------------------------------ #
     # Lifecycle                                                            #
@@ -358,6 +283,138 @@ class Manager:
     def join_all(self, timeout: float = 5.0) -> None:
         for name in list(self._processes):
             self.join(name, timeout=timeout)
+
+    def _collect_ring_pressures(
+        self,
+        rings: dict,
+    ) -> dict[str, int]:
+        pressures = {}
+        for rname, ring in rings.items():
+            try:
+                pressures[rname] = ring.calculate_pressure()
+            except Exception:
+                pass
+        return pressures
+
+    def _check_sustained_pressure(
+        self,
+        ring_pressures: dict[str, int],
+        high_pressure_since: dict[str, float],
+        now: float,
+    ) -> None:
+        for rname, pressure in ring_pressures.items():
+            if pressure > 90:
+                if rname not in high_pressure_since:
+                    high_pressure_since[rname] = now
+                elif now - high_pressure_since[rname] > 1.0:
+                    logging.warning(
+                        "Ring '%s' has been at %d%% pressure for %.1fs  "
+                        "reader may be stalled.",
+                        rname,
+                        pressure,
+                        now - high_pressure_since[rname],
+                    )
+            else:
+                high_pressure_since.pop(rname, None)
+
+    def _sample_process(
+        self,
+        name: str,
+        proc: mp.Process,
+        ring_pressures: dict[str, int],
+        task_specs: dict,
+        metrics: dict,
+        now: float,
+    ) -> dict[str, int]:
+        """
+        Samples one process. Stores a ProcessMetrics snapshot.
+        Returns the task_ring_pressure dict for use by _adjust_process_nice.
+        """
+        ps = psutil.Process(proc.pid)
+
+        cpu  = ps.cpu_percent()
+        mem  = ps.memory_info().rss / (1024 * 1024)
+        nice = ps.nice()
+
+        task = task_specs.get(name)
+        task_ring_pressure: dict[str, int] = {}
+        if task is not None:
+            for rname in list(task.reading_rings) + list(task.writing_rings):
+                if rname in ring_pressures:
+                    task_ring_pressure[rname] = ring_pressures[rname]
+
+        metrics[name] = ProcessMetrics(
+            name=name,
+            pid=proc.pid,
+            cpu_percent=cpu,
+            memory_rss_mb=mem,
+            nice=nice,
+            ring_pressure=task_ring_pressure,
+            sampled_at=now,
+        )
+        return task_ring_pressure
+
+    def _adjust_process_nice(
+        self,
+        proc: mp.Process,
+        task_ring_pressure: dict[str, int],
+    ) -> None:
+        if not task_ring_pressure:
+            return
+        ps = psutil.Process(proc.pid)
+        worst = max(task_ring_pressure.values())
+        if worst > 80:
+            ps.nice(-10)
+        elif worst < 20:
+            ps.nice(10)
+
+    def start_monitor(self, interval_s: float = 0.01) -> None:
+        """
+        Starts the daemon monitor thread.
+        Orchestrates _collect_ring_pressures, _check_sustained_pressure,
+        _sample_process, and _adjust_process_nice once per interval.
+        All psutil calls inside the delegated methods are wrapped in
+        try/except so a dead process never crashes the monitor.
+        Manager is NOT captured by the thread closure  only plain
+        dicts extracted before the thread starts are referenced.
+        """
+        rings      = self._rings
+        processes  = self._processes
+        metrics    = self._metrics
+        task_specs = self._task_specs
+
+        _high_pressure_since: dict[str, float] = {}
+
+        def _monitor():
+            while True:
+                now = time.perf_counter()
+                ring_pressures = self._collect_ring_pressures(rings)
+                self._check_sustained_pressure(
+                    ring_pressures, _high_pressure_since, now
+                )
+                for name, proc in list(processes.items()):
+                    try:
+                        if not proc.is_alive():
+                            continue
+                        task_ring_pressure = self._sample_process(
+                            name, proc, ring_pressures, task_specs, metrics, now
+                        )
+                        self._adjust_process_nice(proc, task_ring_pressure)
+                    except Exception:
+                        pass
+                time.sleep(interval_s)
+
+        t = threading.Thread(
+            target=_monitor, daemon=True, name="viviian_monitor"
+        )
+        t.start()
+
+    def get_metrics(self, name: str) -> ProcessMetrics | None:
+        """
+        Return the most recent ProcessMetrics snapshot for a task,
+        or None if no sample has been collected yet.
+        """
+        return self._metrics.get(name)
 
     def close(self) -> None:
         """Close and unlink all creator-side ring handles."""

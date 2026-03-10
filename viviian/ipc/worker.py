@@ -67,34 +67,6 @@ class TaskSpec:
             f"reading_rings={self.reading_rings}, writing_rings={self.writing_rings})"
         )
 
-
-@dataclass(frozen=True)
-class WorkerSpec:
-    """
-    A grouping directive. Tells Manager to run a set of named tasks
-    together inside one process. Nothing more.
-
-    - name:  unique identifier for the process.
-    - tasks: tuple of TaskSpec names to compose and run in sequence.
-             Must reference tasks already registered with Manager via
-             create_task(). Manager resolves names at start() time and
-             derives all reading/writing ring assignments from the tasks.
-
-    A task that is NOT grouped into a WorkerSpec runs in its own process
-    when started directly by name — Manager auto-wraps it internally.
-    There is no difference in execution; only the grouping changes.
-    """
-    name:  str
-    tasks: tuple[str, ...]
-
-    def __post_init__(self):
-        if len(self.tasks) == 0:
-            raise ValueError(f"WorkerSpec '{self.name}': must reference at least one task")
-
-    def __repr__(self):
-        return f"WorkerSpec(name={self.name!r}, tasks={self.tasks})"
-
-
 # ------------------------------------------------------------------ #
 # Worker — dumb execution primitive                                   #
 # ------------------------------------------------------------------ #
