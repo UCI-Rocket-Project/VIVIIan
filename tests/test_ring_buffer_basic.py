@@ -1,4 +1,4 @@
-"""Run with: python -m unittest src.data_handeling.testing.test_shared_ring_buffer_basic -v"""
+"""Run with: python -m unittest tests.test_ring_buffer_basic -v"""
 
 import unittest
 import uuid
@@ -10,7 +10,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependency
     np = None
 
 try:
-    from src.data_handeling.shared_ring_buffer import SharedRingBuffer
+    from viviian.ipc.ring_buffer import SharedRingBuffer
 except ModuleNotFoundError:  # pragma: no cover - environment dependency
     SharedRingBuffer = None
 
@@ -34,6 +34,13 @@ class SharedRingBufferBasicTests(unittest.TestCase):
         ring = SharedRingBuffer(name=name, create=True, size=size, num_readers=num_readers, reader=reader)
         self.addCleanup(self._cleanup_ring, ring)
         return ring
+
+    @staticmethod
+    def _mark_reader_alive(ring: SharedRingBuffer, reader_index: int | None = None):
+        if reader_index is None:
+            reader_index = ring.reader
+        slot = 6 + (reader_index * 3)
+        ring.header[slot + 1] = 1
 
     @staticmethod
     def _cleanup_ring(ring: SharedRingBuffer):
@@ -89,7 +96,7 @@ class SharedRingBufferBasicTests(unittest.TestCase):
             size=64,
             num_readers=2,
             reader=0,
-            cache_allign=True,
+            cache_align=True,
             cache_size=64,
         )
         self.addCleanup(self._cleanup_ring, ring)
@@ -108,7 +115,7 @@ class SharedRingBufferBasicTests(unittest.TestCase):
             size=64,
             num_readers=2,
             reader=0,
-            cache_allign=True,
+            cache_align=True,
             cache_size=32,
         )
         self.addCleanup(self._cleanup_ring, ring)
@@ -125,7 +132,7 @@ class SharedRingBufferBasicTests(unittest.TestCase):
                 size=64,
                 num_readers=1,
                 reader=0,
-                cache_allign=True,
+                cache_align=True,
                 cache_size=48,
             )
         with self.assertRaises(ValueError):
@@ -135,7 +142,7 @@ class SharedRingBufferBasicTests(unittest.TestCase):
                 size=64,
                 num_readers=1,
                 reader=0,
-                cache_allign=True,
+                cache_align=True,
                 cache_size=0,
             )
 
@@ -157,6 +164,7 @@ class SharedRingBufferBasicTests(unittest.TestCase):
 
         ring.update_write_pos(20)
         ring.update_reader_pos(5)
+        self._mark_reader_alive(ring)
         writable = ring.compute_max_amount_writable()
         self.assertEqual(writable, 17)  # used = 20-5 = 15, free = 32-15 = 17
         self.assertEqual(int(ring.header[ring.max_amount_writable_index]), 17)
@@ -298,6 +306,82 @@ class SharedRingBufferBasicTests(unittest.TestCase):
 
         self.assertEqual(dst.tolist(), [14, 15, 0])
         self._release_mvs(reader_mv[0], reader_mv[1])
+
+    def test_write_array_contiguous_advances_writer(self):
+        ring = self._make_ring(size=32, num_readers=1, reader=0)
+        ring.update_reader_pos(0)
+        ring.update_write_pos(0)
+        arr = np.array([1, 2, 3, 4], dtype=np.int16)
+
+        written = ring.write_array(arr)
+
+        self.assertEqual(written, arr.nbytes)
+        self.assertEqual(int(ring.get_write_pos()), arr.nbytes)
+        self.assertEqual(bytes(ring.ring_buffer[:arr.nbytes]), arr.tobytes())
+
+    def test_write_array_wraparound_writes_both_segments(self):
+        ring = self._make_ring(size=16, num_readers=1, reader=0)
+        ring.ring_buffer[:] = bytes([0] * 16)
+        ring.update_reader_pos(6)
+        ring.update_write_pos(14)
+        arr = np.array([100, 101, 102, 103, 104, 105], dtype=np.uint8)
+
+        written = ring.write_array(arr)
+
+        self.assertEqual(written, arr.nbytes)
+        self.assertEqual(bytes(ring.ring_buffer[14:16]), b"\x64\x65")
+        self.assertEqual(bytes(ring.ring_buffer[0:4]), b"\x66\x67\x68\x69")
+
+    def test_write_array_returns_zero_when_space_is_insufficient(self):
+        ring = self._make_ring(size=16, num_readers=1, reader=0)
+        ring.ring_buffer[:] = bytes([0xEE] * 16)
+        ring.update_reader_pos(0)
+        ring.update_write_pos(12)
+        self._mark_reader_alive(ring)
+        arr = np.arange(8, dtype=np.uint8)
+
+        written = ring.write_array(arr)
+
+        self.assertEqual(written, 0)
+        self.assertEqual(int(ring.get_write_pos()), 12)
+        self.assertEqual(bytes(ring.ring_buffer), bytes([0xEE] * 16))
+
+    def test_read_array_contiguous_returns_expected_dtype(self):
+        ring = self._make_ring(size=32, num_readers=1, reader=0)
+        arr = np.array([10, 20, 30, 40], dtype=np.int16)
+        ring.ring_buffer[:arr.nbytes] = arr.tobytes()
+        ring.update_reader_pos(0)
+        ring.update_write_pos(arr.nbytes)
+
+        got = ring.read_array(arr.nbytes, dtype=np.int16)
+
+        self.assertTrue(np.array_equal(got, arr))
+        self.assertEqual(got.dtype, np.int16)
+        self.assertEqual(int(ring.header[ring.reader_pos_index]), arr.nbytes)
+
+    def test_read_array_wraparound_returns_contiguous_array(self):
+        ring = self._make_ring(size=16, num_readers=1, reader=0)
+        arr = np.array([14, 15, 16, 17, 18, 19], dtype=np.uint8)
+        ring.ring_buffer[14:16] = arr[:2].tobytes()
+        ring.ring_buffer[0:4] = arr[2:].tobytes()
+        ring.update_reader_pos(14)
+        ring.update_write_pos(20)
+
+        got = ring.read_array(arr.nbytes, dtype=np.uint8)
+
+        self.assertTrue(np.array_equal(got, arr))
+        self.assertEqual(int(ring.header[ring.reader_pos_index]), 20)
+
+    def test_read_array_returns_empty_when_data_is_insufficient(self):
+        ring = self._make_ring(size=16, num_readers=1, reader=0)
+        ring.update_reader_pos(0)
+        ring.update_write_pos(2)
+
+        got = ring.read_array(4, dtype=np.uint16)
+
+        self.assertEqual(got.size, 0)
+        self.assertEqual(got.dtype, np.uint16)
+        self.assertEqual(int(ring.header[ring.reader_pos_index]), 0)
 
     def test_expose_writer_mem_view_recomputes_writable_each_call(self):
         ring = self._make_ring(size=16, num_readers=1, reader=0)

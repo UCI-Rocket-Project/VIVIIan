@@ -1,4 +1,4 @@
-"""Run with: ./.venv/bin/python -m unittest src.data_handeling.testing.test_shared_ring_buffer_contract -v"""
+"""Run with: python -m unittest tests.test_ring_buffer_contract -v"""
 
 from __future__ import annotations
 
@@ -12,14 +12,14 @@ from multiprocessing import shared_memory
 from unittest.mock import patch
 
 try:
-    import src.data_handeling.shared_ring_buffer as shared_ring_buffer_module
+    import viviian.ipc.ring_buffer as shared_ring_buffer_module
 except ModuleNotFoundError:  # pragma: no cover - environment dependency
     shared_ring_buffer_module = None
 
 SharedRingBuffer = None if shared_ring_buffer_module is None else getattr(shared_ring_buffer_module, "SharedRingBuffer", None)
 SharedMemorySpec = None if shared_ring_buffer_module is None else getattr(
     shared_ring_buffer_module,
-    "SharedMemorySpec",
+    "RingSpec",
     getattr(shared_ring_buffer_module, "RingSpec", None),
 )
 

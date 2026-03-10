@@ -1,4 +1,4 @@
-"""Run with: python -B -m unittest src.data_handeling.testing.test_shared_ring_buffer_edge_cases -v"""
+"""Run with: python -B -m unittest tests.test_ring_buffer_edge_cases -v"""
 
 import gc
 import unittest
@@ -10,7 +10,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependency
     np = None
 
 try:
-    from src.data_handeling.shared_ring_buffer import SharedRingBuffer
+    from viviian.ipc.ring_buffer import SharedRingBuffer
 except ModuleNotFoundError:  # pragma: no cover - environment dependency
     SharedRingBuffer = None
 
@@ -25,6 +25,13 @@ class SharedRingBufferEdgeCaseTests(unittest.TestCase):
         ring = SharedRingBuffer(name=name, create=True, size=size, num_readers=num_readers, reader=reader)
         self.addCleanup(self._cleanup_ring, ring)
         return ring
+
+    @staticmethod
+    def _mark_reader_alive(ring: SharedRingBuffer, reader_index: int | None = None):
+        if reader_index is None:
+            reader_index = ring.reader
+        slot = 6 + (reader_index * 3)
+        ring.header[slot + 1] = 1
 
     @staticmethod
     def _cleanup_ring(ring: SharedRingBuffer):
@@ -66,6 +73,7 @@ class SharedRingBufferEdgeCaseTests(unittest.TestCase):
     def _set_reader_slot_pos(self, ring: SharedRingBuffer, reader_index: int, value: int):
         slot = 6 + (reader_index * 3)
         ring.header[slot] = value
+        ring.header[slot + 1] = 1
 
     def test_int_to_pos_wraps_large_values(self):
         ring = self._make_ring(size=16)
@@ -100,9 +108,10 @@ class SharedRingBufferEdgeCaseTests(unittest.TestCase):
         ring = self._make_ring(size=16)
         ring.update_write_pos(12)
         ring.update_reader_pos(0)  # used=12, writable=4
+        self._mark_reader_alive(ring)
         mv1, mv2, n, wrap = ring.expose_writer_mem_view(100)
         self.assertEqual(n, 4)
-        self.assertTrue(wrap)
+        self.assertFalse(wrap)
         self.assertEqual(len(mv1), 4)
         self.assertEqual((len(mv2) if mv2 is not None else 0), 0)
         self._release_mvs(mv1, mv2)
@@ -199,6 +208,7 @@ class SharedRingBufferEdgeCaseTests(unittest.TestCase):
         ring = self._make_ring(size=16)
         ring.update_write_pos(40)
         ring.update_reader_pos(30)  # true used=10, writable=6
+        self._mark_reader_alive(ring)
         ring._min_reader_pos_cache = 0  # stale/wrong on purpose
         ring._reader_positions_dirty = False
         ring._writes_since_min_scan = 0
@@ -209,6 +219,7 @@ class SharedRingBufferEdgeCaseTests(unittest.TestCase):
         ring = self._make_ring(size=16)
         ring.update_write_pos(100)
         ring.update_reader_pos(95)  # true used=5, writable=11
+        self._mark_reader_alive(ring)
         ring._min_reader_pos_cache = 80  # stale cache makes used=20 (> size)
         ring._reader_positions_dirty = False
         ring._writes_since_min_scan = 0
@@ -219,6 +230,7 @@ class SharedRingBufferEdgeCaseTests(unittest.TestCase):
         ring = self._make_ring(size=16)
         ring.update_write_pos(20)
         ring.update_reader_pos(10)  # used=10, writable=6
+        self._mark_reader_alive(ring)
         self.assertEqual(ring.compute_max_amount_writable(), 6)
 
         # Simulate a different process advancing this reader directly in shared header.

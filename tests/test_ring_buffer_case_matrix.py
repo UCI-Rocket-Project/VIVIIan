@@ -1,4 +1,4 @@
-"""Run with: python -B -m unittest src.data_handeling.testing.test_shared_ring_buffer_case_matrix -v"""
+"""Run with: python -B -m unittest tests.test_ring_buffer_case_matrix -v"""
 
 import gc
 import unittest
@@ -10,7 +10,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependency
     np = None
 
 try:
-    from src.data_handeling.shared_ring_buffer import SharedRingBuffer
+    from viviian.ipc.ring_buffer import SharedRingBuffer
 except ModuleNotFoundError:  # pragma: no cover - environment dependency
     SharedRingBuffer = None
 
@@ -79,6 +79,7 @@ class SharedRingBufferCaseMatrixTests(unittest.TestCase):
     def _set_reader_pos(self, ring: SharedRingBuffer, reader_index: int, value: int):
         slot = 6 + (reader_index * 3)
         ring.header[slot] = value
+        ring.header[slot + 1] = 1
 
     def _snapshot(self, label: str, ring: SharedRingBuffer, req: int, got, mode: str, expected: tuple[int, bool, int, int]) -> str:
         mv1, mv2, size_ret, wrap = got
@@ -110,7 +111,7 @@ class SharedRingBufferCaseMatrixTests(unittest.TestCase):
         writable = ring_size - used
         n = request if request <= writable else writable
         idx = write_pos % ring_size
-        if idx + n < ring_size:
+        if idx + n <= ring_size:
             return (n, False, n, 0)
         mv1 = ring_size - idx
         mv2 = n - mv1
@@ -144,7 +145,7 @@ class SharedRingBufferCaseMatrixTests(unittest.TestCase):
             with self.subTest(case=label):
                 ring = self._make_ring(size=size, num_readers=1, reader=0)
                 ring.update_write_pos(write_pos)
-                ring.update_reader_pos(read_pos)
+                self._set_reader_pos(ring, 0, read_pos)
                 ring.compute_max_amount_writable()
 
                 got = ring.expose_writer_mem_view(request)

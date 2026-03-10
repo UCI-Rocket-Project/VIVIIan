@@ -1,15 +1,16 @@
 """
 Run with:
-python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput
+python -B -m tests.test_ring_buffer_throughput
 
 Examples:
-python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend numpy
-python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend torch --torch-device cuda
-python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend jax
-python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode search --columns 8 --target-mib 512 --consumers 1,2,4,8 --ring-mib 64,128,256,512 --rows 4096,8192,16384 --repeats 5 --top-k 5 --fft-backend auto
-python -B -m src.data_handeling.testing.test_shared_ring_buffer_throughput --mode generator --columns 8 --generator-rows 10000 --generator-repeats 200
+python -B -m tests.test_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend numpy
+python -B -m tests.test_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend torch --torch-device cuda
+python -B -m tests.test_ring_buffer_throughput --mode single --single-consumers 2 --single-ring-mib 128 --single-rows 10000 --columns 8 --fft-backend jax
+python -B -m tests.test_ring_buffer_throughput --mode search --columns 8 --target-mib 512 --consumers 1,2,4,8 --ring-mib 64,128,256,512 --rows 4096,8192,16384 --repeats 5 --top-k 5 --fft-backend auto
+python -B -m tests.test_ring_buffer_throughput --mode generator --columns 8 --generator-rows 10000 --generator-repeats 200
 """
 
+from __future__ import annotations
 
 import argparse
 import itertools
@@ -19,12 +20,15 @@ import time
 import uuid
 from typing import Any
 
-import numpy as np
+try:
+    import numpy as np
+except ModuleNotFoundError:  # pragma: no cover - environment dependency
+    np = None
 
 try:
-    from src.data_handeling.shared_ring_buffer import SharedRingBuffer
+    from viviian.ipc.ring_buffer import SharedRingBuffer
 except ModuleNotFoundError:  # pragma: no cover - convenience for direct file execution
-    from shared_ring_buffer import SharedRingBuffer
+    SharedRingBuffer = None
 
 
 def generator(columns: int, size: int) -> np.ndarray:
@@ -166,7 +170,7 @@ def run_producer(
         size=ring_size,
         num_readers=num_readers,
         reader=0,
-        cache_allign=True,
+        cache_align=True,
         cache_size=64,
     )
     t0 = time.perf_counter()
@@ -247,7 +251,7 @@ def run_consumer(
         size=ring_size,
         num_readers=num_readers,
         reader=reader_id,
-        cache_allign=True,
+        cache_align=True,
         cache_size=64,
     )
     t0 = time.perf_counter()
@@ -375,7 +379,7 @@ def run_benchmark(
         size=ring_size,
         num_readers=num_consumers,
         reader=0,
-        cache_allign=True,
+        cache_align=True,
         cache_size=64,
     )
     try:
