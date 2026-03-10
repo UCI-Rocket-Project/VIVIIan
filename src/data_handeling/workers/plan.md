@@ -123,7 +123,7 @@ class WorkerSpec:
               Rings are process-scoped — opened once, closed once on exit.
               Tasks share these open handles. Tasks do not open their own.
               This is a hard constraint: shared memory handles must be opened
-              in the process that will use them.
+              in the process that will use them, never in the parent.
     - events: all events this worker interacts with across all its tasks.
     - tasks:  at least one required. A single-task worker is just a worker
               with one task. There is no special single-function path —
@@ -154,8 +154,9 @@ created. Frozen makes that class of mistake impossible.
 
 **Why are rings and events referenced by name strings in TaskSpec?** Because
 specs are pure data. They hold no live objects. Manager resolves those strings
-into real `SharedRingBuffer` and `WorkerEvent` instances at `start()` time —
-the last possible moment, when everything is available.
+into real `SharedRingBuffer` and `WorkerEvent` instances inside the child
+process at `start()` time — after the fork, in the address space that will
+actually use them.
 
 **Why no in/out distinction on rings or events?** The OS handles scheduling.
 Whether a ring is read or written, whether an event is waited on or signalled,
@@ -292,8 +293,14 @@ attribute lookups, no event checks in the loop itself.
 
 Manager owns ring specs, live rings, event specs, live events, worker specs,
 and live processes. Every `create_*` method takes a spec — Manager's job is
-purely to turn those specs into live objects and wire them together at
-`start()` time.
+purely to turn those specs into live objects and wire them together.
+
+**Critical constraint:** ring handles are opened in the child process, never
+the parent. `mmap`-backed handles are tied to the address space of the process
+that opened them. With the `spawn` context the child gets a fresh interpreter —
+any live handle constructed in the parent is garbage by the time the child runs.
+Only plain data (dicts of strings, ints, bools) crosses the process boundary.
+Composition happens inside the child after handles are open.
 
 ```python
 import signal
@@ -337,60 +344,82 @@ class Manager:
     def start(self, name: str) -> mp.Process:
         spec = self._worker_specs[name]
 
-        # Open one handle per ring for the child process.
-        # Manager keeps its own separate handle — child is fully independent.
-        rings = [
-            SharedRingBuffer(**self._ring_specs[r.name].to_kwargs(create=False, reader=i))
+        # Serialize ring specs to plain dicts — strings, ints, bools only.
+        # These are the only things safe to pickle across the process boundary.
+        # Live SharedRingBuffer handles are NOT passed here; they would carry
+        # mmap pointers and file descriptors valid only in the parent's address
+        # space, producing silent corruption or crashes in the child.
+        ring_kwargs = [
+            self._ring_specs[r.name].to_kwargs(create=False, reader=i)
             for i, r in enumerate(spec.rings)
         ]
 
-        # Compose all tasks into one callable.
-        # Worker receives this and knows nothing about what is inside it.
-        composed = self._compose_tasks(spec, rings)
-
         WorkerClass = Worker._registry.get(getattr(spec, 'worker_type', None), Worker)
-        worker = WorkerClass(fn=composed)
 
-        proc = self._ctx.Process(target=worker, name=name, daemon=True)
+        # _bootstrap runs entirely inside the child process.
+        # It opens ring handles there, composes tasks against those handles,
+        # then hands the composed callable to Worker.
+        # Manager is NOT captured — it must never cross the boundary.
+        def _bootstrap(spec=spec, ring_kwargs=ring_kwargs):
+            rings = [SharedRingBuffer(**kw) for kw in ring_kwargs]
+            try:
+                composed = Manager._compose_tasks_static(spec, rings)
+                WorkerClass(fn=composed)()
+            finally:
+                # Deterministic cleanup: close and unlink all child-side handles
+                # regardless of how the loop exits (SystemExit from SIGTERM,
+                # unhandled exception, or normal return).
+                # weakref.finalize on each SharedRingBuffer is the hard safety
+                # net beneath this.
+                for r in rings:
+                    r.__exit__(None, None, None)
+
+        _bootstrap.__name__ = f"{spec.name}_bootstrap"
+        proc = self._ctx.Process(target=_bootstrap, name=name, daemon=True)
         proc.start()
         self._processes[name] = proc
         return proc
 
     # ------------------------------------------------------------------ #
-    # Composition — Manager's core intelligence                           #
+    # Composition — static: must not reference Manager or any live object #
     # ------------------------------------------------------------------ #
 
-    def _compose_tasks(self, spec: WorkerSpec, rings: list[SharedRingBuffer]) -> callable:
+    @staticmethod
+    def _compose_tasks_static(spec: WorkerSpec, rings: list[SharedRingBuffer]) -> callable:
         """
         Turn a sequence of TaskSpecs into one callable.
-        Each task function is wrapped with logging before composition.
-        Worker receives an opaque callable — it never sees tasks.
+        Must be a staticmethod — self is Manager, and Manager must never
+        be referenced inside _bootstrap (which runs in the child process).
+        Capturing self would drag Manager across the process boundary.
 
-        This is where Manager earns its place: all resolution and wiring
-        happens here, once, before the process is forked.
+        rings are the child-local handles opened by _bootstrap.
+        All resolution and wiring happens here, once, before the hot loop starts.
+        Worker receives an opaque callable — it never sees tasks.
         """
         ring_by_name = {r.name: r for r in rings}
         resolved = []
 
         for task in spec.tasks:
             task_rings  = [ring_by_name[n] for n in task.rings if n in ring_by_name]
-            wrapped_fn  = self._wrap_fn(task.fn, label=f"{spec.name}/{task.fn.__name__}")
+            wrapped_fn  = Manager._wrap_fn_static(task.fn, label=f"{spec.name}/{task.fn.__name__}")
             effective_args = task.args if task.args else (task_rings,)
             resolved.append((wrapped_fn, effective_args, task.kwargs))
 
         def _composed():
-            for (fn, args, kwargs) in resolved:
+            for fn, args, kwargs in resolved:
                 fn(*args, **kwargs)
 
         _composed.__name__ = f"{spec.name}_composed"
         return _composed
 
-    def _wrap_fn(self, fn: callable, label: str) -> callable:
+    @staticmethod
+    def _wrap_fn_static(fn: callable, label: str) -> callable:
         """
         Wrap any task function with logging.
         `label` is "worker_name/task_fn_name" so per-task timing is
         visible in logs automatically.
         functools.wraps preserves __name__ and __doc__ on the wrapper.
+        Must be a staticmethod for the same reason as _compose_tasks_static.
         Tasks and Worker never see this — it is purely Manager's concern.
         """
         @wraps(fn)
@@ -509,9 +538,10 @@ with Manager() as mgr:
 ```
 
 All three task functions run in one process. They share the same open ring
-handles. Manager composed them into one callable before forking. Worker calls
-that callable in a loop and knows nothing about the tasks inside it.
-Per-task timing appears in logs automatically because Manager wrapped each
+handles — handles that were opened inside that process, not passed in from
+the parent. Manager composed them into one callable inside `_bootstrap`.
+Worker calls that callable in a loop and knows nothing about the tasks inside
+it. Per-task timing appears in logs automatically because Manager wrapped each
 task function individually before composing them.
 
 ---
@@ -529,8 +559,11 @@ task function individually before composing them.
 | `__call__` | `Worker` | Worker IS the process target — two line hot loop, no branches |
 | `__init_subclass__` | `Worker` | Auto-registration for subclasses that need a genuinely different loop |
 | Spec-only `create_*` methods | `Manager` | Uniform API; all validation happens in specs before Manager sees them |
-| `_compose_tasks` | `Manager` | All task intelligence lives here; Worker receives one opaque callable |
-| `functools.wraps` in `_wrap_fn` | `Manager` | Per-task logging injected transparently; tasks and Worker never see it |
+| `ring_kwargs` dicts in `start()` | `Manager` | Only plain data crosses the process boundary; live handles stay in child |
+| `_bootstrap` closure in `start()` | `Manager` | Opens ring handles in child address space; Manager never crosses boundary |
+| `_compose_tasks_static` | `Manager` | `@staticmethod` enforces no `self` reference — Manager cannot leak into child |
+| `try/finally` in `_bootstrap` | `Manager` | Deterministic child-side ring cleanup regardless of how the loop exits |
+| `functools.wraps` in `_wrap_fn_static` | `Manager` | Per-task logging injected transparently; tasks and Worker never see it |
 | Fluent `return self` | `Manager.create_*` | Builder pattern for readable pipeline setup |
 
 ---
@@ -541,13 +574,16 @@ task function individually before composing them.
 
 > **Rings are process-scoped. Tasks are logic-scoped.**
 
+> **Handles open where they are used. Specs travel. Objects do not.**
+
 > **Error handling belongs in the task function, not the framework.**
 
 > **Every `create_*` method takes a spec. Nothing else.**
 
-Manager turns specs into live objects, opens handles, composes tasks, wraps
-functions, then forks. Once forked the Worker is completely self-contained
-and never calls back to Manager.
+Manager turns specs into plain kwargs dicts, passes those into the child
+process, opens ring handles there, composes tasks against those handles,
+then runs the Worker loop — all inside `_bootstrap`. Once forked the Worker
+is completely self-contained and never calls back to Manager.
 
 A multi-task worker is not a different kind of worker. It is a worker whose
 composed function happens to call several things in sequence. The rings do not

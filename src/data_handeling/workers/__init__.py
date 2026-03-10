@@ -1,5 +1,18 @@
 """Worker definitions."""
 
-from .worker import Worker, CallType, WorkerState, WorkerSpec, EventSpec, TaskSpec
+from .worker import EventSpec, TaskSpec, Worker, WorkerSpec
 
-__all__ = ["AbstractWorker", "CallType"]
+# Compatibility alias for older imports that still refer to AbstractWorker.
+AbstractWorker = Worker
+CallType = None
+WorkerState = None
+
+__all__ = [
+    "Worker",
+    "AbstractWorker",
+    "TaskSpec",
+    "WorkerSpec",
+    "EventSpec",
+    "CallType",
+    "WorkerState",
+]
