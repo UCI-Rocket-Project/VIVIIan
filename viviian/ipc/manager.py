@@ -20,6 +20,7 @@ __all__ = [
     "Worker",
     "TaskSpec",
     "EventSpec",
+    "_TaskBootstrap",
 ]
 
 
@@ -89,6 +90,40 @@ class ProcessMetrics:
     nice:          int
     ring_pressure: dict[str, int]
     sampled_at:    float
+
+
+class _TaskBootstrap:
+    """
+    Picklable callable that bootstraps a single task in a child process.
+    Must be a top-level class so Windows 'spawn' can pickle it.
+    """
+
+    __slots__ = ("name", "fn", "reading_ring_kwargs", "writing_ring_kwargs", "events")
+
+    def __init__(self, name, fn, reading_ring_kwargs, writing_ring_kwargs, events):
+        self.name = name
+        self.fn = fn
+        self.reading_ring_kwargs = reading_ring_kwargs
+        self.writing_ring_kwargs = writing_ring_kwargs
+        self.events = events
+
+    def __call__(self):
+        import logging
+        from contextlib import ExitStack
+        from viviian import context
+
+        logging.debug("[%s] start", self.name)
+
+        reading_rings = {n: SharedRingBuffer(**kw) for n, kw in self.reading_ring_kwargs.items()}
+        writing_rings = {n: SharedRingBuffer(**kw) for n, kw in self.writing_ring_kwargs.items()}
+
+        with ExitStack() as stack:
+            for ring in {**reading_rings, **writing_rings}.values():
+                stack.enter_context(ring)
+            context._install(reading_rings, writing_rings, self.events)
+            Worker(fn=self.fn)()
+
+        logging.debug("[%s] end", self.name)
 
 
 # ------------------------------------------------------------------ #
@@ -211,42 +246,18 @@ class Manager:
         else: 
             raise ValueError(f"TaskSpec of {name} is not registered with manager")
         
-    @staticmethod
-    def _wrap_fn_static(fn: callable, label: str) -> callable:
-        @wraps(fn)
-        def _logged(*args, **kwargs):
-            logging.debug("[%s] start", label)
-            result = fn(*args, **kwargs)
-            logging.debug("[%s] end", label)
-            return result
-        return _logged
-
-
-    def _task_bootstrap(self, name: str) -> callable:
+    def _task_bootstrap(self, name: str) -> _TaskBootstrap:
         task = self._validate_task(name=name)
         reading_ring_kwargs, writing_ring_kwargs = self._create_ring_kwargs([task])
         events = self._create_events([task])
-        wrapped_fn = Manager._wrap_fn_static(task.fn, label=name)
 
-        def _bootstrap(
+        return _TaskBootstrap(
+            name=name,
+            fn=task.fn,
             reading_ring_kwargs=reading_ring_kwargs,
             writing_ring_kwargs=writing_ring_kwargs,
             events=events,
-        ):
-            from contextlib import ExitStack
-            from viviian import context
-
-            reading_rings = {n: SharedRingBuffer(**kw) for n, kw in reading_ring_kwargs.items()}
-            writing_rings = {n: SharedRingBuffer(**kw) for n, kw in writing_ring_kwargs.items()}
-
-            with ExitStack() as stack:
-                for ring in {**reading_rings, **writing_rings}.values():
-                    stack.enter_context(ring)
-                context._install(reading_rings, writing_rings, events)
-                Worker(fn=wrapped_fn)()
-
-        _bootstrap.__name__ = f"{name}_bootstrap"
-        return _bootstrap
+        )
     
 
     def start(self, name: str) -> mp.Process:

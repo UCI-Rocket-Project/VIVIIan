@@ -146,7 +146,10 @@ class SharedRingBufferCaseMatrixTests(unittest.TestCase):
                 ring = self._make_ring(size=size, num_readers=1, reader=0)
                 ring.update_write_pos(write_pos)
                 self._set_reader_pos(ring, 0, read_pos)
-                ring.compute_max_amount_writable()
+                # This matrix mutates reader slots directly to build exact
+                # header states. Force a rescan so expectations are based on
+                # the current shared header rather than the writer's cache.
+                ring.compute_max_amount_writable(force_rescan=True)
 
                 got = ring.expose_writer_mem_view(request)
                 expected = self._expected_writer(size, write_pos, read_pos, request)
@@ -199,7 +202,7 @@ class SharedRingBufferCaseMatrixTests(unittest.TestCase):
         self._set_reader_pos(ring, 1, 22)
         self._set_reader_pos(ring, 2, 30)
 
-        writable = ring.compute_max_amount_writable()
+        writable = ring.compute_max_amount_writable(force_rescan=True)
         # min_reader_pos=22 -> used=18 -> writable=14
         self.assertEqual(writable, 14)
         self.assertEqual(int(ring.header[ring.max_amount_writable_index]), 14)
