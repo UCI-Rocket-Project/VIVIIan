@@ -72,6 +72,7 @@ def nidaq() -> None:
                     case "NRSE":
                         terminal_config = TerminalConfiguration.NRSE
                     case _:
+                        terminal_config = TerminalConfiguration.NRSE
                         logging.error(f"Invalid channel type selected {channel['sample_type']}")
 
                 task.ai_channels.add_ai_voltage_chan(
@@ -130,8 +131,6 @@ def nidaq() -> None:
 
 
 if __name__ == "__main__":
-
-    nidaq()
     while True:
         try:
             nidaq()

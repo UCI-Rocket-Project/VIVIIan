@@ -6,7 +6,6 @@ import time
 import pyarrow as pa
 from contextlib import contextmanager
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("backend")
 
 class ArrowBatchStreamServer:
