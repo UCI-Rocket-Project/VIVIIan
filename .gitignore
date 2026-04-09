@@ -35,3 +35,11 @@ Thumbs.db
 # Runtime/log/config-local artifacts
 *.log
 imgui.ini
+
+
+/site
+
+*.obj
+
+/gui_assets/compiled
+
