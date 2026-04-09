@@ -9,7 +9,7 @@ from nidaqmx.stream_readers import AnalogMultiChannelReader
 
 import tomllib
 
-from viviian import VIVIIan 
+from deviceinterface import DeviceInterface
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("nidaq_stream")
@@ -59,7 +59,7 @@ def nidaq() -> None:
     for channel in nidaq_channels:
         schema = schema.append(pa.field(channel['name'], pa.float64()))
     
-    with VIVIIan(schema) as viv:
+    with DeviceInterface(schema) as device_interface:
         with nidaqmx.Task() as task:
             for channel in nidaq_channels:
                 physical_channel = f"{NIDAQ_DEVICE}/{channel['channel']}"
@@ -119,7 +119,7 @@ def nidaq() -> None:
 
                     table = chunk_table(timestamps, data_buffer, [channel['name'] for channel in nidaq_channels])
 
-                    viv.ingress_table(table)
+                    device_interface.ingress_table(table)
 
                 current_time = time.monotonic()
                 sleep_time = (last_time + (1 / POLLING_FREQ)) - current_time

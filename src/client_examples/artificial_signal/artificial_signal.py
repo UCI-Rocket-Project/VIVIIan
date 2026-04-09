@@ -9,7 +9,7 @@ import tomllib
 import sympy as sp
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
 
-from viviian import VIVIIan 
+from deviceinterface import DeviceInterface
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("noise_stream")
@@ -60,7 +60,7 @@ def gen_signals() -> None:
     for channel in channels:
         schema = schema.append(pa.field(channel['name'], pa.float64()))
     
-    with VIVIIan(schema) as viv:
+    with DeviceInterface(schema) as device_interface:
         for channel in channels:
             try:
                 channel['exec_py_func'] = create_math_function(channel['signal'])
@@ -90,7 +90,7 @@ def gen_signals() -> None:
 
             table = chunk_table(timestamps, data_buffer, [channel['name'] for channel in channels])
 
-            viv.ingress_table(table)
+            device_interface.ingress_table(table)
 
             last_time += samples_available / SAMPLING_RATE
 
