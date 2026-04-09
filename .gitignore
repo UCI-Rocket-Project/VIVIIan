@@ -41,5 +41,4 @@ imgui.ini
 
 *.obj
 
-/gui_assets/compiled
-
+src/gui_assets/compiled/
