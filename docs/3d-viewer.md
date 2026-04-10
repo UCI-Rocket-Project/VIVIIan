@@ -13,7 +13,7 @@ For internal architecture, maintenance constraints, and current performance risk
 
 ## Quick Start
 
-The default asset layout is:
+The default runtime asset layout is:
 
 ```text
 gui_assets/cad/
@@ -22,6 +22,7 @@ gui_assets/compiled/
 
 Put exactly one `.obj` file in `gui_assets/cad/`.
 The runnable discovers that file automatically, reuses an existing compiled cache under `gui_assets/compiled/` when possible, and otherwise compiles a fresh cache.
+The repository also includes checked-in sample assets under `src/gui_assets/`, but the runnable’s default lookup path is the repo-root `gui_assets/` directory shown above.
 
 The manual example is:
 

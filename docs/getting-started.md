@@ -1,11 +1,12 @@
 # Getting Started
 
 This page assumes you are in the repo root.
-The current top-level repo is not packaged as an installable application yet, so the working pattern today is:
+The current repo is not packaged as a finished end-to-end application yet, so the working pattern today is:
 
 - create a virtual environment
-- install the few Python dependencies directly into that environment
-- run tests and examples from the repo root
+- install the dependencies directly into that environment
+- run tests and manual examples from the repo root
+- treat the architecture doc as the target system model and the runnable modules as the currently implemented surface
 
 ## Environment Setup
 
@@ -14,7 +15,7 @@ The current top-level repo is not packaged as an installable application yet, so
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install numpy imgui
+python -m pip install -r requirements.txt numpy imgui
 ```
 
 ### Optional Desktop Dependencies
@@ -35,35 +36,47 @@ python -m pip install mkdocs
 
 ## Current Repo Surface
 
-The useful top-level code today is:
+The most useful working modules today are:
 
-- `gui_utils/buttons.py`
-- `gui_utils/graphs.py`
-- `simulation_utils/simulators.py`
+- `src/gui_utils/buttons.py`
+- `src/gui_utils/graphs.py`
+- `src/gui_utils/3dmodel.py`
+- `src/simulation_utils/simulators.py`
+- `src/deviceinterface/deviceinterface.py`
 - `tests/gui_runnables/signal_graph_lab.py`
+- `tests/gui_runnables/rocket_viewer_lab.py`
 
-The following are currently empty stubs and should not be treated as active APIs:
+The following areas exist, but should still be treated as incomplete or placeholder-level relative to the architecture document:
 
-- `main.py`
-- `configure.py`
-- `connector_utils/connectors.py`
-- `datastorage_utils/database.py`
+- `src/connector_utils/connectors.py`
+- `src/datastorage_utils/database.py`
+- `src/orchestrator/orchestrator.py`
+- the backend processing and deployment topology described in [Architecture](architecture.md)
 
 ## Run The Tests
 
 Run the current working regression suite:
 
 ```bash
-python -m unittest tests.test_gui_utils tests.test_simulation_utils tests.test_signal_graph_lab
+python -m unittest \
+  tests.test_gui_utils \
+  tests.test_simulation_utils \
+  tests.test_signal_graph_lab \
+  tests.test_rocket_viewer_lab \
+  tests.test_3dmodel \
+  tests.test_gauge_lab \
+  tests.test_deviceinterface_utils
 ```
 
 If you want a syntax check without executing the tests:
 
 ```bash
 python -m py_compile \
-  gui_utils/buttons.py \
-  gui_utils/graphs.py \
-  simulation_utils/simulators.py \
+  src/gui_utils/buttons.py \
+  src/gui_utils/graphs.py \
+  src/gui_utils/3dmodel.py \
+  src/simulation_utils/simulators.py \
+  src/deviceinterface/deviceinterface.py \
   tests/gui_runnables/signal_graph_lab.py
 ```
 
@@ -110,8 +123,8 @@ MkDocs reads the root `mkdocs.yml` and the pages under `docs/`.
 
 If you are new to this repo, the most useful sequence is:
 
-1. read [GUI Utils](gui-utils.md)
-2. read [Simulation Utils](simulation-utils.md)
+1. read [Architecture](architecture.md)
+2. read [GUI Utils](gui-utils.md) and [Simulation Utils](simulation-utils.md)
 3. run the signal-lab example from [Examples](examples.md)
 
-That path covers the working operator-desk primitives and the current simulator stack without forcing assumptions about the rest of the planned ground station.
+That path covers the target architecture first and then the most mature working modules without overstating what is already implemented.

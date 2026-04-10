@@ -1,7 +1,9 @@
 # VIVIIan Architecture
 
-This repository-root copy is preserved as a mirror.
-The canonical docs page lives at `docs/architecture.md`.
+This is the canonical architecture document for the docs site.
+The repository root keeps a mirrored `architecture.md` so the familiar path still works.
+
+![VIVIIan architecture diagram](assets/vivian_architecture.svg)
 
 ## Purpose
 
@@ -240,7 +242,7 @@ This is the same general pattern already used in the GUI utilities:
 The default telemetry flow is:
 
 1. hardware or user device code produces raw measurements
-2. `deviceinterface` converts them into typed versioned payloads 
+2. `deviceinterface` converts them into typed versioned payloads
 3. a generic Arrow connector sends those payloads to `backend`
 4. `backend` ingests, processes, and optionally persists them
 5. `backend` may publish selected outputs through Arrow connectors to one or more `frontend` deployments

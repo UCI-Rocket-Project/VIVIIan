@@ -1,23 +1,40 @@
 # VIVIIan Docs
 
-VIVIIan is an early-stage rocket ground-station codebase.
-At the top level, the implementation that exists today is concentrated in two areas:
+VIVIIan is a Python-first architecture for hardware-agnostic telemetry and control systems.
+The architecture centers on explicit typed boundaries between `deviceinterface`, `backend`, `frontend`, and `orchestrator` roles, with `pythusa` on local hot paths and `pyarrow` across deployment boundaries.
+
+The repo is an in-progress implementation of that architecture.
+The strongest working code today is concentrated in a few areas:
 
 - `gui_utils` for ImGui-native operator-desk primitives
 - `simulation_utils` for deterministic, repeating telemetry-like signals defined in NumPy `rfft` space
+- `deviceinterface` for an early Arrow-based streaming boundary
 
-The larger application shell is not implemented yet.
-`main.py`, `connector_utils`, `datastorage_utils`, and top-level `configure.py` are still stubs, so this first docs set stays tightly grounded in the working modules instead of speculating about future APIs.
+The connector, storage, backend, and orchestrator layers are not yet implemented to the full architectural shape, so the docs separate target architecture from current code carefully.
+
+## Start Here
+
+- [Architecture](architecture.md)
+  The target system model, runtime boundaries, and deployable roles.
+- [Getting Started](getting-started.md)
+  Local environment setup, runnable commands, and the current repo surface.
+- [GUI Utils](gui-utils.md)
+  `SensorGraph`, `GraphSeries`, buttons, and gauges for operator desks.
+- [3D Viewer](3d-viewer.md)
+  The public guide for the OBJ-backed model viewer and its stream contracts.
+- [Simulation Utils](simulation-utils.md)
+  Sparse spectral signal configs, exact repeating cycles, and seeded helpers.
 
 ## What Exists Now
 
-The current top-level system can already do a few concrete things:
+The current codebase can already do a few concrete things:
 
 - render multi-series time graphs with explicit timestamped numeric input
 - render generic state buttons for operator workflows
 - render OBJ-backed 3D telemetry models with per-body coloring and pose-driven orientation
 - export and reconstruct graph and button config from TOML
 - generate exact repeating signals from sparse `rfft` coefficients
+- batch and transmit typed Arrow tables from the device-interface boundary
 - run a manual ImGui signal desk example that exercises the graph and simulator stack together
 
 The mental model is:
@@ -25,23 +42,7 @@ The mental model is:
 - `simulation_utils` produces deterministic `(timestamp, value)` batches
 - a small reader adapter feeds those batches into `gui_utils.SensorGraph`
 - `gui_utils` handles windowing, plotting, and operator controls
-
-## Start Here
-
-- [Getting Started](getting-started.md)
-  Local environment setup, test commands, docs commands, and the first runnable.
-- [GUI Utils](gui-utils.md)
-  `SensorGraph`, `GraphSeries`, and the button classes used to build an ImGui operator desk.
-- [3D Viewer](3d-viewer.md)
-  The public guide for the OBJ-backed model viewer, its stream contracts, and its configuration surface.
-- [3D Viewer Maintainer Notes](3d-viewer-maintainer.md)
-  Internal architecture, lifecycle, compatibility policy, and current performance constraints for the viewer stack.
-- [Simulation Utils](simulation-utils.md)
-  Sparse spectral signal configs, exact repeating cycles, and the seeded random helpers.
-- [Examples](examples.md)
-  A walkthrough of the current manual GUI example and the exact commands to run it.
-- [Roadmap](roadmap.md)
-  Short notes on the parts of the ground station that are planned but not implemented yet.
+- `deviceinterface` shows the intended Arrow-oriented edge between local device logic and the rest of the system
 
 ## Current Design Direction
 
@@ -52,7 +53,7 @@ The current code is written in a style that fits a high-rate telemetry desk:
 - simulators are deterministic and reconstructable from compact config
 - the GUI layer is ImGui-first rather than web-first
 
-That makes the current modules good building blocks for a future `pythusa`-backed ground-station runtime, even though that full system does not exist at the top level yet.
+That makes the current modules good building blocks for the broader VIVIIan architecture, even though the full multi-unit runtime described in [Architecture](architecture.md) does not exist yet.
 
 ## Quick Example
 

@@ -36,6 +36,8 @@ Before running it, place exactly one `.obj` file in:
 gui_assets/cad/
 ```
 
+The runnable defaults to the repo-root `gui_assets/` paths even though the repo also carries checked-in assets under `src/gui_assets/`.
+
 What it demonstrates:
 
 - discovery of exactly one CAD asset under `gui_assets/cad/`
@@ -47,7 +49,7 @@ What it demonstrates:
 - visible model rotation within the first few seconds of runtime
 
 If you only need the graph/button/signal path, use the signal lab below.
-This page documents the signal lab in the same spirit as `pythusa`’s showcase docs:
+This page documents the signal lab in the same spirit as the architecture’s local-runtime examples:
 
 - what it demonstrates
 - how the data flows

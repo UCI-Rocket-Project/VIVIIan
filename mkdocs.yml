@@ -1,11 +1,12 @@
 site_name: VIVIIan Docs
-site_description: Rocket ground-station primitives for ImGui operator desks and deterministic telemetry simulation
+site_description: Python-first architecture and toolkit for hardware-agnostic telemetry, control, and operator-facing frontends
 
 theme:
   name: mkdocs
 
 nav:
   - Home: index.md
+  - Architecture: architecture.md
   - Getting Started: getting-started.md
   - GUI Utils: gui-utils.md
   - 3D Viewer: 3d-viewer.md
