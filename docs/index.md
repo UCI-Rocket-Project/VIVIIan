@@ -9,8 +9,9 @@ The strongest working code today is concentrated in a few areas:
 - `gui_utils` for ImGui-native operator-desk primitives
 - `simulation_utils` for deterministic, repeating telemetry-like signals defined in NumPy `rfft` space
 - `deviceinterface` for an early Arrow-based streaming boundary
+- `connector_utils` for initial strict-schema Arrow Flight connector primitives
 
-The connector, storage, backend, and orchestrator layers are not yet implemented to the full architectural shape, so the docs separate target architecture from current code carefully.
+The storage, backend, and orchestrator layers are not yet implemented to the full architectural shape, and the connector layer now exists only as initial primitives, so the docs separate target architecture from current code carefully.
 
 ## Start Here
 

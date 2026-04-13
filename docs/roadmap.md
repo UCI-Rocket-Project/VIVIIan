@@ -19,7 +19,6 @@ Those parts are documented in detail because they exist, run, and are covered by
 
 These areas are still incomplete relative to the architecture:
 
-- generic connector abstractions
 - backend-owned storage and archival
 - orchestrated deployment topology
 - the full backend processing DAG and republishing flow
@@ -27,7 +26,7 @@ These areas are still incomplete relative to the architecture:
 
 That means there is **not yet** a documented finished API for:
 
-- the full connector layer
+- the full connector runtime beyond the initial Arrow Flight primitives
 - durable backend storage
 - orchestrated multi-process launch
 - the complete telemetry/control runtime

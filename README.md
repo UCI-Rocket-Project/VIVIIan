@@ -18,9 +18,10 @@ The repo already contains working pieces of that larger architecture:
 - `gui_utils/3dmodel.py` for the compact OBJ-backed 3D viewer runtime
 - `simulation_utils` for deterministic repeating signal simulators in NumPy `rfft` space
 - `deviceinterface` for an early Arrow batch streaming boundary
+- `connector_utils` for initial strict-schema Arrow Flight connector primitives
 - `tests/gui_runnables/signal_graph_lab.py` and `tests/gui_runnables/rocket_viewer_lab.py` for manual end-to-end GUI examples
 
-Other architecture-aligned areas exist only partially or as placeholders right now, especially the connector, storage, and orchestrator layers. The repo should be read as an in-progress implementation of the architecture rather than a finished end-to-end system.
+Other architecture-aligned areas still exist only partially right now, especially the storage and orchestrator layers and the larger multi-unit runtime. The repo should be read as an in-progress implementation of the architecture rather than a finished end-to-end system.
 
 ## Documentation
 
@@ -108,11 +109,11 @@ Implemented now:
 - deterministic signal generation from sparse `rfft` coefficients
 - a compact OBJ-backed 3D viewer runtime and example
 - an early `deviceinterface` Arrow streaming path
+- strict-schema Arrow Flight send/receive connector primitives
 - working manual GUI examples and regression tests
 
 Still incomplete relative to the architecture:
 
-- generic connector abstractions
 - backend-owned storage and archival
 - orchestrated multi-unit topology launch
 - the full backend/frontend/deviceinterface deployment flow described in `architecture.md`

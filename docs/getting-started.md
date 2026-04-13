@@ -46,12 +46,22 @@ The most useful working modules today are:
 - `tests/gui_runnables/signal_graph_lab.py`
 - `tests/gui_runnables/rocket_viewer_lab.py`
 
-The following areas exist, but should still be treated as incomplete or placeholder-level relative to the architecture document:
+The following areas exist, but should still be treated as incomplete relative to the architecture document:
 
 - `src/connector_utils/connectors.py`
 - `src/datastorage_utils/database.py`
 - `src/orchestrator/orchestrator.py`
 - the backend processing and deployment topology described in [Architecture](architecture.md)
+
+### Connector Transport Casting
+
+All data sent through connectors is cast to `float64` on the wire regardless of the original schema types.
+The `StreamSpec` preserves the original typed schema and provides `from_transport()` to cast back.
+
+- `recv_numpy()` returns raw `float64` arrays as received from the wire.
+- `recv_typed_numpy()` casts the `float64` transport data back to the original schema types (e.g. `timestamp("ns")` columns come back as `datetime64[ns]`).
+
+If your schema contains non-float64 types and you need them back, use `recv_typed_numpy()` or call `stream_spec.from_transport(table)` on the raw table yourself.
 
 ## Run The Tests
 
