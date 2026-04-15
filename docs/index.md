@@ -9,7 +9,7 @@ The strongest working code today is concentrated in a few areas:
 - `gui_utils` for ImGui-native operator-desk primitives
 - `simulation_utils` for deterministic, repeating telemetry-like signals defined in NumPy `rfft` space
 - `deviceinterface` for an early Arrow-based streaming boundary
-- `connector_utils` for initial strict-schema Arrow Flight connector primitives
+- `connector_utils` for a latest-only Arrow Flight connector runtime
 
 The storage, backend, and orchestrator layers are not yet implemented to the full architectural shape, and the connector layer now exists only as initial primitives, so the docs separate target architecture from current code carefully.
 
@@ -19,6 +19,10 @@ The storage, backend, and orchestrator layers are not yet implemented to the ful
   The target system model, runtime boundaries, and deployable roles.
 - [Getting Started](getting-started.md)
   Local environment setup, runnable commands, and the current repo surface.
+- [Orchestrator](orchestrator.md)
+  The topology compiler role and the boundary between structural stream wiring and local runtime adaptation.
+- [Connectors](connectors.md)
+  The current latest-only Flight connector runtime, read/write semantics, and benchmark usage.
 - [GUI Utils](gui-utils.md)
   `SensorGraph`, `GraphSeries`, buttons, and gauges for operator desks.
 - [3D Viewer](3d-viewer.md)
@@ -36,6 +40,7 @@ The current codebase can already do a few concrete things:
 - export and reconstruct graph and button config from TOML
 - generate exact repeating signals from sparse `rfft` coefficients
 - batch and transmit typed Arrow tables from the device-interface boundary
+- publish and subscribe latest-only numeric batches through Arrow Flight connectors
 - run a manual ImGui signal desk example that exercises the graph and simulator stack together
 
 The mental model is:
@@ -50,6 +55,7 @@ The mental model is:
 The current code is written in a style that fits a high-rate telemetry desk:
 
 - signals are fixed-shape numeric frames, not arbitrary Python objects
+- connectors keep current state rather than building lossless live queues
 - graphs consume explicit timestamps rather than assuming wall-clock plotting
 - simulators are deterministic and reconstructable from compact config
 - the GUI layer is ImGui-first rather than web-first

@@ -1,0 +1,41 @@
+{
+  "benchmark": "datastorage_benchmark",
+  "config": {
+    "columns": 8,
+    "compression": "snappy",
+    "duration_s": 5.0,
+    "folder": "/Volumes/THEREPO/viviiantest",
+    "keep": false,
+    "rows": 2048,
+    "rows_per_file": 2097152
+  },
+  "generated_at_utc": "2026-04-15T22:15:53.512395+00:00",
+  "notes": [
+    "The benchmark hammers store(...) for the requested duration and then measures retrieve(...) across the full written time range.",
+    "The database adds database_timestamp_ns internally; the benchmark does not reserve payload columns for metadata.",
+    "Unless --keep is used, the target folder is cleared before the run."
+  ],
+  "results": {
+    "batches_written": 9216,
+    "bytes_written": 1207959552,
+    "columns": 8,
+    "elapsed_read_s": 0.3515789170014614,
+    "elapsed_write_s": 5.096664083001087,
+    "end_timestamp_ns": 1776291352583804047,
+    "file_count": 9,
+    "read_mb": 1380.18816,
+    "read_mb_s": 3925.685225301104,
+    "read_rows": 18874368,
+    "read_rows_s": 53684584.27762193,
+    "rows": 2048,
+    "rows_written": 18874368,
+    "start_timestamp_ns": 1776291348052127000,
+    "write_batches_s": 1808.2415968394191,
+    "write_mb_s": 237.00984258093635,
+    "write_rows_s": 3703278.7903271304
+  },
+  "summary": {
+    "existing_parquet_files_before_run": 0,
+    "final_parquet_files": 9
+  }
+}

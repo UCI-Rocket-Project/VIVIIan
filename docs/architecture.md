@@ -95,6 +95,14 @@ In short:
 - inside a unit: optimize for efficient internal execution
 - between units: optimize for stable contracts and transport clarity
 
+Inside one deployment unit, the structural stream contract should remain
+predictable, but one local `pythusa` task may still consume a different byte
+window when it explicitly owns regrouping. The current endorsed local procedure
+is to keep the stream definition normal, override binding-local `frame_nbytes`
+on the side that wants a different local size, and use `look()` /
+`increment()` there. This is a local runtime adaptation only. It does not alter
+the cross-unit Arrow connector contract.
+
 ## Deployable Roles
 
 ### Device Interface
@@ -175,6 +183,11 @@ The orchestrator is not a central runtime brain.
 It should not sit inline on the data path or act as a live routing coordinator for every message.
 
 Its job is to turn system definition into running units with coherent contracts.
+That includes wiring the structural stream contract, not deciding every
+task-local read window inside a deployment. If a backend task aggregates or
+splits local `pythusa` frames by overriding binding-local `frame_nbytes`, that
+remains an internal runtime concern of that unit rather than an orchestrator
+topology concern.
 
 ## Core Architectural Objects
 

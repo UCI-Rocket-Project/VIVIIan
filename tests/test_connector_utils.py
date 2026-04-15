@@ -7,56 +7,53 @@ from typing import Callable, TypeVar
 import numpy as np
 import pyarrow as pa
 
-from connector_utils import DefaultConnector, ReceiveConnector, SendConnector, StreamSpec
+from connector_utils import ReceiveConnector, SendConnector, StreamSpec
 
 T = TypeVar("T")
+
+
+class CountingSendConnector(SendConnector):
+    def __init__(
+        self,
+        stream_spec: StreamSpec,
+        port: int,
+        *,
+        delay_seconds: float = 0.0,
+    ) -> None:
+        self.delay_seconds = delay_seconds
+        self.do_get_call_count = 0
+        super().__init__(stream_spec, port)
+
+    def do_get(self, _context, ticket):
+        self.do_get_call_count += 1
+        return super().do_get(_context, ticket)
+
+    def _batch_to_record_batch(self, batch: np.ndarray) -> pa.RecordBatch:
+        if self.delay_seconds > 0.0:
+            time.sleep(self.delay_seconds)
+        return super()._batch_to_record_batch(batch)
 
 
 class ConnectorUtilsTests(unittest.TestCase):
     def make_schema(self) -> pa.Schema:
         return pa.schema(
             [
-                pa.field("timestamp", pa.timestamp("ns")),
-                pa.field("value", pa.float64()),
+                pa.field("signal", pa.float64()),
+                pa.field("weight", pa.float64()),
             ]
         )
-
-    def make_scalar_schema(self) -> pa.Schema:
-        return pa.schema([pa.field("value", pa.float64())])
 
     def make_spec(
         self,
         *,
         stream_id: str = "telemetry",
-        frames: int = 2,
+        rows: int = 2,
+        columns: int = 2,
     ) -> StreamSpec:
         return StreamSpec(
             stream_id=stream_id,
-            schema_version=1,
             schema=self.make_schema(),
-            shape=(2, frames),
-        )
-
-    def make_scalar_spec(
-        self,
-        *,
-        stream_id: str = "scalar",
-        frames: int = 3,
-    ) -> StreamSpec:
-        return StreamSpec(
-            stream_id=stream_id,
-            schema_version=1,
-            schema=self.make_scalar_schema(),
-            shape=(frames,),
-        )
-
-    def make_table(self, values: list[float]) -> pa.Table:
-        return pa.table(
-            {
-                "timestamp": pa.array(range(len(values)), type=pa.timestamp("ns")),
-                "value": pa.array(values, type=pa.float64()),
-            },
-            schema=self.make_schema(),
+            shape=(rows, columns),
         )
 
     def wait_for_value(self, getter: Callable[[], T | None]) -> T | None:
@@ -68,279 +65,236 @@ class ConnectorUtilsTests(unittest.TestCase):
             time.sleep(0.01)
         return None
 
-    def test_stream_spec_rejects_invalid_shapes(self) -> None:
-        with self.subTest("1d multi-field"):
-            with self.assertRaisesRegex(ValueError, "exactly one schema field"):
+    def test_stream_spec_requires_explicit_2d_shape(self) -> None:
+        with self.assertRaises(TypeError):
+            StreamSpec(stream_id="telemetry", schema=self.make_schema())  # type: ignore[call-arg]
+
+        with self.subTest("1d shape"):
+            with self.assertRaisesRegex(ValueError, "2D"):
                 StreamSpec(
                     stream_id="telemetry",
-                    schema_version=1,
                     schema=self.make_schema(),
                     shape=(4,),
                 )
 
-        with self.subTest("2d single-field"):
-            with self.assertRaisesRegex(ValueError, "Single-field streams must use shape"):
-                StreamSpec(
-                    stream_id="scalar",
-                    schema_version=1,
-                    schema=self.make_scalar_schema(),
-                    shape=(1, 4),
-                )
-
-        with self.subTest("unsupported ndim"):
-            with self.assertRaisesRegex(ValueError, "shape must be"):
+        with self.subTest("3d shape"):
+            with self.assertRaisesRegex(ValueError, "2D"):
                 StreamSpec(
                     stream_id="telemetry",
-                    schema_version=1,
                     schema=self.make_schema(),
-                    shape=(2, 2, 2),
+                    shape=(4, 2, 1),
                 )
 
-        with self.subTest("field-count mismatch"):
+        with self.subTest("non-positive"):
+            with self.assertRaisesRegex(ValueError, ">= 1"):
+                StreamSpec(
+                    stream_id="telemetry",
+                    schema=self.make_schema(),
+                    shape=(0, 2),
+                )
+
+        with self.subTest("width mismatch"):
             with self.assertRaisesRegex(ValueError, "does not match schema field count"):
                 StreamSpec(
                     stream_id="telemetry",
-                    schema_version=1,
                     schema=self.make_schema(),
-                    shape=(3, 4),
+                    shape=(4, 3),
                 )
 
-        with self.subTest("non-positive dim"):
-            with self.assertRaisesRegex(ValueError, "shape dimensions must be >= 1"):
-                StreamSpec(
-                    stream_id="telemetry",
-                    schema_version=1,
-                    schema=self.make_schema(),
-                    shape=(2, 0),
-                )
+    def test_open_and_close_are_idempotent(self) -> None:
+        spec = self.make_spec()
 
-    def test_stream_spec_infers_default_shape_from_schema(self) -> None:
-        multi_field = StreamSpec(
-            stream_id="telemetry",
-            schema_version=1,
-            schema=self.make_schema(),
-        )
-        single_field = StreamSpec(
-            stream_id="scalar",
-            schema_version=1,
-            schema=self.make_scalar_schema(),
-        )
+        sender = SendConnector(spec, port=0)
+        sender.open()
+        opened_port = sender.port
+        sender.open()
+        self.assertEqual(sender.port, opened_port)
+        sender.close()
+        sender.close()
 
-        self.assertEqual(multi_field.shape, (2, 1))
-        self.assertEqual(single_field.shape, (1,))
+        receiver = ReceiveConnector(spec, port=opened_port)
+        receiver.open()
+        receiver.open()
+        receiver.close()
+        receiver.close()
 
-    def test_default_connector_repr_is_configuration_only(self) -> None:
-        connector = DefaultConnector(self.make_spec(), port=9101)
+    def test_send_connector_requires_numpy_and_exact_2d_shape(self) -> None:
+        spec = self.make_spec(rows=3)
+        sender = SendConnector(spec, port=9107)
 
-        self.assertEqual(connector.direction, "default")
-        self.assertEqual(connector.endpoint_uri, "grpc://127.0.0.1:9101")
-        self.assertEqual(
-            repr(connector),
-            "DefaultConnector(stream_id='telemetry', schema_version=1, "
-            "direction='default', endpoint='grpc://127.0.0.1:9101')",
-        )
+        with self.assertRaisesRegex(TypeError, "numpy.ndarray"):
+            sender.send_numpy([[1.0, 2.0]])  # type: ignore[arg-type]
 
-    def test_receive_connector_keeps_only_latest_table(self) -> None:
-        spec = self.make_spec(frames=2)
-        connector = ReceiveConnector(spec, port=9103)
+        with self.assertRaisesRegex(ValueError, "2D numpy.ndarray"):
+            sender.send_numpy(np.array([1.0, 2.0], dtype=np.float64))
 
-        connector._accept_table(spec.to_transport(self.make_table([1.0, 2.0])))
-        connector._accept_table(spec.to_transport(self.make_table([3.0, 4.0])))
+        with self.assertRaisesRegex(ValueError, "batch shape mismatch"):
+            sender.send_numpy(np.ones((2, 2), dtype=np.float64))
 
-        table = connector.recv_table()
-        self.assertIsNotNone(table)
-        assert table is not None
-        typed = spec.from_transport(table)
-        self.assertEqual(typed.column("value").to_pylist(), [3.0, 4.0])
-        self.assertIsNone(connector.recv_table())
+        with self.assertRaisesRegex(ValueError, "batch shape mismatch"):
+            sender.send_numpy(np.ones((3, 3), dtype=np.float64))
 
-    def test_receive_connector_rejects_invalid_transport_without_overwriting_latest(self) -> None:
-        spec = self.make_spec(frames=2)
-        connector = ReceiveConnector(spec, port=9104)
-        valid = spec.to_transport(self.make_table([5.0, 6.0]))
+    def test_round_trip_updates_latest_batch_and_has_batch(self) -> None:
+        spec = self.make_spec(rows=2)
+        expected = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
 
-        connector._accept_table(valid)
+        with SendConnector(spec, port=0) as sender, ReceiveConnector(
+            spec,
+            port=sender.port,
+        ) as receiver:
+            self.assertFalse(receiver.has_batch)
+            sender.send_numpy(expected.astype(np.float32))
 
-        with self.assertRaisesRegex(ValueError, "Row count mismatch"):
-            connector._accept_table(spec.to_transport(self.make_table([7.0])))
+            received = self.wait_for_value(
+                lambda: receiver.batch.copy() if receiver.has_batch else None
+            )
 
-        received = connector.recv_table()
         self.assertIsNotNone(received)
         assert received is not None
-        typed = spec.from_transport(received)
-        self.assertEqual(typed.column("value").to_pylist(), [5.0, 6.0])
+        self.assertTrue(receiver.has_batch)
+        np.testing.assert_array_equal(received, expected)
 
-    def test_receive_connector_can_convert_latest_transport_to_numpy(self) -> None:
-        spec = self.make_spec(frames=2)
-        connector = ReceiveConnector(spec, port=9105)
-        connector._accept_table(spec.to_transport(self.make_table([4.0, 5.0])))
+    def test_multiple_sends_leave_only_latest_batch(self) -> None:
+        spec = self.make_spec(rows=2)
+        first = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
+        second = np.array([[3.0, 30.0], [4.0, 40.0]], dtype=np.float64)
+        third = np.array([[5.0, 50.0], [6.0, 60.0]], dtype=np.float64)
 
-        arrays = connector.recv_numpy()
+        with SendConnector(spec, port=0) as sender, ReceiveConnector(
+            spec,
+            port=sender.port,
+        ) as receiver:
+            sender.send_numpy(first)
+            sender.send_numpy(second)
+            sender.send_numpy(third)
 
-        self.assertIsNotNone(arrays)
-        assert arrays is not None
-        self.assertEqual(len(arrays), 2)
-        self.assertEqual(arrays[0].dtype, np.float64)
-        self.assertEqual(arrays[0].tolist(), [0.0, 1.0])
-        self.assertEqual(arrays[1].tolist(), [4.0, 5.0])
-        self.assertIsNone(connector.recv_numpy())
-
-    def test_receive_connector_can_convert_latest_transport_to_numpy_batch(self) -> None:
-        spec = self.make_spec(frames=2)
-        connector = ReceiveConnector(spec, port=9106)
-        connector._accept_table(spec.to_transport(self.make_table([4.0, 5.0])))
-
-        batch = connector.recv_numpy_batch()
-
-        self.assertIsNotNone(batch)
-        assert batch is not None
-        self.assertEqual(batch.shape, (2, 2))
-        np.testing.assert_array_equal(
-            batch,
-            np.array([[0.0, 1.0], [4.0, 5.0]], dtype=np.float64),
-        )
-        self.assertIsNone(connector.recv_numpy_batch())
-
-    def test_send_connector_rejects_table_with_wrong_row_count(self) -> None:
-        sender = SendConnector(self.make_spec(frames=2), port=9107)
-
-        with self.assertRaisesRegex(ValueError, "Row count mismatch"):
-            sender.send_table(self.make_table([1.0]))
-
-    def test_defaulted_shape_allows_exactly_one_schema_send(self) -> None:
-        sender = SendConnector(
-            StreamSpec(
-                stream_id="telemetry",
-                schema_version=1,
-                schema=self.make_schema(),
-            ),
-            port=9108,
-        )
-
-        sender.stream_spec.validate_table(self.make_table([1.0]))
-        with self.assertRaisesRegex(ValueError, "Row count mismatch"):
-            sender.stream_spec.validate_table(self.make_table([1.0, 2.0]))
-
-    def test_send_connector_rejects_numpy_batch_with_wrong_shape(self) -> None:
-        sender = SendConnector(self.make_spec(frames=2), port=9109)
-
-        with self.assertRaisesRegex(ValueError, "NumPy batch shape mismatch"):
-            sender.send_numpy(np.ones((2, 3), dtype=np.float64))
-
-    def test_flight_send_and_receive_round_trip(self) -> None:
-        spec = self.make_spec(frames=3)
-        receiver = ReceiveConnector(spec, port=0)
-        sender: SendConnector | None = None
-        try:
-            receiver.open()
-            sender = SendConnector(spec, port=receiver.port)
-
-            expected = self.make_table([10.0, 20.0, 30.0])
-            sender.send_table(expected)
-
-            received = self.wait_for_value(receiver.recv_table)
-
-            self.assertIsNotNone(received)
-            assert received is not None
-            self.assertTrue(
-                received.schema.equals(spec.transport_schema, check_metadata=True)
+            received = self.wait_for_value(
+                lambda: receiver.batch.copy()
+                if receiver.has_batch and np.array_equal(receiver.batch, third)
+                else None
             )
-            typed = spec.from_transport(received)
-            self.assertTrue(typed.equals(expected))
-        finally:
-            if sender is not None:
-                sender.close()
-            receiver.close()
 
-    def test_flight_recv_typed_numpy_casts_back(self) -> None:
-        spec = self.make_spec(frames=2)
-        receiver = ReceiveConnector(spec, port=0)
-        sender: SendConnector | None = None
-        try:
-            receiver.open()
-            sender = SendConnector(spec, port=receiver.port)
+        self.assertIsNotNone(received)
+        assert received is not None
+        np.testing.assert_array_equal(received, third)
 
-            sender.send_table(self.make_table([7.0, 8.0]))
+    def test_send_connector_is_nonblocking_under_slow_stream(self) -> None:
+        spec = self.make_spec(rows=2)
+        batches = [
+            np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64),
+            np.array([[3.0, 30.0], [4.0, 40.0]], dtype=np.float64),
+            np.array([[5.0, 50.0], [6.0, 60.0]], dtype=np.float64),
+        ]
 
-            arrays = self.wait_for_value(receiver.recv_typed_numpy)
-
-            self.assertIsNotNone(arrays)
-            assert arrays is not None
-            self.assertEqual(len(arrays), 2)
-            self.assertEqual(arrays[0].dtype, np.dtype("datetime64[ns]"))
-            self.assertEqual(arrays[1].tolist(), [7.0, 8.0])
-        finally:
-            if sender is not None:
-                sender.close()
-            receiver.close()
-
-    def test_flight_recv_numpy_batch_returns_field_major_shape(self) -> None:
-        spec = self.make_spec(frames=2)
-        receiver = ReceiveConnector(spec, port=0)
-        sender: SendConnector | None = None
-        try:
-            receiver.open()
-            sender = SendConnector(spec, port=receiver.port)
-
-            sender.send_table(self.make_table([1.5, 2.5]))
-
-            batch = self.wait_for_value(receiver.recv_numpy_batch)
-
-            self.assertIsNotNone(batch)
-            assert batch is not None
-            self.assertEqual(batch.shape, (2, 2))
-            np.testing.assert_array_equal(
-                batch,
-                np.array([[0.0, 1.0], [1.5, 2.5]], dtype=np.float64),
-            )
-        finally:
-            if sender is not None:
-                sender.close()
-            receiver.close()
-
-    def test_flight_send_numpy_and_receive_single_field_batch(self) -> None:
-        spec = self.make_scalar_spec(frames=3)
-        receiver = ReceiveConnector(spec, port=0)
-        sender: SendConnector | None = None
-        try:
-            receiver.open()
-            sender = SendConnector(spec, port=receiver.port)
-
-            sender.send_numpy(np.array([1.5, 2.5, 3.5], dtype=np.float32))
-
-            batch = self.wait_for_value(receiver.recv_numpy_batch)
-
-            self.assertIsNotNone(batch)
-            assert batch is not None
-            self.assertEqual(batch.shape, (3,))
-            np.testing.assert_array_equal(
-                batch,
-                np.array([1.5, 2.5, 3.5], dtype=np.float64),
-            )
-        finally:
-            if sender is not None:
-                sender.close()
-            receiver.close()
-
-    def test_flight_descriptor_mismatch_fails_clearly(self) -> None:
-        receiver = ReceiveConnector(
-            self.make_spec(stream_id="expected", frames=2),
+        with CountingSendConnector(
+            spec,
             port=0,
-        )
-        sender: SendConnector | None = None
-        try:
-            receiver.open()
-            sender = SendConnector(
-                self.make_spec(stream_id="other", frames=2),
-                port=receiver.port,
+            delay_seconds=0.25,
+        ) as sender, ReceiveConnector(spec, port=sender.port) as receiver:
+            start = time.monotonic()
+            for batch in batches:
+                sender.send_numpy(batch)
+            elapsed = time.monotonic() - start
+
+            received = self.wait_for_value(
+                lambda: receiver.batch.copy()
+                if receiver.has_batch and np.array_equal(receiver.batch, batches[-1])
+                else None
             )
 
-            with self.assertRaises(pa.ArrowException):
-                sender.send_table(self.make_table([1.0, 2.0]))
+        self.assertLess(elapsed, 0.2)
+        self.assertIsNotNone(received)
+        assert received is not None
+        np.testing.assert_array_equal(received, batches[-1])
+
+    def test_receiver_auto_reconnects_when_sender_starts_later(self) -> None:
+        spec = self.make_spec(rows=2)
+        expected = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
+        receiver = ReceiveConnector(spec, port=9117)
+        receiver.open()
+
+        try:
+            time.sleep(0.1)
+            with SendConnector(spec, port=9117) as sender:
+                sender.send_numpy(expected)
+                received = self.wait_for_value(
+                    lambda: receiver.batch.copy() if receiver.has_batch else None
+                )
         finally:
-            if sender is not None:
-                sender.close()
             receiver.close()
+
+        self.assertIsNotNone(received)
+        assert received is not None
+        np.testing.assert_array_equal(received, expected)
+
+    def test_receiver_auto_reconnects_after_sender_restart(self) -> None:
+        spec = self.make_spec(rows=2)
+        first = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
+        second = np.array([[5.0, 50.0], [6.0, 60.0]], dtype=np.float64)
+
+        with SendConnector(spec, port=0) as sender:
+            receiver = ReceiveConnector(spec, port=sender.port)
+            receiver.open()
+            try:
+                sender.send_numpy(first)
+                self.wait_for_value(
+                    lambda: receiver.batch.copy()
+                    if receiver.has_batch and np.array_equal(receiver.batch, first)
+                    else None
+                )
+            finally:
+                receiver.close()
+            sender_port = sender.port
+
+        receiver = ReceiveConnector(spec, port=sender_port)
+        receiver.open()
+        try:
+            with SendConnector(spec, port=sender_port) as restarted_sender:
+                restarted_sender.send_numpy(second)
+                received = self.wait_for_value(
+                    lambda: receiver.batch.copy()
+                    if receiver.has_batch and np.array_equal(receiver.batch, second)
+                    else None
+                )
+        finally:
+            receiver.close()
+
+        self.assertIsNotNone(received)
+        assert received is not None
+        np.testing.assert_array_equal(received, second)
+
+    def test_multiple_sends_use_one_do_get_stream(self) -> None:
+        spec = self.make_spec(rows=2)
+        batches = [
+            np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64),
+            np.array([[3.0, 30.0], [4.0, 40.0]], dtype=np.float64),
+            np.array([[5.0, 50.0], [6.0, 60.0]], dtype=np.float64),
+        ]
+
+        with CountingSendConnector(spec, port=0) as sender, ReceiveConnector(
+            spec,
+            port=sender.port,
+        ) as receiver:
+            for batch in batches:
+                sender.send_numpy(batch)
+
+            received = self.wait_for_value(
+                lambda: receiver.batch.copy()
+                if receiver.has_batch and np.array_equal(receiver.batch, batches[-1])
+                else None
+            )
+
+        self.assertIsNotNone(received)
+        assert received is not None
+        np.testing.assert_array_equal(received, batches[-1])
+        self.assertEqual(sender.do_get_call_count, 1)
+
+    def test_send_after_close_fails_clearly(self) -> None:
+        sender = SendConnector(self.make_spec(), port=9107)
+        sender.close()
+
+        with self.assertRaisesRegex(RuntimeError, "closed"):
+            sender.send_numpy(np.ones((2, 2), dtype=np.float64))
 
 
 if __name__ == "__main__":

@@ -32,18 +32,19 @@ class Orchestrator:
 
 
     def make_deviceinterface(): 
-
-    def make_frontend(): 
+        pass
+    def make_frontend():
+        pass 
 
 
     def make_backend(): 
-
+        pass
 
 
 
 
     def make_connections(stream_spec: StreamSpec, sender_address: tuple[str, int], reciever_address: tuple[str, int]) -> None: 
-
+        pass 
 
     
 

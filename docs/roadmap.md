@@ -26,7 +26,7 @@ These areas are still incomplete relative to the architecture:
 
 That means there is **not yet** a documented finished API for:
 
-- the full connector runtime beyond the initial Arrow Flight primitives
+- the full connector/runtime story beyond the current latest-only Arrow Flight transport
 - durable backend storage
 - orchestrated multi-process launch
 - the complete telemetry/control runtime
@@ -36,6 +36,7 @@ That means there is **not yet** a documented finished API for:
 The current primitives suggest a likely future shape:
 
 - connectors publish strict versioned numeric payloads
+- connectors already support a working latest-only live transport for current-state distribution
 - a backend runtime handles ingestion, processing, storage, and republishing
 - ImGui desks consume snapshots and time-series batches through the current graph, gauge, button, and model-viewer layers
 - frontends emit one-way typed commands directly to device interfaces

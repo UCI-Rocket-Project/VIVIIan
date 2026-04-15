@@ -53,15 +53,34 @@ The following areas exist, but should still be treated as incomplete relative to
 - `src/orchestrator/orchestrator.py`
 - the backend processing and deployment topology described in [Architecture](architecture.md)
 
-### Connector Transport Casting
+### Connectors
 
-All data sent through connectors is cast to `float64` on the wire regardless of the original schema types.
-The `StreamSpec` preserves the original typed schema and provides `from_transport()` to cast back.
+The current connector runtime is documented in [Connectors](connectors.md).
 
-- `recv_numpy()` returns raw `float64` arrays as received from the wire.
-- `recv_typed_numpy()` casts the `float64` transport data back to the original schema types (e.g. `timestamp("ns")` columns come back as `datetime64[ns]`).
+The short version is:
 
-If your schema contains non-float64 types and you need them back, use `recv_typed_numpy()` or call `stream_spec.from_transport(table)` on the raw table yourself.
+- `SendConnector` is the Flight server
+- `ReceiveConnector` is the Flight client
+- both sides are latest-only
+- the runtime uses one long-lived `do_get` stream
+- the public receive surface is `receiver.has_batch` plus `receiver.batch`
+
+All transport data is sent as `float64`.
+
+### Orchestrator And Local Stream Adaptation
+
+The orchestrator role and the current guidance for local mixed frame sizes are
+documented in [Orchestrator](orchestrator.md).
+
+The short version is:
+
+- the orchestrator owns topology and structural stream wiring
+- task-local `pythusa` consumption size is still a local runtime concern
+- if one task needs to consume a different local byte window, the current
+  endorsed path is to override `frame_nbytes` on that local binding and use
+  `look()` / `increment()`
+- one side must own regrouping internally or logical frame alignment can be
+  lost
 
 ## Run The Tests
 
@@ -129,12 +148,34 @@ mkdocs build
 
 MkDocs reads the root `mkdocs.yml` and the pages under `docs/`.
 
+## Run The Connector Benchmark
+
+The connector benchmark lives at:
+
+- `benchmarks/connector_throughput_benchmark.py`
+
+Run it from the repo root:
+
+```bash
+PYTHONPATH=src .venv/bin/python benchmarks/connector_throughput_benchmark.py \
+  --graph \
+  --graph-out benchmarks/results/connector-heatmaps.png \
+  --json-out benchmarks/results/connector-matrix.json \
+  --no-show
+```
+
+It writes:
+
+- structured JSON results
+- throughput and latency heatmaps
+
 ## First Things To Read
 
 If you are new to this repo, the most useful sequence is:
 
 1. read [Architecture](architecture.md)
-2. read [GUI Utils](gui-utils.md) and [Simulation Utils](simulation-utils.md)
-3. run the signal-lab example from [Examples](examples.md)
+2. read [Orchestrator](orchestrator.md)
+3. read [GUI Utils](gui-utils.md) and [Simulation Utils](simulation-utils.md)
+4. run the signal-lab example from [Examples](examples.md)
 
 That path covers the target architecture first and then the most mature working modules without overstating what is already implemented.
