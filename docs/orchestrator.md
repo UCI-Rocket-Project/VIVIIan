@@ -1,22 +1,22 @@
 # Orchestrator
 
-This page documents the orchestrator role in the VIVIIan architecture as it
-exists today: mostly as a structural and deployment concern, not as a finished
-runtime subsystem.
+This page documents `orchestrator` as the shared deployable-unit base in the
+VIVIIan architecture.
 
 The key rule is simple:
 
-- the orchestrator owns topology
+- `orchestrator` owns common deployment scaffolding
+- `backend` and `frontend` inherit from it
 - the local runtime owns hot-path stream consumption details
 
 ## What The Orchestrator Owns
 
-The orchestrator is responsible for:
+The `orchestrator` base is responsible for:
 
-- defining deployment topology in code
-- wiring units to explicit endpoints
-- materializing reconstructable deployment descriptions
-- launching and supervising units
+- defining deployable-unit structure in code
+- wiring connectors to explicit endpoints
+- providing common lifecycle and setup utilities
+- materializing coherent structural contracts
 - keeping deployment logic out of the hot path
 
 It does **not** own:
@@ -25,9 +25,21 @@ It does **not** own:
 - global live routing of every message
 - reinterpretation of local shared-memory buffers across unit boundaries
 
-The orchestrator should wire a coherent structural stream contract. It should
-not reach into a worker’s inner loop and decide how many local bytes one task
-consumes per `look()`.
+The `orchestrator` base should wire a coherent structural stream contract. It
+should not reach into a worker's inner loop and decide how many local bytes
+one task consumes per `look()`.
+
+## Specializations
+
+The intended inheritance model is:
+
+- `Backend(Orchestrator)` for ingestion, processing, persistence, and
+  republishing
+- `Frontend(Orchestrator)` for operator-facing consumption and command emission
+
+That means connector setup, endpoint wiring, and lifecycle scaffolding belong
+in the shared base, while processing graphs, storage, rendering, and command
+surfaces stay in the subclasses.
 
 ## Structural Contract vs Local Read Window
 
@@ -55,9 +67,9 @@ stream at the wrong local size and lose logical frame alignment.
 
 This is a local-runtime rule only. It does **not** change:
 
-- the declared stream structure in the deployment topology
+- the declared stream structure in the deployable unit
 - the Arrow connector contract between deployment units
-- the orchestrator’s job as the topology compiler
+- the shared role of `orchestrator`
 
 ## Minimal Example
 
@@ -102,6 +114,13 @@ Why this stays local:
   `frame_size`
 - so the resized side should use `look()` / `increment()` and own regrouping
   explicitly
+
+In practice:
+
+- `backend` may use this pattern inside a local `pythusa` DAG
+- `frontend` may use the same pattern inside a local view-layer runtime if it
+  ever has a legitimate need
+- the shared `orchestrator` layer still does not own that decision
 
 ## Relationship To The Spike
 

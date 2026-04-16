@@ -67,9 +67,8 @@ VIVIIan systems are composed from separately deployable units.
 The common production shape is:
 
 - many `deviceinterface` deployments
-- one or more `backend` deployments
-- one or more `frontend` deployments
-- an `orchestrator` that compiles and launches the topology
+- one or more `backend` deployments derived from `orchestrator`
+- one or more `frontend` deployments derived from `orchestrator`
 
 These units may run on the same host, across a lab LAN, or across a wider trusted network.
 The code should not assume co-location.
@@ -131,7 +130,16 @@ If a control message says "set valve target to 0.35" or "set motor speed target 
 
 ### Backend
 
-`backend` is the aggregation, processing, persistence, and republishing layer.
+`backend` is an `orchestrator` specialization for aggregation, processing,
+persistence, and republishing.
+
+It inherits the shared deployment scaffolding that `orchestrator` owns:
+
+- connector setup
+- endpoint wiring
+- unit lifecycle utilities
+- common deployment structure
+- coherent structural stream contracts
 
 It is responsible for:
 
@@ -145,11 +153,23 @@ The backend is not required to publish a fixed universal API to the frontend.
 Different deployments may expose different derived products, summaries, alerts, raw streams, or downsampled outputs.
 That choice is deployment-defined, not architecture-defined.
 
-Internally, the backend uses `pythusa` for local stream movement and processing DAG execution when high-rate paths matter.
+Internally, the backend uses `pythusa` for local stream movement and
+processing DAG execution when high-rate paths matter.
+The inherited `orchestrator` layer does not replace that local runtime. It
+provides the deployable-unit structure around it.
 
 ### Frontend
 
-`frontend` is the operator-facing consumer and control surface.
+`frontend` is an `orchestrator` specialization for the operator-facing consumer
+and control surface.
+
+It inherits the same shared deployment scaffolding that `orchestrator` owns:
+
+- connector setup
+- endpoint wiring
+- unit lifecycle utilities
+- common deployment structure
+- coherent structural stream contracts
 
 It is responsible for:
 
@@ -167,25 +187,31 @@ The frontend sends desired-state or setpoint updates, and the operator observes 
 
 ### Orchestrator
 
-`orchestrator` is the topology compiler and launcher.
+`orchestrator` is the shared deployable-unit base for VIVIIan components that
+need connector and lifecycle scaffolding.
 
 It is responsible for:
 
-- defining system topology in code
+- defining unit-level topology in code
 - wiring units to explicit endpoints
-- generating or materializing reconstructable deployment descriptions
-- launching and supervising deployment units
+- setting up shared connector and lifecycle utilities
+- generating or materializing coherent deployment structure
 - keeping deployment logic out of the hot path
 
-The orchestrator is not a central runtime brain.
+`backend` and `frontend` are the primary specialized subclasses of
+`orchestrator`.
+They inherit the common setup behavior and add role-specific runtime logic on
+top.
+
+The orchestrator base is not a central runtime brain.
 It should not sit inline on the data path or act as a live routing coordinator for every message.
 
-Its job is to turn system definition into running units with coherent contracts.
+Its job is to provide reusable deployment structure with coherent contracts.
 That includes wiring the structural stream contract, not deciding every
 task-local read window inside a deployment. If a backend task aggregates or
 splits local `pythusa` frames by overriding binding-local `frame_nbytes`, that
-remains an internal runtime concern of that unit rather than an orchestrator
-topology concern.
+remains an internal runtime concern of that backend rather than an
+`orchestrator` concern.
 
 ## Core Architectural Objects
 
@@ -301,7 +327,8 @@ Those stages may exist in a particular deployment, but the default architecture 
 
 - users compose the graph they need
 - the runtime provides strict stream contracts and efficient local execution
-- the orchestrator wires the pieces together
+- the shared `orchestrator` layer provides connector and lifecycle structure
+- backend subclasses own the processing DAG that runs inside that structure
 
 This fits research systems better because real pipelines diverge quickly:
 
@@ -495,7 +522,7 @@ A representative VIVIIan deployment looks like this:
 1. a device interface talks to a DAQ and a serial controller
 2. it timestamps each acquisition at the device boundary
 3. it emits Arrow telemetry/state tables to a backend
-4. the backend ingests those tables and runs a `pythusa` DAG that filters, derives, and republishes selected outputs
+4. the backend, as an `orchestrator` specialization, ingests those tables and runs a `pythusa` DAG that filters, derives, and republishes selected outputs
 5. the backend stores raw streams and selected derived streams in append-only columnar archives
 6. a frontend subscribes to backend-published streams and renders graphs, buttons, gauges, and 3D views
 7. the frontend sends a typed desired-state command directly to the device interface
@@ -513,6 +540,7 @@ Its central design commitments are:
 - `pyarrow` for explicit inter-unit boundaries
 - frontend-to-device one-way typed commands
 - backend-owned storage
+- shared `orchestrator` scaffolding for backend and frontend deployments
 - code-first topology with deterministic reconstruction
 - bounded freshest-wins live behavior
 

@@ -1,7 +1,10 @@
 # VIVIIan Docs
 
 VIVIIan is a Python-first architecture for hardware-agnostic telemetry and control systems.
-The architecture centers on explicit typed boundaries between `deviceinterface`, `backend`, `frontend`, and `orchestrator` roles, with `pythusa` on local hot paths and `pyarrow` across deployment boundaries.
+The architecture centers on explicit typed boundaries between `deviceinterface`
+and deployable units built on the shared `orchestrator` base, with `backend`
+and `frontend` as its primary specializations, `pythusa` on local hot paths,
+and `pyarrow` across deployment boundaries.
 
 The repo is an in-progress implementation of that architecture.
 The strongest working code today is concentrated in a few areas:
@@ -11,7 +14,10 @@ The strongest working code today is concentrated in a few areas:
 - `deviceinterface` for an early Arrow-based streaming boundary
 - `connector_utils` for a latest-only Arrow Flight connector runtime
 
-The storage, backend, and orchestrator layers are not yet implemented to the full architectural shape, and the connector layer now exists only as initial primitives, so the docs separate target architecture from current code carefully.
+The storage, backend, frontend, and orchestrator-derived deployment layers are
+not yet implemented to the full architectural shape, and the connector layer
+now exists only as initial primitives, so the docs separate target
+architecture from current code carefully.
 
 ## Start Here
 
@@ -20,7 +26,7 @@ The storage, backend, and orchestrator layers are not yet implemented to the ful
 - [Getting Started](getting-started.md)
   Local environment setup, runnable commands, and the current repo surface.
 - [Orchestrator](orchestrator.md)
-  The topology compiler role and the boundary between structural stream wiring and local runtime adaptation.
+  The shared deployment base and the boundary between structural stream wiring and local runtime adaptation.
 - [Connectors](connectors.md)
   The current latest-only Flight connector runtime, read/write semantics, and benchmark usage.
 - [GUI Utils](gui-utils.md)

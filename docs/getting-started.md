@@ -51,7 +51,7 @@ The following areas exist, but should still be treated as incomplete relative to
 - `src/connector_utils/connectors.py`
 - `src/datastorage_utils/database.py`
 - `src/orchestrator/orchestrator.py`
-- the backend processing and deployment topology described in [Architecture](architecture.md)
+- the shared orchestrator/base-class model and backend/frontend deployment shape described in [Architecture](architecture.md)
 
 ### Connectors
 
@@ -74,7 +74,8 @@ documented in [Orchestrator](orchestrator.md).
 
 The short version is:
 
-- the orchestrator owns topology and structural stream wiring
+- `orchestrator` is the shared deployment base for backend/frontend units
+- it owns connector setup and structural stream wiring
 - task-local `pythusa` consumption size is still a local runtime concern
 - if one task needs to consume a different local byte window, the current
   endorsed path is to override `frame_nbytes` on that local binding and use

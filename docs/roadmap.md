@@ -20,7 +20,7 @@ Those parts are documented in detail because they exist, run, and are covered by
 These areas are still incomplete relative to the architecture:
 
 - backend-owned storage and archival
-- orchestrated deployment topology
+- shared `orchestrator` deployment scaffolding
 - the full backend processing DAG and republishing flow
 - the end-to-end multi-unit system described in [Architecture](architecture.md)
 
@@ -37,6 +37,8 @@ The current primitives suggest a likely future shape:
 
 - connectors publish strict versioned numeric payloads
 - connectors already support a working latest-only live transport for current-state distribution
+- a shared `orchestrator` base handles common deployment and connector setup
+- backend and frontend specializations build on that base
 - a backend runtime handles ingestion, processing, storage, and republishing
 - ImGui desks consume snapshots and time-series batches through the current graph, gauge, button, and model-viewer layers
 - frontends emit one-way typed commands directly to device interfaces

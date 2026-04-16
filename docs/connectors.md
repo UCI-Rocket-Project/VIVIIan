@@ -171,7 +171,7 @@ The current connector runtime is not:
 - a lossless queue
 - a replay store
 - a command acknowledgement protocol
-- the full backend/frontend/deviceinterface runtime described in [Architecture](architecture.md)
+- the full orchestrator-derived backend/frontend/deviceinterface runtime described in [Architecture](architecture.md)
 
 ## Benchmark
 
