@@ -18,23 +18,18 @@ for the cached triangles.
 
 import argparse
 from pathlib import Path
-import sys
 import time
 from typing import Any, Sequence
 
 import numpy as np
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-from gui_utils import (
+from viviian.gui_utils import (
     ModelBodyBinding,
     ModelViewerConfig,
     discover_single_obj_asset,
     resolve_compiled_obj_assets,
 )
-from simulation_utils import (
+from viviian.simulation_utils import (
     RotationMatrixSignalGenerator,
     SpectralSignalConfig,
     SpectralTerm,

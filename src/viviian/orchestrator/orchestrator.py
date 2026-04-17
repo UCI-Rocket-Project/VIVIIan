@@ -8,10 +8,9 @@ from dataclasses import dataclass
 
 """
 def main() -> None:
-    with VIVIIan.backend as VIVII:
+    with VIVIIan("backend") as VIVII:
         id1 = "test"
         stream1 = VIVII.add_ReceiveConnector(StreamSpec, "DataIngressStream")
-        stream1.hash == some hash for the thing
         stream1.name == "DataIngressStream"
         # name is optional and when not used we fall back to the hash
         stream2 = VIVII.add_ReceiveConnector(StreamSpec, stream_X_id)
@@ -26,13 +25,13 @@ def main() -> None:
 """
 
 @dataclass
-class taskSpec: 
+class TaskSpec: 
     runnable: function 
     name: str
-    connections: list[str]
+    connections: set[str] | None
 
-class Orchestrator:
-    """
+class Orchestrator(Pipeline):
+    """s
     Minimal orchestrator scaffold.
 
     This class intentionally wraps a local ``pythusa.Pipeline`` and owns only
@@ -40,32 +39,29 @@ class Orchestrator:
     """
 
 
-    def __init__(self, name: str = "orchestrator", pipeline: Pipeline | None = None) -> None:
-        self.name = name
+    def __init__(self, name: str = "orchestrator") -> None:
+        super().__init__(name)
         self.internal_graph = nx.DiGraph()
-        self.pipeline = pipeline if pipeline is not None else Pipeline(name)
-        self._closed = False
+        self.nodes: dict[str, TaskSpec] = {}
 
     def __enter__(self) -> "Orchestrator":
-        self._ensure_open()
-        self.pipeline.__enter__()
+        super().__enter__()
         return self
 
     def __exit__(self, exc_type: object, exc: object, exc_tb: object) -> None:
-        self.pipeline.__exit__(exc_type, exc, exc_tb)
-        self._closed = True
+        super().__exit__(exc_type, exc, exc_tb)
 
     def close(self) -> None:
-        if self._closed:
-            return
-        self.pipeline.close()
-        self._closed = True
+        super().close()
 
     def _ensure_open(self) -> None:
         if self._closed:
             raise RuntimeError("Orchestrator is closed.")
         
-    def add_internal_graph(
+
+    #adds tasks and connectors to the internal graph to that orchestrator can compile to pythusa pipeline
+    #streams and other tasks
+    def _add_to_internal_graph(
         self,
         name: str,
         connected_to: set[str] | None = None,
@@ -85,9 +81,31 @@ class Orchestrator:
             self.internal_graph.add_node(upstream)
             self.internal_graph.add_edge(upstream, name)
 
+    def _register_task(self, task_spec: TaskSpec) -> None: 
+        self.nodes[task_spec.name] = task_spec 
+        self._add_to_internal_graph(task_spec.name, connected_to=task_spec.connections)
+
+    def _compile_to_pipeline(self) -> None:
+        for edge in self.internal_graph.edges():
+            #finish implementing here
+            name = edge[0] + edge[1]
+
+            self.add_stream(name= name, ) 
+        
+        for node in self.internal_graph.nodes():
+            #finish implementing here
+            self.add_task(node)
 
 
 
+    
+
+    def compile(self) -> None:
+        self._ensure_open()
+        if self._compiled:
+            raise RuntimeError("Pipeline has already been compiled.")
+        self._compile_to_pipeline()
+        super().compile()
 
 
 __all__ = ["Orchestrator"]

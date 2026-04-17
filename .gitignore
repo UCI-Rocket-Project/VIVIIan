@@ -42,3 +42,4 @@ imgui.ini
 *.obj
 
 src/gui_assets/compiled/
+opencode.sh

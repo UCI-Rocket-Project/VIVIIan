@@ -1,34 +1,40 @@
 # VIVIIan Docs
 
-VIVIIan is a Python-first architecture for hardware-agnostic telemetry and control systems.
-The architecture centers on explicit typed boundaries between `deviceinterface`
-and deployable units built on the shared `orchestrator` base, with `backend`
-and `frontend` as its primary specializations, `pythusa` on local hot paths,
-and `pyarrow` across deployment boundaries.
+VIVIIan is a Python-first architecture for hardware-agnostic telemetry and
+control systems.
+The architecture centers on an explicit `deviceinterface` boundary, a
+`pythusa`-powered `orchestrator` composition root, and local tool collections
+for processing, storage, GUI, simulation, and transport concerns.
 
 The repo is an in-progress implementation of that architecture.
 The strongest working code today is concentrated in a few areas:
 
 - `gui_utils` for ImGui-native operator-desk primitives
-- `simulation_utils` for deterministic, repeating telemetry-like signals defined in NumPy `rfft` space
+- `simulation_utils` for deterministic, repeating telemetry-like signals
+  defined in NumPy `rfft` space
 - `deviceinterface` for an early Arrow-based streaming boundary
 - `connector_utils` for a latest-only Arrow Flight connector runtime
+  with an optional receive-side appended mirror stream
+- `datastorage_utils` for append-only Parquet persistence helpers
+- `orchestrator` for the in-progress `Pipeline`-subclass composition layer
 
-The storage, backend, frontend, and orchestrator-derived deployment layers are
-not yet implemented to the full architectural shape, and the connector layer
-now exists only as initial primitives, so the docs separate target
-architecture from current code carefully.
+The full orchestrator/tool-collection runtime described in
+[Architecture](architecture.md) is still being built, so the docs separate
+target architecture from current code carefully.
 
 ## Start Here
 
 - [Architecture](architecture.md)
-  The target system model, runtime boundaries, and deployable roles.
+  The target system model, runtime boundaries, and modular composition rules.
 - [Getting Started](getting-started.md)
   Local environment setup, runnable commands, and the current repo surface.
 - [Orchestrator](orchestrator.md)
-  The shared deployment base and the boundary between structural stream wiring and local runtime adaptation.
+  The intended `Pipeline`-subclass composition root, its private topology
+  bookkeeping role, and the boundary between structural stream wiring and local
+  runtime adaptation.
 - [Connectors](connectors.md)
-  The current latest-only Flight connector runtime, read/write semantics, and benchmark usage.
+  The current latest-only Flight connector runtime, read/write semantics, and
+  optional local mirror-stream behavior.
 - [GUI Utils](gui-utils.md)
   `SensorGraph`, `GraphSeries`, buttons, and gauges for operator desks.
 - [3D Viewer](3d-viewer.md)
@@ -42,19 +48,28 @@ The current codebase can already do a few concrete things:
 
 - render multi-series time graphs with explicit timestamped numeric input
 - render generic state buttons for operator workflows
-- render OBJ-backed 3D telemetry models with per-body coloring and pose-driven orientation
+- render OBJ-backed 3D telemetry models with per-body coloring and pose-driven
+  orientation
 - export and reconstruct graph and button config from TOML
 - generate exact repeating signals from sparse `rfft` coefficients
 - batch and transmit typed Arrow tables from the device-interface boundary
-- publish and subscribe latest-only numeric batches through Arrow Flight connectors
-- run a manual ImGui signal desk example that exercises the graph and simulator stack together
+- publish and subscribe latest-only numeric batches through Arrow Flight
+  connectors
+- mirror receive-side connector data into one appended local frame when a local
+  downstream consumer needs transport state inline
+- persist fixed-shape numeric batches into append-only Parquet partitions
+- run a manual ImGui signal desk example that exercises the graph and simulator
+  stack together
 
 The mental model is:
 
-- `simulation_utils` produces deterministic `(timestamp, value)` batches
-- a small reader adapter feeds those batches into `gui_utils.SensorGraph`
+- `simulation_utils` produces deterministic numeric batches
+- `deviceinterface` and `connector_utils` define explicit Arrow boundaries
+- `orchestrator` is where a deployment-local `pythusa` pipeline will be
+  assembled
 - `gui_utils` handles windowing, plotting, and operator controls
-- `deviceinterface` shows the intended Arrow-oriented edge between local device logic and the rest of the system
+- `datastorage_utils` persists typed numeric output when a deployment needs
+  archival
 
 ## Current Design Direction
 
@@ -64,9 +79,12 @@ The current code is written in a style that fits a high-rate telemetry desk:
 - connectors keep current state rather than building lossless live queues
 - graphs consume explicit timestamps rather than assuming wall-clock plotting
 - simulators are deterministic and reconstructable from compact config
+- storage is columnar and append oriented
 - the GUI layer is ImGui-first rather than web-first
 
-That makes the current modules good building blocks for the broader VIVIIan architecture, even though the full multi-unit runtime described in [Architecture](architecture.md) does not exist yet.
+That makes the current modules good building blocks for the broader VIVIIan
+architecture, even though the full composed runtime described in
+[Architecture](architecture.md) does not exist yet.
 
 ## Quick Example
 
@@ -82,8 +100,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from gui_utils.graphs import GraphSeries, SensorGraph
-from simulation_utils import random_sparse_spectrum_generator
+from viviian.gui_utils.graphs import GraphSeries, SensorGraph
+from viviian.simulation_utils import random_sparse_spectrum_generator
 
 
 class Reader:
@@ -134,4 +152,5 @@ graph.consume()
 print(graph.series_snapshot("signal_1"))
 ```
 
-This example does not open a GUI window by itself, but it shows the actual data contract that the current graph runtime expects.
+This example does not open a GUI window by itself, but it shows the actual data
+contract that the current graph runtime expects.

@@ -5,7 +5,7 @@ Manual ImGui runnable for the new gauge widgets.
 
 Run from the repo root:
 
-    /Users/daciwolf/Documents/VIVIIan/.venv/bin/python tests/gui_runnables/gauge_lab.py
+    python tests/gui_runnables/gauge_lab.py
 
 Desktop requirements:
     pip install glfw PyOpenGL
@@ -18,19 +18,13 @@ The runnable shows one deterministic scalar signal in three views:
 """
 
 import argparse
-from pathlib import Path
-import sys
 import time
 from typing import Any, Sequence
 
 import numpy as np
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-from gui_utils.gauges import AnalogNeedleGauge, LedBarGauge
-from gui_utils.graphs import GraphSeries, SensorGraph
+from viviian.gui_utils.gauges import AnalogNeedleGauge, LedBarGauge
+from viviian.gui_utils.graphs import GraphSeries, SensorGraph
 from tests.gui_runnables._support import BufferedFrameReader, apply_operator_theme
 
 _WINDOW_TITLE = "Gauge Lab"

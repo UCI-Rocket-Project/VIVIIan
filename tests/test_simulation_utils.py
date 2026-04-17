@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-from simulation_utils.simulators import (
+from viviian.simulation_utils.simulators import (
     RotationMatrixSignalGenerator,
     SpectralSignalConfig,
     SpectralTerm,

@@ -5,7 +5,7 @@ Manual ImGui signal-lab runnable for the current GUI utils stack.
 
 Run from the repo root:
 
-    /Users/daciwolf/Documents/VIVIIan/.venv/bin/python tests/gui_runnables/signal_graph_lab.py
+    python tests/gui_runnables/signal_graph_lab.py
 
 Desktop requirements:
     pip install glfw PyOpenGL
@@ -18,21 +18,14 @@ configured graph window.
 """
 
 import argparse
-from pathlib import Path
-import sys
 import time
 from typing import Any, Sequence
 
 import numpy as np
 
-# Allow direct execution via `python tests/gui_runnables/signal_graph_lab.py`.
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-from gui_utils.buttons import MomentaryButton, ToggleButton
-from gui_utils.graphs import GraphSeries, SensorGraph
-from simulation_utils import (
+from viviian.gui_utils.buttons import MomentaryButton, ToggleButton
+from viviian.gui_utils.graphs import GraphSeries, SensorGraph
+from viviian.simulation_utils import (
     SpectralSignalGenerator,
     random_sparse_spectrum_generator,
 )

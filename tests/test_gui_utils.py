@@ -6,19 +6,19 @@ from unittest import mock
 
 import numpy as np
 
-from gui_utils.buttons import (
+from viviian.gui_utils.buttons import (
     ButtonStateUpdate,
     MomentaryButton,
     StateButton,
     ToggleButton,
 )
-from gui_utils.gauges import (
+from viviian.gui_utils.gauges import (
     AnalogNeedleGauge,
     LedBarGauge,
     SensorGauge,
     _advance_display_value,
 )
-from gui_utils.graphs import GraphSeries, SensorGraph
+from viviian.gui_utils.graphs import GraphSeries, SensorGraph
 
 
 class FakeReader:
@@ -368,7 +368,7 @@ class SensorGraphTests(unittest.TestCase):
         graph.bind({"outlier": outlier_reader, "normal": normal_reader})
         graph.consume()
 
-        with mock.patch("gui_utils.graphs._require_imgui", return_value=FakeImgui([True, False])):
+        with mock.patch("viviian.gui_utils.graphs._require_imgui", return_value=FakeImgui([True, False])):
             graph._render_visibility_controls(FakeImgui([True, False]))
 
         self.assertEqual(graph._y_limits, (0.92, 2.08))
@@ -607,7 +607,7 @@ class SensorGaugeTests(unittest.TestCase):
         gauge._display_value = 60.0
         fake_imgui = FakeImgui(delta_time=0.05)
 
-        with mock.patch("gui_utils.gauges._require_imgui", return_value=fake_imgui):
+        with mock.patch("viviian.gui_utils.gauges._require_imgui", return_value=fake_imgui):
             gauge.render()
 
         call_names = [name for name, _args in fake_imgui.get_window_draw_list().calls]
@@ -643,7 +643,7 @@ class SensorGaugeTests(unittest.TestCase):
         gauge._display_value = 75.0
         fake_imgui = FakeImgui(delta_time=0.05)
 
-        with mock.patch("gui_utils.gauges._require_imgui", return_value=fake_imgui):
+        with mock.patch("viviian.gui_utils.gauges._require_imgui", return_value=fake_imgui):
             gauge.render()
 
         call_names = [name for name, _args in fake_imgui.get_window_draw_list().calls]
@@ -657,7 +657,7 @@ class SensorGaugeTests(unittest.TestCase):
         gauge._display_value = 100.0
         fake_imgui = FakeImgui(delta_time=0.05)
 
-        with mock.patch("gui_utils.gauges._require_imgui", return_value=fake_imgui):
+        with mock.patch("viviian.gui_utils.gauges._require_imgui", return_value=fake_imgui):
             gauge.render()
 
         fill_calls = [
@@ -677,7 +677,7 @@ class SensorGaugeTests(unittest.TestCase):
         gauge._display_value = 100.0
         fake_imgui = FakeImgui(delta_time=0.05)
 
-        with mock.patch("gui_utils.gauges._require_imgui", return_value=fake_imgui):
+        with mock.patch("viviian.gui_utils.gauges._require_imgui", return_value=fake_imgui):
             gauge.render()
 
         fill_calls = [
@@ -736,7 +736,7 @@ class ButtonTests(unittest.TestCase):
             state=False,
         )
 
-        with mock.patch("gui_utils.buttons._require_imgui", return_value=FakeImgui([True])):
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=FakeImgui([True])):
             update = button.render()
 
         self.assertEqual(
@@ -753,7 +753,7 @@ class ButtonTests(unittest.TestCase):
             state="pulse",
         )
 
-        with mock.patch("gui_utils.buttons._require_imgui", return_value=FakeImgui([True])):
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=FakeImgui([True])):
             update = button.render()
 
         self.assertEqual(
@@ -771,7 +771,7 @@ class ButtonTests(unittest.TestCase):
             interlock_ids=("armed",),
         )
 
-        with mock.patch("gui_utils.buttons._require_imgui", return_value=FakeImgui([True, True])):
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=FakeImgui([True, True])):
             update_gate_blocked = button.render(
                 gate_states={"control_gate": False},
                 interlock_states={"armed": True},

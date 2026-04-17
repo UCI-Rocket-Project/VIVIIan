@@ -63,7 +63,7 @@ The preferred API names are `Model*`.
 Compile an OBJ file once:
 
 ```python
-from gui_utils import compile_obj_to_cache
+from viviian.gui_utils import compile_obj_to_cache
 
 cache_path, manifest_path = compile_obj_to_cache(
     "rocket.obj",
@@ -171,7 +171,7 @@ All body color ranges are explicit.
 ## Basic Example
 
 ```python
-from gui_utils import ModelBodyBinding, ModelViewerConfig
+from viviian.gui_utils import ModelBodyBinding, ModelViewerConfig
 
 body_20 = ModelBodyBinding(
     binding_id="body_20",

@@ -1,5 +1,5 @@
 site_name: VIVIIan Docs
-site_description: Python-first architecture and toolkit for hardware-agnostic telemetry, control, and operator-facing frontends
+site_description: Python-first architecture and toolkit for hardware-agnostic telemetry, control, and operator-facing tool collections
 
 theme:
   name: mkdocs
@@ -8,11 +8,13 @@ nav:
   - Home: index.md
   - Architecture: architecture.md
   - Getting Started: getting-started.md
-  - Orchestrator: orchestrator.md
+  - Device Interface: deviceinterface.md
+  - Data Storage: datastorage.md
   - Connectors: connectors.md
+  - Orchestrator: orchestrator.md
+  - Frontend: frontend.md
   - GUI Utils: gui-utils.md
   - 3D Viewer: 3d-viewer.md
-  - 3D Viewer Maintainer Notes: 3d-viewer-maintainer.md
   - Simulation Utils: simulation-utils.md
   - Examples: examples.md
   - Roadmap: roadmap.md

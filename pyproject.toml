@@ -7,15 +7,19 @@ name = "viviian"
 version = "0.1.0"
 description = "VIVIIan API for hardware-agnostic data sampling"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 dependencies = [
     "pyarrow",
-    "nidaqmx",
     "numpy",
     "toml",
-    "scipy"
+    "scipy",
+    "networkx",
+    "pythusa",
 ]
 
-[tool.setuptools]
-package-dir = {"viviian" = "api"}
-packages = ["viviian"]
+[project.optional-dependencies]
+ni  = ["nidaqmx"]
+gui = ["imgui", "glfw", "PyOpenGL"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

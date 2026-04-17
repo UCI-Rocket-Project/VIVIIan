@@ -110,7 +110,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from gui_utils.graphs import GraphSeries, SensorGraph
+from viviian.gui_utils.graphs import GraphSeries, SensorGraph
 
 
 class Reader:
@@ -228,7 +228,7 @@ Every button emits a `ButtonStateUpdate` with:
 `ToggleButton` stores a boolean state and flips it on press.
 
 ```python
-from gui_utils.buttons import ToggleButton
+from viviian.gui_utils.buttons import ToggleButton
 
 button = ToggleButton(
     button_id="signal_1",
@@ -247,7 +247,7 @@ if update is not None:
 `MomentaryButton` emits a configured value without latching its own state machine.
 
 ```python
-from gui_utils.buttons import MomentaryButton
+from viviian.gui_utils.buttons import MomentaryButton
 
 button = MomentaryButton(
     button_id="generate_bank",
@@ -370,7 +370,7 @@ The default footprint is compact enough for dashboard grids:
 - `arc_thickness = 14.0`
 
 ```python
-from gui_utils.gauges import AnalogNeedleGauge
+from viviian.gui_utils.gauges import AnalogNeedleGauge
 
 gauge = AnalogNeedleGauge(
     "chamber_pressure",
@@ -390,7 +390,7 @@ The displayed value eases toward the latest consumed reading using a simple fram
 By default it uses 10 sections.
 
 ```python
-from gui_utils.gauges import LedBarGauge
+from viviian.gui_utils.gauges import LedBarGauge
 
 gauge = LedBarGauge(
     "battery",
@@ -441,7 +441,7 @@ rebuilt = AnalogNeedleGauge.reconstruct(path)
 or through the base dispatcher:
 
 ```python
-from gui_utils.gauges import SensorGauge
+from viviian.gui_utils.gauges import SensorGauge
 
 rebuilt = SensorGauge.reconstruct(path)
 ```

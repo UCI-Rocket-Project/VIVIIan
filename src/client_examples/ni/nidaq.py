@@ -9,7 +9,7 @@ from nidaqmx.stream_readers import AnalogMultiChannelReader
 
 import tomllib
 
-from deviceinterface import DeviceInterface
+from viviian.deviceinterface import DeviceInterface
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("nidaq_stream")

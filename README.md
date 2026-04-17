@@ -1,7 +1,7 @@
 # VIVIIan
 
 VIVIIan is a Python-first architecture and toolkit for hardware-agnostic telemetry and control systems.
-It is designed around typed numeric streams, explicit runtime boundaries, deterministic reconstruction, and operator-facing frontends.
+It is designed around typed numeric streams, explicit runtime boundaries, deterministic reconstruction, and operator-facing tool collections composed by a local orchestrator runtime.
 
 ![VIVIIan architecture diagram](docs/assets/vivian_architecture.svg)
 
@@ -19,9 +19,11 @@ The repo already contains working pieces of that larger architecture:
 - `simulation_utils` for deterministic repeating signal simulators in NumPy `rfft` space
 - `deviceinterface` for an early Arrow batch streaming boundary
 - `connector_utils` for initial strict-schema Arrow Flight connector primitives
+- `datastorage_utils` for append-only Parquet persistence
+- `orchestrator` for the early `pythusa.Pipeline`-subclass composition layer
 - `tests/gui_runnables/signal_graph_lab.py` and `tests/gui_runnables/rocket_viewer_lab.py` for manual end-to-end GUI examples
 
-Other architecture-aligned areas still exist only partially right now, especially the storage and orchestrator layers and the larger multi-unit runtime. The repo should be read as an in-progress implementation of the architecture rather than a finished end-to-end system.
+Other architecture-aligned areas still exist only partially right now, especially reusable processing tools, tighter orchestrator composition helpers, and the larger multi-deployment runtime. The repo should be read as an in-progress implementation of the architecture rather than a finished end-to-end system.
 
 ## Documentation
 
@@ -46,13 +48,7 @@ Create and activate a virtual environment, then install the current repo depende
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt numpy imgui glfw PyOpenGL mkdocs
-```
-
-If you only need the core Python dependencies and not the desktop/docs tools:
-
-```bash
-python -m pip install -r requirements.txt
+pip install -e ".[gui]"
 ```
 
 ## Run Tests
@@ -65,7 +61,10 @@ python -m unittest \
   tests.test_rocket_viewer_lab \
   tests.test_3dmodel \
   tests.test_gauge_lab \
-  tests.test_deviceinterface_utils
+  tests.test_connector_utils \
+  tests.test_datastorage_utils \
+  tests.test_deviceinterface_utils \
+  tests.test_orchestrator
 ```
 
 ## Run The Signal Lab
@@ -110,10 +109,12 @@ Implemented now:
 - a compact OBJ-backed 3D viewer runtime and example
 - an early `deviceinterface` Arrow streaming path
 - strict-schema Arrow Flight send/receive connector primitives
+- append-only Parquet storage helpers
+- an early `Orchestrator` composition root built on `pythusa.Pipeline`
 - working manual GUI examples and regression tests
 
 Still incomplete relative to the architecture:
 
-- backend-owned storage and archival
-- orchestrated multi-unit topology launch
-- the full backend/frontend/deviceinterface deployment flow described in `architecture.md`
+- higher-level processing tool collections
+- richer orchestrated topology and deployment launch helpers
+- the full deviceinterface/orchestrator runtime described in `architecture.md`

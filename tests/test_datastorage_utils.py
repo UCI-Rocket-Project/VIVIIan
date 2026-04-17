@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 import pyarrow as pa
 
-from datastorage_utils import ParquetDatabase
+from viviian.datastorage_utils import ParquetDatabase
 
 
 class TestParquetDatabase(unittest.TestCase):

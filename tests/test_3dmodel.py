@@ -7,7 +7,7 @@ import unittest
 
 import numpy as np
 
-from gui_utils import (
+from viviian.gui_utils import (
     GradientStop,
     ModelBodyBinding,
     ModelViewer,

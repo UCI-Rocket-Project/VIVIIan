@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-`api/` contains the packaged `viviian` backend transport code. The active root libraries are `gui_utils/` for ImGui widgets and `simulation_utils/` for deterministic signal generators. `tests/` mirrors those modules with unit coverage, while `tests/gui_runnables/` holds manual ImGui lab apps such as `signal_graph_lab.py` and `rocket_viewer_lab.py`.
+The active root libraries are `gui_utils/` for ImGui widgets, `simulation_utils/` for deterministic signal generators, `connector_utils/` for Arrow transport helpers, `datastorage_utils/` for Parquet persistence, `deviceinterface/` for hardware-boundary publishing, and `orchestrator/` for the `pythusa.Pipeline`-based composition layer. `tests/` mirrors those modules with unit coverage, while `tests/gui_runnables/` holds manual ImGui lab apps such as `signal_graph_lab.py` and `rocket_viewer_lab.py`.
 
 `docs/` is the MkDocs source tree. `/site`, `imgui.ini`, `*.obj`, and `gui_assets/compiled/` are generated or local artifacts; avoid committing changes there unless the task explicitly requires it. `clients/` and `benchmarking/` contain examples and performance scripts. `pythusa/` and `rocket2-webservice-gui/` are semi-independent subprojects with their own tooling and should be treated as separate scopes unless a change intentionally spans them.
 
@@ -12,7 +12,7 @@
 
 `python -m pip install -r requirements.txt numpy imgui glfw PyOpenGL mkdocs` installs the core dependencies plus the optional GUI and docs tools used in this repo.
 
-`python -m unittest tests.test_gui_utils tests.test_simulation_utils tests.test_signal_graph_lab tests.test_rocket_viewer_lab tests.test_3dmodel tests.test_gauge_lab` runs the root regression suite.
+`PYTHONPATH=src python -m unittest tests.test_gui_utils tests.test_simulation_utils tests.test_signal_graph_lab tests.test_rocket_viewer_lab tests.test_3dmodel tests.test_gauge_lab tests.test_connector_utils tests.test_datastorage_utils tests.test_deviceinterface_utils tests.test_orchestrator` runs the root regression suite.
 
 `python tests/gui_runnables/signal_graph_lab.py` and `python tests/gui_runnables/rocket_viewer_lab.py` launch the manual GUI labs.
 

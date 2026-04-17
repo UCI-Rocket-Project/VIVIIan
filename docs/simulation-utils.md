@@ -101,7 +101,7 @@ with:
 ## Hand-Authored Signal Example
 
 ```python
-from simulation_utils import SpectralSignalConfig, SpectralTerm
+from viviian.simulation_utils import SpectralSignalConfig, SpectralTerm
 
 config = SpectralSignalConfig(
     signal_id="copv_pressure",
@@ -164,7 +164,7 @@ That TOML stores:
 The fastest way to create plausible signals for demos is:
 
 ```python
-from simulation_utils import random_sparse_spectrum_generator
+from viviian.simulation_utils import random_sparse_spectrum_generator
 
 generator = random_sparse_spectrum_generator(
     signal_id="signal_1",

@@ -6,22 +6,35 @@ from unittest import mock
 import numpy as np
 import pyarrow as pa
 
-from deviceinterface import DeviceInterface
-import deviceinterface.deviceinterface as deviceinterface_module
+from viviian.connector_utils import StreamSpec
+from viviian.deviceinterface import DeviceInterface
+import viviian.deviceinterface.deviceinterface as deviceinterface_module
 
 
-class FakeStreamServer:
-    def __init__(self, host: str, port: int) -> None:
-        self.host = host
+class FakeSendConnector:
+    def __init__(self, spec, port, host="127.0.0.1"):
+        self.spec = spec
         self.port = port
-        self.sent_tables: list[pa.Table] = []
+        self.host = host
+        self.sent_batches: list[np.ndarray] = []
+        self.opened = False
         self.closed = False
 
-    def send_table(self, table: pa.Table) -> None:
-        self.sent_tables.append(table)
+    def open(self) -> None:
+        self.opened = True
 
     def close(self) -> None:
         self.closed = True
+
+    def send_numpy(self, batch: np.ndarray) -> None:
+        self.sent_batches.append(batch.copy())
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, *a):
+        self.close()
 
 
 class FakeThread:
@@ -65,40 +78,40 @@ class DeviceInterfaceTests(unittest.TestCase):
             }
         )
 
-    def build_device_interface(self, **kwargs) -> DeviceInterface:
-        return DeviceInterface(self.make_schema(), **kwargs)
+    def build_device_interface(self, **kwargs) -> tuple[DeviceInterface, FakeSendConnector]:
+        fake_sender = FakeSendConnector(spec=None, port=0)
+        di = DeviceInterface(self.make_schema(), sender=fake_sender, **kwargs)
+        return di, fake_sender
 
     def test_package_exports_device_interface_class(self) -> None:
         self.assertIs(DeviceInterface, deviceinterface_module.DeviceInterface)
 
-    @mock.patch("deviceinterface_utils.deviceinterface.ArrowBatchStreamServer", FakeStreamServer)
     def test_tx_table_splits_batches_by_row_cap(self) -> None:
-        device_interface = self.build_device_interface(max_rows=2)
+        device_interface, fake_sender = self.build_device_interface(max_rows=2)
         device_interface.ingress_table(self.make_table([1.0, 2.0, 3.0]))
         device_interface.ingress_table(self.make_table([4.0, 5.0]))
 
         device_interface._tx_table()
 
-        self.assertEqual([table.num_rows for table in device_interface.stream_server.sent_tables], [2, 2, 1])
+        self.assertEqual(len(fake_sender.sent_batches), 3)
+        self.assertTrue(all(b.shape == (2, 2) for b in fake_sender.sent_batches))
         self.assertEqual(device_interface.stats["sent_batches"], 3)
         self.assertEqual(device_interface.stats["sent_rows"], 5)
         self.assertEqual(device_interface.stats["queued_rows"], 0)
         self.assertEqual(device_interface.table_list, [])
 
-    @mock.patch("deviceinterface_utils.deviceinterface.ArrowBatchStreamServer", FakeStreamServer)
     def test_ingress_rejects_schema_mismatch_without_queueing(self) -> None:
-        device_interface = self.build_device_interface()
+        device_interface, fake_sender = self.build_device_interface()
 
         device_interface.ingress_table(self.make_bad_table())
 
         self.assertEqual(device_interface.stats["queued_rows"], 0)
         self.assertEqual(device_interface.table_list, [])
-        self.assertEqual(device_interface.stream_server.sent_tables, [])
+        self.assertEqual(fake_sender.sent_batches, [])
 
-    @mock.patch("deviceinterface_utils.deviceinterface.ArrowBatchStreamServer", FakeStreamServer)
-    @mock.patch("deviceinterface_utils.deviceinterface.threading.Thread", FakeThread)
+    @mock.patch("viviian.deviceinterface.deviceinterface.threading.Thread", FakeThread)
     def test_exit_flushes_remaining_rows_and_closes_stream_server(self) -> None:
-        device_interface = self.build_device_interface(max_rows=4)
+        device_interface, fake_sender = self.build_device_interface(max_rows=4)
 
         with device_interface as active_device_interface:
             active_device_interface.ingress_table(self.make_table([1.0, 2.0, 3.0]))
@@ -107,8 +120,21 @@ class DeviceInterfaceTests(unittest.TestCase):
         self.assertIsNotNone(device_interface._sender_thread)
         self.assertTrue(device_interface._sender_thread.started)
         self.assertEqual(device_interface._sender_thread.join_timeout, 2.0)
-        self.assertEqual([table.num_rows for table in device_interface.stream_server.sent_tables], [3])
-        self.assertTrue(device_interface.stream_server.closed)
+        self.assertEqual(len(fake_sender.sent_batches), 1)
+        self.assertTrue(fake_sender.closed)
+
+    @mock.patch("viviian.deviceinterface.deviceinterface.SendConnector")
+    def test_publish_endpoint_arguments_are_forwarded_to_stream_server(self, MockSendConnector) -> None:
+        mock_sender = mock.MagicMock()
+        MockSendConnector.return_value = mock_sender
+
+        DeviceInterface(self.make_schema(), publish_host="0.0.0.0", publish_port=9001)
+
+        MockSendConnector.assert_called_once()
+        args, kwargs = MockSendConnector.call_args
+        self.assertIsInstance(args[0], StreamSpec)
+        self.assertEqual(args[1], 9001)
+        self.assertEqual(kwargs.get("host"), "0.0.0.0")
 
 
 if __name__ == "__main__":

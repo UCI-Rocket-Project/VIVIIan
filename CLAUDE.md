@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-VIVIIan is a rocket ground-station library providing ImGui-based operator-desk primitives for real-time telemetry visualization. The core library lives in `gui_utils/` and `simulation_utils/`. `connector_utils/`, `datastorage_utils/`, and root `main.py`/`configure.py` are stubs not yet implemented.
+VIVIIan is a rocket ground-station library providing ImGui-based operator-desk primitives for real-time telemetry visualization. All library code lives under `src/viviian/` and is importable as `from viviian.<subpackage> import <name>` after `pip install -e .`.
 
 Two semi-independent subsystems exist as subdirectories:
 - `pythusa/` — shared-memory multiprocess DSP pipeline runtime (separate package)
@@ -15,12 +15,12 @@ Two semi-independent subsystems exist as subdirectories:
 ### Core Library (root)
 
 ```bash
-# Install dependencies
-python3 -m venv .venv && source .venv/bin/activate
-pip install numpy imgui glfw PyOpenGL  # glfw/PyOpenGL needed for interactive labs
+# Install (requires Python 3.12+)
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -e ".[gui]"  # adds imgui glfw PyOpenGL for interactive labs
 
-# Run all tests
-python -m unittest tests.test_gui_utils tests.test_simulation_utils tests.test_signal_graph_lab tests.test_rocket_viewer_lab tests.test_3dmodel tests.test_gauge_lab
+# Run all tests (no PYTHONPATH needed)
+python -m unittest tests.test_gui_utils tests.test_simulation_utils tests.test_signal_graph_lab tests.test_rocket_viewer_lab tests.test_3dmodel tests.test_gauge_lab tests.test_connector_utils tests.test_datastorage_utils tests.test_deviceinterface_utils
 
 # Run a single test class
 python -m unittest tests.test_gui_utils.SensorGraphTests
@@ -62,7 +62,7 @@ make test      # Run Playwright e2e tests
 
 All telemetry data moves as NumPy arrays with shape `(2, N)` — row 0 is timestamps, row 1 is values. dtype is `float32` or `float64`. This fixed-shape frame contract is enforced by `gui_utils/_streaming.py` (`validate_numeric_reader`, `normalize_numeric_batch`) before any widget consumes data.
 
-### gui_utils/
+### viviian.gui_utils
 
 ImGui operator-desk widgets. Each widget is self-contained and TOML-persistent via `gui_utils/configure.py`.
 
@@ -73,7 +73,7 @@ ImGui operator-desk widgets. Each widget is self-contained and TOML-persistent v
 - **`_streaming.py`** — Reader validation and batch normalization (the boundary layer).
 - **`configure.py`** — TOML read/write helpers. Persistence files carry `format_version` and `kind` fields.
 
-### simulation_utils/
+### viviian.simulation_utils
 
 Deterministic, seeded signal generation for testing and demos.
 

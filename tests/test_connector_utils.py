@@ -1,15 +1,274 @@
 from __future__ import annotations
 
+import os
 import time
 import unittest
+import uuid
 from typing import Callable, TypeVar
 
 import numpy as np
 import pyarrow as pa
 
-from connector_utils import ReceiveConnector, SendConnector, StreamSpec
+from viviian.connector_utils import ReceiveConnector, SendConnector, StreamSpec
+try:
+    from pythusa import Pipeline
+    from pythusa._buffers.ring import SharedRingBuffer
+    from pythusa._pipeline._stream_io import make_reader_binding, make_writer_binding
+except ModuleNotFoundError:  # pragma: no cover - integration env dependency
+    Pipeline = None
+    SharedRingBuffer = None
+    make_reader_binding = None
+    make_writer_binding = None
 
 T = TypeVar("T")
+
+_PIPELINE_CONNECTOR_PORT = 9129
+_PIPELINE_STREAM_ID = "telemetry"
+_PIPELINE_BATCH = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
+_MIRRORED_STREAM_NAME = "mirrored"
+_MIRRORED_STREAM_BASE_SHAPE = _PIPELINE_BATCH.shape
+_MIRRORED_STREAM_SHAPE = (2, 4)
+_MIRRORED_STREAM_DTYPE = np.float64
+_MIRRORED_LIVE_FRAME_COUNT = 1
+_MIRRORED_TOTAL_FRAME_COUNT = 2
+_MIRRORED_DONE_EVENT = "done"
+_MIRRORED_TIMEOUT_SECONDS = 3.0
+_CONNECTOR_STRESS_FRAME_COUNT = int(
+    os.environ.get("CONNECTOR_STRESS_FRAME_COUNT", "100000")
+)
+_CONNECTOR_STRESS_TIMEOUT_SECONDS = 30.0
+_RUN_CONNECTOR_STRESS_TESTS = os.environ.get("RUN_CONNECTOR_STRESS_TESTS") == "1"
+_TIME_RECEIVED_COLUMN = 2
+_CONNECTION_ALIVE_COLUMN = 3
+
+
+def _connector_schema() -> pa.Schema:
+    return pa.schema(
+        [
+            pa.field("signal", pa.float64()),
+            pa.field("weight", pa.float64()),
+        ]
+    )
+
+
+def _mirrored_frame_target_nbytes(frame_count: int) -> int:
+    frame_nbytes = (
+        int(np.prod(_MIRRORED_STREAM_SHAPE, dtype=np.int64))
+        * np.dtype(_MIRRORED_STREAM_DTYPE).itemsize
+    )
+    return frame_nbytes * frame_count
+
+
+def _wait_for_mirrored_frames(
+    mirrored,
+    expected_frame_count: int,
+    *,
+    timeout_seconds: float = _MIRRORED_TIMEOUT_SECONDS,
+) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    target_nbytes = _mirrored_frame_target_nbytes(expected_frame_count)
+    while time.monotonic() < deadline:
+        if int(mirrored.raw.get_write_pos()) >= target_nbytes:
+            return
+        time.sleep(0.01)
+    raise RuntimeError("timed out waiting for mirrored frames to be written")
+
+
+def _release_view(view: memoryview | None) -> None:
+    if view is None:
+        return
+    try:
+        view.release()
+    except Exception:
+        pass
+
+
+def _make_ring(
+    *,
+    size: int,
+) -> tuple[SharedRingBuffer, SharedRingBuffer] | tuple[None, None]:
+    if SharedRingBuffer is None:
+        return None, None
+
+    name = f"connector{uuid.uuid4().hex[:10]}"
+    writer = SharedRingBuffer(
+        name=name,
+        create=True,
+        size=size,
+        num_readers=1,
+        reader=SharedRingBuffer._NO_READER,
+        cache_align=False,
+    )
+    reader = SharedRingBuffer(
+        name=name,
+        create=False,
+        size=size,
+        num_readers=1,
+        reader=0,
+        cache_align=False,
+    )
+    return writer, reader
+
+
+def _close_ring(ring: SharedRingBuffer | None, *, unlink: bool) -> None:
+    if ring is None:
+        return
+    try:
+        ring.close()
+    finally:
+        if unlink:
+            try:
+                ring.unlink()
+            except FileNotFoundError:
+                pass
+
+
+def _read_with_overridden_size(
+    stream,
+    *,
+    shape: tuple[int, ...],
+    dtype: np.dtype,
+) -> np.ndarray | None:
+    stream.frame_nbytes = int(np.prod(shape, dtype=np.int64)) * np.dtype(dtype).itemsize
+    view = stream.look()
+    if view is None:
+        return None
+    try:
+        return np.frombuffer(view, dtype=dtype).reshape(shape).copy()
+    finally:
+        _release_view(view)
+        stream.increment()
+
+
+def _assert_live_mirrored_frame(frame: np.ndarray) -> None:
+    if frame.shape != _MIRRORED_STREAM_SHAPE:
+        raise AssertionError(
+            f"expected live mirrored frame shape {_MIRRORED_STREAM_SHAPE}, "
+            f"got {tuple(frame.shape)}"
+        )
+    np.testing.assert_array_equal(
+        frame[:, : _PIPELINE_BATCH.shape[1]],
+        _PIPELINE_BATCH,
+    )
+    if not np.all(frame[:, _TIME_RECEIVED_COLUMN] == frame[0, _TIME_RECEIVED_COLUMN]):
+        raise AssertionError("time_received column must be constant across the live frame")
+    if not frame[0, _TIME_RECEIVED_COLUMN] > 0.0:
+        raise AssertionError("time_received must be > 0 for the live frame")
+    if not np.all(frame[:, _CONNECTION_ALIVE_COLUMN] == 1.0):
+        raise AssertionError("connection_alive must be 1.0 for the live frame")
+
+
+def _assert_disconnect_mirrored_frame(frame: np.ndarray) -> None:
+    if frame.shape != _MIRRORED_STREAM_SHAPE:
+        raise AssertionError(
+            f"expected disconnect mirrored frame shape {_MIRRORED_STREAM_SHAPE}, "
+            f"got {tuple(frame.shape)}"
+        )
+    if not np.all(np.isnan(frame[:, : _PIPELINE_BATCH.shape[1]])):
+        raise AssertionError("disconnect mirrored payload must be NaN")
+    if not np.all(frame[:, _TIME_RECEIVED_COLUMN] == frame[0, _TIME_RECEIVED_COLUMN]):
+        raise AssertionError(
+            "time_received column must be constant across the disconnect frame"
+        )
+    if not frame[0, _TIME_RECEIVED_COLUMN] > 0.0:
+        raise AssertionError("time_received must be > 0 for the disconnect frame")
+    if not np.all(frame[:, _CONNECTION_ALIVE_COLUMN] == 0.0):
+        raise AssertionError("connection_alive must be 0.0 for the disconnect frame")
+
+
+def _make_integrity_batch(sequence: int) -> np.ndarray:
+    base = float(sequence * 10)
+    return np.array(
+        [
+            [base + 1.0, base + 2.0],
+            [base + 3.0, base + 4.0],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _assert_integrity_frame(frame: np.ndarray, sequence: int) -> None:
+    if frame.shape != _MIRRORED_STREAM_SHAPE:
+        raise AssertionError(
+            f"expected integrity mirrored frame shape {_MIRRORED_STREAM_SHAPE}, "
+            f"got {tuple(frame.shape)}"
+        )
+    np.testing.assert_array_equal(
+        frame[:, : _PIPELINE_BATCH.shape[1]],
+        _make_integrity_batch(sequence),
+    )
+    if not np.all(frame[:, _TIME_RECEIVED_COLUMN] == frame[0, _TIME_RECEIVED_COLUMN]):
+        raise AssertionError(
+            "time_received column must be constant across the integrity frame"
+        )
+    if not frame[0, _TIME_RECEIVED_COLUMN] > 0.0:
+        raise AssertionError("time_received must be > 0 for the integrity frame")
+    if not np.all(frame[:, _CONNECTION_ALIVE_COLUMN] == 1.0):
+        raise AssertionError("connection_alive must be 1.0 for the integrity frame")
+
+
+def _read_next_mirrored_frame(
+    reader,
+    *,
+    timeout_seconds: float,
+) -> np.ndarray | None:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        frame = _read_with_overridden_size(
+            reader,
+            shape=_MIRRORED_STREAM_SHAPE,
+            dtype=_MIRRORED_STREAM_DTYPE,
+        )
+        if frame is not None:
+            return frame
+        time.sleep(0)
+    return None
+
+
+def _connector_ingest_task(mirrored) -> None:
+    spec = StreamSpec(
+        stream_id=_PIPELINE_STREAM_ID,
+        schema=_connector_schema(),
+        shape=_PIPELINE_BATCH.shape,
+        stream=mirrored,
+    )
+
+    with ReceiveConnector(spec, port=_PIPELINE_CONNECTOR_PORT):
+        _wait_for_mirrored_frames(mirrored, _MIRRORED_TOTAL_FRAME_COUNT)
+
+
+def _connector_mirror_sink_task(mirrored, done) -> None:
+    deadline = time.monotonic() + _MIRRORED_TIMEOUT_SECONDS
+
+    while time.monotonic() < deadline:
+        live_frame = _read_with_overridden_size(
+            mirrored,
+            shape=_MIRRORED_STREAM_SHAPE,
+            dtype=_MIRRORED_STREAM_DTYPE,
+        )
+        if live_frame is None:
+            time.sleep(0.01)
+            continue
+        _assert_live_mirrored_frame(live_frame)
+        break
+    else:
+        raise RuntimeError("timed out waiting for live mirrored frame")
+
+    deadline = time.monotonic() + _MIRRORED_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        disconnect_frame = _read_with_overridden_size(
+            mirrored,
+            shape=_MIRRORED_STREAM_SHAPE,
+            dtype=_MIRRORED_STREAM_DTYPE,
+        )
+        if disconnect_frame is None:
+            time.sleep(0.01)
+            continue
+        _assert_disconnect_mirrored_frame(disconnect_frame)
+        done.signal()
+        return
+
+    raise RuntimeError("timed out waiting for disconnect mirrored frame")
 
 
 class CountingSendConnector(SendConnector):
@@ -36,12 +295,7 @@ class CountingSendConnector(SendConnector):
 
 class ConnectorUtilsTests(unittest.TestCase):
     def make_schema(self) -> pa.Schema:
-        return pa.schema(
-            [
-                pa.field("signal", pa.float64()),
-                pa.field("weight", pa.float64()),
-            ]
-        )
+        return _connector_schema()
 
     def make_spec(
         self,
@@ -49,15 +303,22 @@ class ConnectorUtilsTests(unittest.TestCase):
         stream_id: str = "telemetry",
         rows: int = 2,
         columns: int = 2,
+        stream: object | None = None,
     ) -> StreamSpec:
         return StreamSpec(
             stream_id=stream_id,
             schema=self.make_schema(),
             shape=(rows, columns),
+            stream=stream,
         )
 
-    def wait_for_value(self, getter: Callable[[], T | None]) -> T | None:
-        deadline = time.monotonic() + 2.0
+    def wait_for_value(
+        self,
+        getter: Callable[[], T | None],
+        *,
+        timeout_seconds: float = 2.0,
+    ) -> T | None:
+        deadline = time.monotonic() + timeout_seconds
         while time.monotonic() < deadline:
             value = getter()
             if value is not None:
@@ -288,6 +549,140 @@ class ConnectorUtilsTests(unittest.TestCase):
         assert received is not None
         np.testing.assert_array_equal(received, batches[-1])
         self.assertEqual(sender.do_get_call_count, 1)
+
+    @unittest.skipIf(Pipeline is None, "pythusa pipeline runtime dependencies are required")
+    def test_receiver_mirrors_into_real_pythusa_pipeline_stream(self) -> None:
+        sender = SendConnector(
+            self.make_spec(stream_id=_PIPELINE_STREAM_ID),
+            port=_PIPELINE_CONNECTOR_PORT,
+        )
+        pipe = Pipeline("connector-mirror-runtime")
+
+        try:
+            pipe.add_stream(
+                _MIRRORED_STREAM_NAME,
+                shape=_MIRRORED_STREAM_BASE_SHAPE,
+                dtype=_MIRRORED_STREAM_DTYPE,
+                frames=8,
+                cache_align=False,
+            )
+            pipe.add_event(_MIRRORED_DONE_EVENT)
+            pipe.add_task(
+                "ingest",
+                fn=_connector_ingest_task,
+                writes={_MIRRORED_STREAM_NAME: _MIRRORED_STREAM_NAME},
+            )
+            pipe.add_task(
+                "sink",
+                fn=_connector_mirror_sink_task,
+                reads={_MIRRORED_STREAM_NAME: _MIRRORED_STREAM_NAME},
+                events={_MIRRORED_DONE_EVENT: _MIRRORED_DONE_EVENT},
+            )
+
+            sender.open()
+            pipe.start()
+            sender.send_numpy(_PIPELINE_BATCH)
+
+            first_frame_written = self.wait_for_value(
+                lambda: int(pipe._manager._rings[_MIRRORED_STREAM_NAME].get_write_pos())
+                if int(pipe._manager._rings[_MIRRORED_STREAM_NAME].get_write_pos())
+                >= _mirrored_frame_target_nbytes(_MIRRORED_LIVE_FRAME_COUNT)
+                else None,
+                timeout_seconds=_MIRRORED_TIMEOUT_SECONDS,
+            )
+            self.assertIsNotNone(first_frame_written)
+
+            sender.close()
+
+            self.assertTrue(
+                pipe._manager._events[_MIRRORED_DONE_EVENT].wait(
+                    timeout=_MIRRORED_TIMEOUT_SECONDS
+                )
+            )
+
+            pipe.join(timeout=_MIRRORED_TIMEOUT_SECONDS)
+
+            ingest_process = pipe._manager._processes["ingest"]
+            sink_process = pipe._manager._processes["sink"]
+            self.assertFalse(ingest_process.is_alive())
+            self.assertFalse(sink_process.is_alive())
+            self.assertEqual(ingest_process.exitcode, 0)
+            self.assertEqual(sink_process.exitcode, 0)
+        finally:
+            sender.close()
+            pipe.close()
+
+    @unittest.skipUnless(
+        _RUN_CONNECTOR_STRESS_TESTS,
+        "connector stress tests are opt-in; set RUN_CONNECTOR_STRESS_TESTS=1",
+    )
+    @unittest.skipIf(
+        SharedRingBuffer is None or make_reader_binding is None or make_writer_binding is None,
+        "pythusa stream bindings are required",
+    )
+    def test_receiver_mirror_stream_preserves_100000_distinct_values(self) -> None:
+        mirrored_frame_nbytes = _mirrored_frame_target_nbytes(1)
+        writer_ring, reader_ring = _make_ring(size=mirrored_frame_nbytes * 32 + 4096)
+        assert writer_ring is not None
+        assert reader_ring is not None
+
+        mirrored_writer = make_writer_binding(
+            writer_ring,
+            name=_MIRRORED_STREAM_NAME,
+            shape=_MIRRORED_STREAM_BASE_SHAPE,
+            dtype=_MIRRORED_STREAM_DTYPE,
+        )
+        mirrored_reader = make_reader_binding(
+            reader_ring,
+            name=_MIRRORED_STREAM_NAME,
+            shape=_MIRRORED_STREAM_BASE_SHAPE,
+            dtype=_MIRRORED_STREAM_DTYPE,
+        )
+
+        sender = SendConnector(
+            self.make_spec(stream_id=_PIPELINE_STREAM_ID),
+            port=0,
+        )
+        receiver: ReceiveConnector | None = None
+
+        try:
+            sender.open()
+            receiver = ReceiveConnector(
+                self.make_spec(stream_id=_PIPELINE_STREAM_ID, stream=mirrored_writer),
+                port=sender.port,
+            )
+            receiver.open()
+
+            for sequence in range(_CONNECTOR_STRESS_FRAME_COUNT):
+                sender.send_numpy(_make_integrity_batch(sequence))
+                frame = _read_next_mirrored_frame(
+                    mirrored_reader,
+                    timeout_seconds=_CONNECTOR_STRESS_TIMEOUT_SECONDS,
+                )
+                self.assertIsNotNone(
+                    frame,
+                    msg=f"timed out waiting for mirrored frame {sequence}",
+                )
+                assert frame is not None
+                _assert_integrity_frame(frame, sequence)
+
+            sender.close()
+            disconnect_frame = _read_next_mirrored_frame(
+                mirrored_reader,
+                timeout_seconds=_CONNECTOR_STRESS_TIMEOUT_SECONDS,
+            )
+            self.assertIsNotNone(
+                disconnect_frame,
+                msg="timed out waiting for mirrored disconnect frame",
+            )
+            assert disconnect_frame is not None
+            _assert_disconnect_mirrored_frame(disconnect_frame)
+        finally:
+            if receiver is not None:
+                receiver.close()
+            sender.close()
+            _close_ring(reader_ring, unlink=False)
+            _close_ring(writer_ring, unlink=True)
 
     def test_send_after_close_fails_clearly(self) -> None:
         sender = SendConnector(self.make_spec(), port=9107)

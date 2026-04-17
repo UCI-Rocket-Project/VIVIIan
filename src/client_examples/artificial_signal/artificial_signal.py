@@ -9,7 +9,7 @@ import tomllib
 import sympy as sp
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
 
-from deviceinterface import DeviceInterface
+from viviian.deviceinterface import DeviceInterface
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("noise_stream")
