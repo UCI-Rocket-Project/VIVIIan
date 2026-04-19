@@ -9,8 +9,10 @@ import numpy as np
 from viviian.gui_utils.buttons import (
     ButtonStateUpdate,
     MomentaryButton,
+    SetpointButton,
     StateButton,
     ToggleButton,
+    reconstruct_button,
 )
 from viviian.gui_utils.gauges import (
     AnalogNeedleGauge,
@@ -19,6 +21,17 @@ from viviian.gui_utils.gauges import (
     _advance_display_value,
 )
 from viviian.gui_utils.graphs import GraphSeries, SensorGraph
+from viviian.gui_utils.operator import (
+    EventLogPanel,
+    EventRecord,
+    MicroButton,
+    ProcedureCarousel,
+    ProcedureStep,
+    ReadoutCard,
+    TelemetryCard,
+    TelemetryFilmstrip,
+    TelemetryTicker,
+)
 
 
 class FakeReader:
@@ -66,18 +79,48 @@ class FakeDrawList:
 class FakeIO:
     def __init__(self, delta_time: float) -> None:
         self.delta_time = float(delta_time)
+        self.display_size = (1280.0, 900.0)
+        self.fonts = self
+        self.font_default = None
+
+    def add_font_default(self):
+        return object()
+
+    def add_font_from_file_ttf(self, *_args, **_kwargs):
+        return object()
+
+    def clear_fonts(self) -> None:
+        return None
 
 
 class FakeImgui:
     COLOR_BUTTON = 1
     COLOR_BUTTON_HOVERED = 2
     COLOR_BUTTON_ACTIVE = 3
+    COLOR_TEXT = 4
+    COLOR_TEXT_DISABLED = 5
+    COLOR_BORDER = 6
+    STYLE_FRAME_BORDER_SIZE = 1
+    STYLE_FRAME_ROUNDING = 2
+    STYLE_FRAME_PADDING = 3
 
-    def __init__(self, presses: list[bool] | None = None, *, delta_time: float = 1.0 / 60.0):
+    def __init__(
+        self,
+        presses: list[bool] | None = None,
+        *,
+        delta_time: float = 1.0 / 60.0,
+        input_float_values: list[tuple[bool, float]] | None = None,
+    ):
         self._presses = list(presses or [])
+        self._input_float_values: list[tuple[bool, float]] = list(input_float_values or [])
         self._draw_list = FakeDrawList()
         self._io = FakeIO(delta_time)
         self.last_dummy: tuple[float, float] | None = None
+        self._cursor_x = 12.0
+        self._cursor_y = 18.0
+        self._last_item_min = (12.0, 18.0)
+        self._last_item_max = (12.0, 18.0)
+        self._same_line = False
 
     def push_style_color(self, *_args) -> None:
         return None
@@ -85,34 +128,79 @@ class FakeImgui:
     def pop_style_color(self, *_args) -> None:
         return None
 
+    def push_style_var(self, *_args) -> None:
+        return None
+
+    def pop_style_var(self, *_args) -> None:
+        return None
+
     def button(self, *_args, **_kwargs) -> bool:
+        width = float(_kwargs.get("width", 120.0) or 120.0)
+        height = float(_kwargs.get("height", 28.0) or 28.0)
+        self._place_item(width, height)
         if self._presses:
             return self._presses.pop(0)
         return False
 
     def text_disabled(self, *_args) -> None:
+        self._place_item(120.0, 16.0)
         return None
 
     def text_colored(self, *_args) -> None:
+        self._place_item(120.0, 16.0)
         return None
 
     def text_unformatted(self, *_args) -> None:
+        self._place_item(120.0, 16.0)
         return None
 
     def same_line(self, *_args) -> None:
+        self._cursor_x = self._last_item_max[0] + 8.0
+        self._cursor_y = self._last_item_min[1]
+        self._same_line = True
+
+    def spacing(self) -> None:
+        self._same_line = False
+        self._cursor_x = 12.0
+        self._cursor_y = self._last_item_max[1] + 8.0
+
+    def input_text(self, _label: str, value: str, *_args, **_kwargs) -> tuple[bool, str]:
+        self._place_item(220.0, 26.0)
+        return False, value
+
+    def separator(self) -> None:
+        self._place_item(240.0, 8.0)
+
+    def begin_group(self) -> None:
+        return None
+
+    def end_group(self) -> None:
+        return None
+
+    def push_font(self, *_args) -> None:
+        return None
+
+    def pop_font(self) -> None:
         return None
 
     def get_content_region_available(self) -> tuple[float, float]:
-        return (320.0, 240.0)
+        return (max(120.0, 1260.0 - self._cursor_x), 900.0 - self._cursor_y)
 
     def get_cursor_screen_pos(self) -> tuple[float, float]:
-        return (12.0, 18.0)
+        return (self._cursor_x, self._cursor_y)
 
     def dummy(self, width: float, height: float) -> None:
         self.last_dummy = (float(width), float(height))
+        self._place_item(width, height)
 
     def get_window_draw_list(self) -> FakeDrawList:
         return self._draw_list
+
+    def get_item_rect_min(self) -> tuple[float, float]:
+        return self._last_item_min
+
+    def get_item_rect_max(self) -> tuple[float, float]:
+        return self._last_item_max
 
     def get_color_u32_rgba(self, *rgba: float) -> int:
         r, g, b, a = (max(0, min(255, int(channel * 255.0))) for channel in rgba)
@@ -121,8 +209,45 @@ class FakeImgui:
     def get_io(self) -> FakeIO:
         return self._io
 
+    def set_cursor_screen_pos(self, pos: tuple[float, float]) -> None:
+        self._cursor_x = float(pos[0])
+        self._cursor_y = float(pos[1])
+        self._same_line = False
+
+    def set_next_item_width(self, _width: float) -> None:
+        return None
+
+    def input_float(
+        self, _label: str, value: float, *_args, **_kwargs
+    ) -> tuple[bool, float]:
+        self._place_item(90.0, 26.0)
+        if self._input_float_values:
+            return self._input_float_values.pop(0)
+        return False, float(value)
+
     def calc_text_size(self, text: str) -> tuple[float, float]:
         return (max(6.0, len(text) * 6.0), 10.0)
+
+    def _place_item(self, width: float, height: float) -> None:
+        x0 = self._cursor_x
+        y0 = self._cursor_y
+        x1 = x0 + max(1.0, float(width))
+        y1 = y0 + max(1.0, float(height))
+        self._last_item_min = (x0, y0)
+        self._last_item_max = (x1, y1)
+        if self._same_line:
+            self._cursor_x = x1 + 8.0
+        else:
+            self._cursor_x = 12.0
+            self._cursor_y = y1 + 6.0
+        self._same_line = False
+
+
+class MissingFrameBorderFakeImgui(FakeImgui):
+    def __getattribute__(self, name: str):
+        if name == "STYLE_FRAME_BORDER_SIZE":
+            raise AttributeError(name)
+        return super().__getattribute__(name)
 
 
 class SensorGraphTests(unittest.TestCase):
@@ -402,6 +527,16 @@ class SensorGaugeTests(unittest.TestCase):
             animation_response_hz=12.0,
             width=260.0,
             arc_thickness=12.0,
+            theme_name="tau_ceti",
+            layout_style="radial",
+            unit_label="PSI",
+            display_precision=1,
+            status_text="TRACK",
+            status_severity="warn",
+            footer_left="AUTO",
+            footer_right="P-01",
+            secondary_label="DELTA",
+            secondary_value="+12.0",
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -414,6 +549,16 @@ class SensorGaugeTests(unittest.TestCase):
         self.assertEqual(rebuilt.width, 260.0)
         self.assertEqual(rebuilt.arc_thickness, 12.0)
         self.assertEqual(rebuilt.animation_response_hz, 12.0)
+        self.assertEqual(rebuilt.theme_name, "tau_ceti")
+        self.assertEqual(rebuilt.layout_style, "radial")
+        self.assertEqual(rebuilt.unit_label, "PSI")
+        self.assertEqual(rebuilt.display_precision, 1)
+        self.assertEqual(rebuilt.status_text, "TRACK")
+        self.assertEqual(rebuilt.status_severity, "warn")
+        self.assertEqual(rebuilt.footer_left, "AUTO")
+        self.assertEqual(rebuilt.footer_right, "P-01")
+        self.assertEqual(rebuilt.secondary_label, "DELTA")
+        self.assertEqual(rebuilt.secondary_value, "+12.0")
 
     def test_analog_reconstruct_uses_constructor_default_arc_thickness(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -533,6 +678,22 @@ class SensorGaugeTests(unittest.TestCase):
         self.assertEqual(gauge.target_value, 55.0)
         self.assertTrue(gauge.has_value)
 
+    def test_consume_updates_latest_rate_from_newest_samples(self) -> None:
+        gauge = self.make_analog_gauge(display_precision=1)
+        reader = FakeReader(
+            shape=(2, 3),
+            dtype=np.float64,
+            frames=[
+                np.array([[0.0, 1.0, 2.0], [10.0, 18.0, 30.0]], dtype=np.float64),
+            ],
+        )
+        gauge.bind({"pressure_stream": reader})
+
+        gauge.consume()
+
+        self.assertEqual(gauge.latest_rate, 12.0)
+        self.assertEqual(gauge.formatted_rate(), "Δ +12.0 / SEC")
+
     def test_timestamp_rewind_snaps_display_value_to_new_target(self) -> None:
         gauge = self.make_analog_gauge()
         reader = FakeReader(
@@ -619,10 +780,15 @@ class SensorGaugeTests(unittest.TestCase):
         tick_labels = [args[3] for name, args in fake_imgui.get_window_draw_list().calls if name == "add_text"]
         self.assertEqual(tick_labels, ["0", "25", "50", "75", "100"])
 
-        panel_left = 12.0
-        panel_top = 18.0
-        panel_right = panel_left + gauge.width
-        panel_bottom = panel_top + gauge.height
+        panel_fill = next(
+            args for name, args in fake_imgui.get_window_draw_list().calls if name == "add_rect_filled"
+        )
+        panel_left, panel_top, panel_right, panel_bottom = (
+            float(panel_fill[0]),
+            float(panel_fill[1]),
+            float(panel_fill[2]),
+            float(panel_fill[3]),
+        )
         for name, args in fake_imgui.get_window_draw_list().calls:
             if name != "add_line":
                 continue
@@ -715,6 +881,8 @@ class ButtonTests(unittest.TestCase):
             state=False,
             gate_id="operator_gate",
             interlock_ids=("armed",),
+            theme_name="tau_ceti",
+            variant="alert",
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -727,6 +895,8 @@ class ButtonTests(unittest.TestCase):
         self.assertFalse(rebuilt.state)
         self.assertEqual(rebuilt.gate_id, "operator_gate")
         self.assertEqual(rebuilt.interlock_ids, ("armed",))
+        self.assertEqual(rebuilt.theme_name, "tau_ceti")
+        self.assertEqual(rebuilt.variant, "alert")
 
     def test_toggle_render_flips_state_and_emits_update(self) -> None:
         button = ToggleButton(
@@ -783,6 +953,488 @@ class ButtonTests(unittest.TestCase):
 
         self.assertIsNone(update_gate_blocked)
         self.assertIsNone(update_interlock_blocked)
+
+    def test_tau_ceti_button_renders_custom_draw_list_chrome(self) -> None:
+        button = ToggleButton(
+            button_id="ignite",
+            label="Ignite Primary",
+            state_id="ign.main",
+            state=False,
+            theme_name="tau_ceti",
+            variant="primary",
+        )
+
+        fake_imgui = FakeImgui([True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake_imgui):
+            update = button.render()
+
+        self.assertEqual(
+            update,
+            ButtonStateUpdate(button_id="ignite", state_id="ign.main", state=True),
+        )
+        draw_calls = fake_imgui.get_window_draw_list().calls
+        fill_calls = [args for name, args in draw_calls if name == "add_rect_filled"]
+        text_calls = [args[3] for name, args in draw_calls if name == "add_text"]
+        self.assertGreaterEqual(len(fill_calls), 2)
+        self.assertIn("IGNITE PRIMARY", text_calls)
+        self.assertIn("OFF", text_calls)
+
+    def test_tau_ceti_button_handles_imgui_without_frame_border_size_constant(self) -> None:
+        button = ToggleButton(
+            button_id="ignite",
+            label="Ignite Primary",
+            state_id="ign.main",
+            state=False,
+            theme_name="tau_ceti",
+            variant="primary",
+        )
+
+        fake_imgui = MissingFrameBorderFakeImgui([True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake_imgui):
+            update = button.render()
+
+        self.assertEqual(
+            update,
+            ButtonStateUpdate(button_id="ignite", state_id="ign.main", state=True),
+        )
+
+
+class SetpointButtonTests(unittest.TestCase):
+    def make_button(self, **overrides) -> SetpointButton:
+        params = dict(
+            button_id="chamber_pressure",
+            label="Chamber Pressure",
+            state_id="ecu.chamber_pressure",
+            state=500.0,
+            unit="psi",
+            step=50.0,
+            min_value=0.0,
+            max_value=1000.0,
+        )
+        params.update(overrides)
+        return SetpointButton(**params)
+
+    # --- construction ---
+
+    def test_defaults(self) -> None:
+        btn = SetpointButton(
+            button_id="sp", label="SP", state_id="sp.val", state=10.0,
+        )
+        self.assertEqual(btn.unit, "")
+        self.assertEqual(btn.step, 1.0)
+        self.assertEqual(btn.min_value, 0.0)
+        self.assertEqual(btn.max_value, 1000.0)
+
+    def test_initial_state_is_float(self) -> None:
+        btn = self.make_button(state=200)
+        self.assertIsInstance(btn.state, float)
+        self.assertEqual(btn.state, 200.0)
+
+    def test_initial_state_clamped_to_range(self) -> None:
+        btn = self.make_button(state=2000.0)
+        self.assertEqual(btn.state, 1000.0)
+        btn_low = self.make_button(state=-100.0)
+        self.assertEqual(btn_low.state, 0.0)
+
+    def test_rejects_bool_state(self) -> None:
+        with self.assertRaises(TypeError):
+            self.make_button(state=True)
+
+    def test_rejects_string_state(self) -> None:
+        with self.assertRaises(TypeError):
+            self.make_button(state="500")
+
+    def test_rejects_non_positive_step(self) -> None:
+        with self.assertRaises(ValueError):
+            self.make_button(step=0.0)
+        with self.assertRaises(ValueError):
+            self.make_button(step=-1.0)
+
+    def test_rejects_inverted_range(self) -> None:
+        with self.assertRaises(ValueError):
+            self.make_button(min_value=500.0, max_value=100.0)
+        with self.assertRaises(ValueError):
+            self.make_button(min_value=100.0, max_value=100.0)
+
+    # --- state text ---
+
+    def test_state_text_with_unit(self) -> None:
+        btn = self.make_button(state=500.0, unit="psi")
+        self.assertEqual(btn._state_text(), "500 psi")
+
+    def test_state_text_without_unit(self) -> None:
+        btn = self.make_button(state=3.14, unit="")
+        self.assertIn("3.14", btn._state_text())
+
+    # --- legacy render: decrement ---
+
+    def test_legacy_decrement_emits_update(self) -> None:
+        btn = self.make_button(state=500.0, step=50.0)
+        fake = FakeImgui(presses=[True, False, False])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNotNone(update)
+        self.assertEqual(update.state, 450.0)
+        self.assertEqual(btn.state, 450.0)
+
+    def test_legacy_increment_emits_update(self) -> None:
+        btn = self.make_button(state=500.0, step=50.0)
+        # presses[0] → [-] button, presses[1] → [+] button
+        fake = FakeImgui(presses=[False, True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNotNone(update)
+        self.assertEqual(update.state, 550.0)
+
+    def test_legacy_input_float_emits_update(self) -> None:
+        btn = self.make_button(state=500.0)
+        fake = FakeImgui(presses=[False, False], input_float_values=[(True, 750.0)])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNotNone(update)
+        self.assertEqual(update.state, 750.0)
+
+    def test_legacy_no_change_returns_none(self) -> None:
+        btn = self.make_button(state=500.0)
+        fake = FakeImgui(presses=[False, False])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNone(update)
+
+    def test_legacy_clamps_decrement_at_min(self) -> None:
+        btn = self.make_button(state=20.0, step=50.0, min_value=0.0)
+        fake = FakeImgui(presses=[True, False, False])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertEqual(update.state, 0.0)
+
+    def test_legacy_clamps_increment_at_max(self) -> None:
+        btn = self.make_button(state=980.0, step=50.0, max_value=1000.0)
+        fake = FakeImgui(presses=[False, True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNotNone(update)
+        self.assertEqual(update.state, 1000.0)
+
+    def test_legacy_clamps_typed_value(self) -> None:
+        btn = self.make_button(state=500.0, min_value=0.0, max_value=1000.0)
+        fake = FakeImgui(presses=[False, False], input_float_values=[(True, 9999.0)])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertEqual(update.state, 1000.0)
+
+    # --- gate / interlock ---
+
+    def test_gate_blocks_emission(self) -> None:
+        btn = self.make_button(gate_id="arm_gate")
+        fake = FakeImgui(presses=[True, False, True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render(gate_states={"arm_gate": False}, interlock_states={})
+        self.assertIsNone(update)
+
+    def test_interlock_blocks_emission(self) -> None:
+        btn = self.make_button(interlock_ids=("safe_mode",))
+        fake = FakeImgui(presses=[True, False, True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render(gate_states={}, interlock_states={"safe_mode": False})
+        self.assertIsNone(update)
+
+    # --- tau_ceti render ---
+
+    def test_tau_ceti_decrement_emits_update(self) -> None:
+        btn = self.make_button(state=500.0, step=50.0, theme_name="tau_ceti")
+        # presses: [-] presses True, input_float unchanged, [+] presses False
+        fake = FakeImgui(presses=[True, False])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNotNone(update)
+        self.assertEqual(update.state, 450.0)
+
+    def test_tau_ceti_increment_emits_update(self) -> None:
+        btn = self.make_button(state=500.0, step=50.0, theme_name="tau_ceti")
+        # presses: [-] False, input_float unchanged, [+] True
+        fake = FakeImgui(presses=[False, True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNotNone(update)
+        self.assertEqual(update.state, 550.0)
+
+    def test_tau_ceti_input_float_emits_update(self) -> None:
+        btn = self.make_button(state=500.0, theme_name="tau_ceti")
+        fake = FakeImgui(presses=[False, False], input_float_values=[(True, 300.0)])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render()
+        self.assertIsNotNone(update)
+        self.assertEqual(update.state, 300.0)
+
+    def test_tau_ceti_draws_label_and_led(self) -> None:
+        btn = self.make_button(theme_name="tau_ceti")
+        fake = FakeImgui(presses=[False, False])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            btn.render()
+        text_calls = [args[3] for name, args in fake.get_window_draw_list().calls if name == "add_text"]
+        self.assertIn("CHAMBER PRESSURE", text_calls)
+
+    def test_tau_ceti_gate_blocked_returns_none(self) -> None:
+        btn = self.make_button(gate_id="gate", theme_name="tau_ceti")
+        fake = FakeImgui(presses=[True, True])
+        with mock.patch("viviian.gui_utils.buttons._require_imgui", return_value=fake):
+            update = btn.render(gate_states={"gate": False}, interlock_states={})
+        self.assertIsNone(update)
+
+    # --- TOML round-trip ---
+
+    def test_round_trip_preserves_all_fields(self) -> None:
+        btn = self.make_button(
+            state=250.0,
+            unit="psi",
+            step=25.0,
+            min_value=0.0,
+            max_value=500.0,
+            gate_id="arm",
+            interlock_ids=("safe",),
+            theme_name="tau_ceti",
+            variant="alert",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = btn.export(f"{tmpdir}/sp.toml")
+            rebuilt = reconstruct_button(path)
+
+        self.assertIsInstance(rebuilt, SetpointButton)
+        self.assertEqual(rebuilt.state, 250.0)
+        self.assertEqual(rebuilt.unit, "psi")
+        self.assertEqual(rebuilt.step, 25.0)
+        self.assertEqual(rebuilt.min_value, 0.0)
+        self.assertEqual(rebuilt.max_value, 500.0)
+        self.assertEqual(rebuilt.gate_id, "arm")
+        self.assertEqual(rebuilt.interlock_ids, ("safe",))
+        self.assertEqual(rebuilt.theme_name, "tau_ceti")
+        self.assertEqual(rebuilt.variant, "alert")
+
+    def test_reconstruct_dispatches_to_setpoint_button(self) -> None:
+        btn = self.make_button()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = btn.export(f"{tmpdir}/sp.toml")
+            rebuilt = StateButton.reconstruct(path)
+        self.assertIsInstance(rebuilt, SetpointButton)
+
+    def test_round_trip_without_optional_fields(self) -> None:
+        btn = SetpointButton(
+            button_id="sp", label="SP", state_id="sp.val",
+            state=10.0, min_value=0.0, max_value=100.0,
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = btn.export(f"{tmpdir}/sp.toml")
+            rebuilt = reconstruct_button(path)
+        self.assertIsInstance(rebuilt, SetpointButton)
+        self.assertEqual(rebuilt.unit, "")
+        self.assertEqual(rebuilt.step, 1.0)
+
+
+class TauCetiRenderTests(unittest.TestCase):
+    def test_tau_ceti_analog_gauge_adds_header_text(self) -> None:
+        gauge = AnalogNeedleGauge(
+            gauge_id="pressure",
+            label="Pressure",
+            stream_name="pressure_stream",
+            low_value=0.0,
+            high_value=100.0,
+            theme_name="tau_ceti",
+        )
+        gauge._has_value = True
+        gauge._target_value = 72.0
+        gauge._display_value = 72.0
+        fake_imgui = FakeImgui(delta_time=0.05)
+
+        with mock.patch("viviian.gui_utils.gauges._require_imgui", return_value=fake_imgui):
+            gauge.render()
+
+        text_calls = [args[3] for name, args in fake_imgui.get_window_draw_list().calls if name == "add_text"]
+        self.assertIn("PRESSURE", text_calls)
+        self.assertIn("STREAM / pressure_stream", text_calls)
+
+    def test_tau_ceti_radial_gauge_renders_range_labels(self) -> None:
+        gauge = AnalogNeedleGauge(
+            gauge_id="temperature",
+            label="Temperature",
+            stream_name="temperature_stream",
+            low_value=0.0,
+            high_value=100.0,
+            theme_name="tau_ceti",
+            layout_style="radial",
+        )
+        gauge._has_value = True
+        gauge._target_value = 48.0
+        gauge._display_value = 48.0
+        fake_imgui = FakeImgui(delta_time=0.05)
+
+        with mock.patch("viviian.gui_utils.gauges._require_imgui", return_value=fake_imgui):
+            gauge.render()
+
+        text_calls = [args[3] for name, args in fake_imgui.get_window_draw_list().calls if name == "add_text"]
+        self.assertIn("MIN 0", text_calls)
+        self.assertIn("MAX 100", text_calls)
+
+    def test_tau_ceti_led_gauge_renders_secondary_readouts(self) -> None:
+        gauge = LedBarGauge(
+            gauge_id="level",
+            label="Level",
+            stream_name="level_stream",
+            low_value=0.0,
+            high_value=100.0,
+            theme_name="tau_ceti",
+            unit_label="%",
+            secondary_label="CAPACITY",
+            secondary_value="12,480 L",
+            footer_left="RANGE LOCK",
+            footer_right="RESP · 8.0 HZ",
+        )
+        gauge._has_value = True
+        gauge._target_value = 62.0
+        gauge._display_value = 62.0
+        fake_imgui = FakeImgui(delta_time=0.05)
+
+        with mock.patch("viviian.gui_utils.gauges._require_imgui", return_value=fake_imgui):
+            gauge.render()
+
+        text_calls = [args[3] for name, args in fake_imgui.get_window_draw_list().calls if name == "add_text"]
+        self.assertIn("CAPACITY", text_calls)
+        self.assertIn("12,480 L", text_calls)
+        self.assertIn("RANGE LOCK", text_calls)
+        self.assertIn("RESP · 8.0 HZ", text_calls)
+
+    def test_tau_ceti_graph_renders_live_badge(self) -> None:
+        graph = SensorGraph(
+            "telem",
+            title="Telemetry",
+            series=(
+                GraphSeries(
+                    series_id="s",
+                    label="Signal",
+                    stream_name="signal",
+                    color_rgba=(0.9, 0.2, 0.2, 1.0),
+                ),
+            ),
+            theme_name="tau_ceti",
+        )
+        reader = FakeReader(shape=(2, 4), dtype=np.float64)
+        graph.bind({"signal": reader})
+        reader.push(np.array([[0.0, 1.0, 2.0, 3.0], [1.0, 2.0, 3.0, 4.0]], dtype=np.float64))
+        graph.consume()
+        fake_imgui = FakeImgui(delta_time=0.05)
+
+        with mock.patch("viviian.gui_utils.graphs._require_imgui", return_value=fake_imgui):
+            graph.render()
+
+        text_calls = [args[3] for name, args in fake_imgui.get_window_draw_list().calls if name == "add_text"]
+        self.assertIn("● LIVE", text_calls)
+
+    def test_tau_ceti_graph_visibility_controls_handle_imgui_without_frame_border_size_constant(self) -> None:
+        graph = SensorGraph(
+            "telem",
+            title="Telemetry",
+            series=(
+                GraphSeries(
+                    series_id="s",
+                    label="Signal",
+                    stream_name="signal",
+                    color_rgba=(0.9, 0.2, 0.2, 1.0),
+                ),
+            ),
+            theme_name="tau_ceti",
+        )
+        reader = FakeReader(shape=(2, 2), dtype=np.float64)
+        graph.bind({"signal": reader})
+        reader.push(np.array([[0.0, 1.0], [1.0, 2.0]], dtype=np.float64))
+        graph.consume()
+        fake_imgui = MissingFrameBorderFakeImgui([False])
+
+        with mock.patch("viviian.gui_utils.graphs._require_imgui", return_value=fake_imgui):
+            graph.render()
+
+        self.assertTrue(fake_imgui.get_window_draw_list().calls)
+
+
+class OperatorWidgetTests(unittest.TestCase):
+    def test_micro_button_toggles_on_press(self) -> None:
+        button = MicroButton(component_id="micro", label="", icon="●", active=False)
+
+        with mock.patch("viviian.gui_utils.operator._require_imgui", return_value=FakeImgui([True])):
+            changed = button.render()
+
+        self.assertTrue(changed)
+        self.assertTrue(button.active)
+
+    def test_event_log_filter_toggles_severity(self) -> None:
+        panel = EventLogPanel(
+            component_id="events",
+            records=[EventRecord("00:00", "info", "SRC", "Message")],
+        )
+
+        with mock.patch("viviian.gui_utils.operator._require_imgui", return_value=FakeImgui([True, False, False, False])):
+            panel.render()
+
+        self.assertNotIn("info", panel.active_filters)
+
+    def test_toolbar_button_handles_imgui_without_frame_border_size_constant(self) -> None:
+        button = MicroButton(component_id="micro", label="", icon="●", active=False)
+
+        with mock.patch(
+            "viviian.gui_utils.operator._require_imgui",
+            return_value=MissingFrameBorderFakeImgui([True]),
+        ):
+            changed = button.render()
+
+        self.assertTrue(changed)
+
+    def test_procedure_carousel_prev_button_moves_active_index(self) -> None:
+        carousel = ProcedureCarousel(
+            component_id="proc",
+            steps=[
+                ProcedureStep("One", "First", "done"),
+                ProcedureStep("Two", "Second", "active"),
+                ProcedureStep("Three", "Third", "pending"),
+            ],
+            active_index=1,
+        )
+
+        with mock.patch("viviian.gui_utils.operator._require_imgui", return_value=FakeImgui([False, False, False, True, False])):
+            carousel.render()
+
+        self.assertEqual(carousel.active_index, 0)
+
+    def test_telemetry_filmstrip_consume_advances_offset(self) -> None:
+        strip = TelemetryFilmstrip(
+            component_id="film",
+            cards=[
+                TelemetryCard("A", "1"),
+                TelemetryCard("B", "2"),
+                TelemetryCard("C", "3"),
+                TelemetryCard("D", "4"),
+            ],
+            cards_per_view=2,
+            auto_scroll=True,
+            scroll_period_s=0.0,
+        )
+
+        changed = strip.consume()
+
+        self.assertTrue(changed)
+        self.assertEqual([item.label for item in strip._visible_cards()], ["B", "C"])
+
+    def test_telemetry_ticker_consume_advances_offset(self) -> None:
+        ticker = TelemetryTicker(
+            component_id="ticker",
+            items=["A", "B", "C"],
+            visible_items=2,
+            auto_scroll=True,
+            scroll_period_s=0.0,
+        )
+
+        changed = ticker.consume()
+
+        self.assertTrue(changed)
+        self.assertEqual(ticker._visible_items(), ["B", "C"])
 
 
 if __name__ == "__main__":

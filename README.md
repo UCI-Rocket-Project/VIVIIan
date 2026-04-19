@@ -69,6 +69,9 @@ python -m unittest \
 
 ## Run The Signal Lab
 
+Run the command from the repo root. The runnable resolves the repo root and
+`src/` automatically when launched directly.
+
 ```bash
 python tests/gui_runnables/signal_graph_lab.py
 ```

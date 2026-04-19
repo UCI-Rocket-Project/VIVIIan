@@ -5,6 +5,8 @@ from typing import Any
 
 import numpy as np
 
+from viviian.gui_utils import theme
+
 
 @dataclass
 class BufferedFrameReader:
@@ -46,7 +48,10 @@ class BufferedFrameReader:
         return None if frame is None else frame.copy()
 
 
-def apply_operator_theme(imgui: Any) -> None:
+def apply_operator_theme(imgui: Any, *, theme_name: theme.GuiThemeName = "legacy") -> None:
+    if theme_name == "tau_ceti":
+        theme.apply_imgui_theme(imgui, theme_name="tau_ceti")
+        return
     style = imgui.get_style()
     style.window_rounding = 10.0
     style.child_rounding = 8.0

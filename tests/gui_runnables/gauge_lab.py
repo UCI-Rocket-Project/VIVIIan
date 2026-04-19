@@ -18,10 +18,19 @@ The runnable shows one deterministic scalar signal in three views:
 """
 
 import argparse
+from pathlib import Path
+import sys
 import time
 from typing import Any, Sequence
 
 import numpy as np
+
+if __package__ in {None, ""}:
+    _REPO_ROOT = Path(__file__).resolve().parents[2]
+    for _path in (_REPO_ROOT, _REPO_ROOT / "src"):
+        _path_str = str(_path)
+        if _path_str not in sys.path:
+            sys.path.insert(0, _path_str)
 
 from viviian.gui_utils.gauges import AnalogNeedleGauge, LedBarGauge
 from viviian.gui_utils.graphs import GraphSeries, SensorGraph
@@ -139,12 +148,24 @@ class GaugeLabApp:
             "graph_signal": BufferedFrameReader(max_rows=self.max_rows_per_tick),
             "graph_low": BufferedFrameReader(max_rows=self.max_rows_per_tick),
             "graph_high": BufferedFrameReader(max_rows=self.max_rows_per_tick),
+            "pinned_high": BufferedFrameReader(max_rows=1),
         }
+        self.readers["pinned_high"].prime(np.array([[0.0], [self.high_value * 0.92]]))
 
         self.analog_gauge = AnalogNeedleGauge(
             "analog_signal",
             label="Analog Needle Gauge",
             stream_name="analog_signal",
+            low_value=self.low_value,
+            high_value=self.high_value,
+            width=360.0,
+            height=190.0,
+            animation_response_hz=9.0,
+        )
+        self.pinned_gauge = AnalogNeedleGauge(
+            "pinned_high",
+            label="Pinned High (92%)",
+            stream_name="pinned_high",
             low_value=self.low_value,
             high_value=self.high_value,
             width=360.0,
@@ -196,6 +217,7 @@ class GaugeLabApp:
         )
 
         self.analog_gauge.bind(self.readers)
+        self.pinned_gauge.bind(self.readers)
         self.led_gauge.bind(self.readers)
         self.graph.bind(self.readers)
 
@@ -233,6 +255,7 @@ class GaugeLabApp:
         self.readers["graph_high"].prime(high_batch)
 
         analog_updated = self.analog_gauge.consume()
+        self.pinned_gauge.consume()
         led_updated = self.led_gauge.consume()
         graph_updated = self.graph.consume()
         return analog_updated or led_updated or graph_updated
@@ -267,6 +290,8 @@ class GaugeLabApp:
 
         imgui.spacing()
         self.analog_gauge.render()
+        imgui.same_line()
+        self.pinned_gauge.render()
         imgui.same_line()
         self.led_gauge.render()
         imgui.spacing()

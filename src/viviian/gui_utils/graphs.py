@@ -6,11 +6,13 @@ from typing import Any, Callable, Literal, Mapping, Sequence
 
 import numpy as np
 
+from . import theme
 from ._streaming import (
     drain_numeric_reader,
     normalize_numeric_batch,
     validate_numeric_reader,
 )
+from .chrome import draw_dashed_line, rgba_u32, xy
 from .configure import (
     parse_color_rgba,
     read_toml_document,
@@ -184,6 +186,8 @@ class SensorGraph:
         y_padding_floor_ratio: float = _GRAPH_PADDING_FLOOR_RATIO,
         y_min_span_ratio: float = _GRAPH_MIN_SPAN_RATIO,
         y_shrink_alpha: float = _GRAPH_RANGE_SHRINK_ALPHA,
+        theme_name: theme.GuiThemeName = "legacy",
+        plot_height: float = _DEFAULT_PLOT_HEIGHT,
     ) -> None:
         if not graph_id:
             raise ValueError("graph_id must be non-empty.")
@@ -215,6 +219,10 @@ class SensorGraph:
         self.y_padding_floor_ratio = float(y_padding_floor_ratio)
         self.y_min_span_ratio = float(y_min_span_ratio)
         self.y_shrink_alpha = float(y_shrink_alpha)
+        if theme_name not in ("legacy", "tau_ceti"):
+            raise ValueError("theme_name must be 'legacy' or 'tau_ceti'.")
+        self.theme_name = theme_name
+        self.plot_height = float(plot_height)
 
         _validate_graph_series(self.series)
 
@@ -317,7 +325,7 @@ class SensorGraph:
         x_limits, y_limits = self._resolve_plot_limits(visible_series)
         avail = imgui.get_content_region_available()
         plot_width = float(avail[0] if isinstance(avail, tuple) else avail.x)
-        plot_height = _DEFAULT_PLOT_HEIGHT
+        plot_height = self.plot_height
         if plot_width <= 0.0:
             plot_width = 640.0
 
@@ -328,8 +336,12 @@ class SensorGraph:
         x0, y0 = _xy(draw_pos)
         x1 = x0 + plot_width
         y1 = y0 + plot_height
-        bg = _rgba_u32(imgui, (0.028, 0.040, 0.065, 1.0))
-        border = _rgba_u32(imgui, (0.150, 0.235, 0.330, 1.0))
+        if self.theme_name == "tau_ceti":
+            bg = rgba_u32(imgui, theme.GRAPH_BG)
+            border = rgba_u32(imgui, theme.GRAPH_BORDER)
+        else:
+            bg = _rgba_u32(imgui, (0.028, 0.040, 0.065, 1.0))
+            border = _rgba_u32(imgui, (0.150, 0.235, 0.330, 1.0))
         draw_list.add_rect_filled(x0, y0, x1, y1, bg)
         draw_list.add_rect(x0, y0, x1, y1, border)
 
@@ -347,11 +359,25 @@ class SensorGraph:
 
         if self.show_axes and y_min <= 0.0 <= y_max:
             zero_y = inner_bottom - ((0.0 - y_min) * y_scale)
-            draw_list.add_line(inner_left, zero_y, inner_right, zero_y, border, 1.0)
+            if self.theme_name == "tau_ceti":
+                draw_dashed_line(
+                    imgui,
+                    draw_list,
+                    x0=inner_left,
+                    y0=zero_y,
+                    x1=inner_right,
+                    y1=zero_y,
+                    rgba=theme.GRAPH_ZERO_LINE,
+                    dash=4.0,
+                    gap=4.0,
+                    thickness=1.0,
+                )
+            else:
+                draw_list.add_line(inner_left, zero_y, inner_right, zero_y, border, 1.0)
 
         # Draw overlay series last so their visual treatment stays lighter.
         ordered = sorted(visible_series, key=lambda item: item[0].overlay)
-        for series_cfg, timestamps, values in ordered:
+        for index, (series_cfg, timestamps, values) in enumerate(ordered):
             points = _map_segment_to_screen(
                 timestamps,
                 values,
@@ -366,7 +392,39 @@ class SensorGraph:
                 continue
             color = _rgba_u32(imgui, series_cfg.color_rgba)
             thickness = self.overlay_thickness if series_cfg.overlay else self.line_thickness
+            if self.theme_name == "tau_ceti" and index == 0 and not series_cfg.overlay:
+                fill_points = np.vstack(
+                    (
+                        points,
+                        np.array(
+                            [[points[-1, 0], inner_bottom], [points[0, 0], inner_bottom]],
+                            dtype=np.float32,
+                        ),
+                    )
+                )
+                fill_color = _rgba_u32(
+                    imgui,
+                    (
+                        series_cfg.color_rgba[0],
+                        series_cfg.color_rgba[1],
+                        series_cfg.color_rgba[2],
+                        0.14,
+                    ),
+                )
+                fill = getattr(draw_list, "add_polyline", None)
+                if fill is not None:
+                    fill(fill_points.tolist(), fill_color, True, 1.0)
             _draw_polyline(draw_list, points, color, thickness)
+
+        if self.theme_name == "tau_ceti":
+            _draw_live_badges(
+                imgui,
+                draw_list,
+                x0=x0,
+                y0=y0,
+                x1=x1,
+                latest_timestamp=self._latest_timestamp,
+            )
 
     def build_dashboard_hooks(
         self,
@@ -393,6 +451,7 @@ class SensorGraph:
                 f"y_padding_floor_ratio = {self.y_padding_floor_ratio!r}",
                 f"y_min_span_ratio = {self.y_min_span_ratio!r}",
                 f"y_shrink_alpha = {self.y_shrink_alpha!r}",
+                f"theme_name = {toml_string(self.theme_name)}",
                 "",
             ]
         )
@@ -442,6 +501,7 @@ class SensorGraph:
             ),
             y_min_span_ratio=float(data.get("y_min_span_ratio", _GRAPH_MIN_SPAN_RATIO)),
             y_shrink_alpha=float(data.get("y_shrink_alpha", _GRAPH_RANGE_SHRINK_ALPHA)),
+            theme_name=str(data.get("theme_name", "legacy")),
         )
 
     def series_snapshot(self, series_id: str) -> np.ndarray:
@@ -454,14 +514,18 @@ class SensorGraph:
     def _render_visibility_controls(self, imgui: Any) -> None:
         for index, item in enumerate(self.series):
             runtime = self._series_runtime[item.series_id]
-            button_label = f"{'[x]' if runtime.visible else '[ ]'} {item.label}"
-            _push_visibility_button_colors(
+            button_label = item.label if self.theme_name == "tau_ceti" else f"{'[x]' if runtime.visible else '[ ]'} {item.label}"
+            color_count, var_count = _push_visibility_button_colors(
                 imgui,
                 visible=runtime.visible,
                 color=item.color_rgba,
+                theme_name=self.theme_name,
             )
             pressed = imgui.button(button_label, width=0.0, height=28.0)
-            imgui.pop_style_color(3)
+            if var_count > 0:
+                imgui.pop_style_var(var_count)
+            if color_count > 0:
+                imgui.pop_style_color(color_count)
             if pressed:
                 runtime.visible = not runtime.visible
                 self._y_limits = self._target_display_limits()
@@ -575,7 +639,43 @@ def _push_visibility_button_colors(
     *,
     visible: bool,
     color: tuple[float, float, float, float],
-) -> None:
+    theme_name: theme.GuiThemeName = "legacy",
+) -> tuple[int, int]:
+    color_count = 0
+    var_count = 0
+    if theme_name == "tau_ceti":
+        if visible:
+            base = theme.PANEL_BG_2
+            hovered = theme.PANEL_BG_3
+            active = theme.BUTTON_OFF_ACTIVE
+            text = color
+            border = color
+        else:
+            base = theme.PANEL_BG
+            hovered = theme.PANEL_BG_2
+            active = theme.PANEL_BG_3
+            text = theme.INK_3
+            border = theme.PANEL_BORDER
+        imgui.push_style_color(imgui.COLOR_BUTTON, *base)
+        color_count += 1
+        imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *hovered)
+        color_count += 1
+        imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *active)
+        color_count += 1
+        if hasattr(imgui, "COLOR_TEXT"):
+            imgui.push_style_color(imgui.COLOR_TEXT, *text)
+            color_count += 1
+        if hasattr(imgui, "COLOR_BORDER"):
+            imgui.push_style_color(imgui.COLOR_BORDER, *border)
+            color_count += 1
+        if hasattr(imgui, "STYLE_FRAME_BORDER_SIZE"):
+            imgui.push_style_var(imgui.STYLE_FRAME_BORDER_SIZE, 1.0)
+            var_count += 1
+        if hasattr(imgui, "STYLE_FRAME_ROUNDING"):
+            imgui.push_style_var(imgui.STYLE_FRAME_ROUNDING, 0.0)
+            var_count += 1
+        return color_count, var_count
+
     if visible:
         base = color
         hovered = tuple(min(1.0, channel + 0.12) for channel in color[:3]) + (1.0,)
@@ -585,8 +685,63 @@ def _push_visibility_button_colors(
         hovered = (0.120, 0.150, 0.205, 1.0)
         active = (0.150, 0.185, 0.240, 1.0)
     imgui.push_style_color(imgui.COLOR_BUTTON, *base)
+    color_count += 1
     imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *hovered)
+    color_count += 1
     imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *active)
+    color_count += 1
+    return color_count, var_count
+
+
+def _draw_live_badges(
+    imgui: Any,
+    draw_list: Any,
+    *,
+    x0: float,
+    y0: float,
+    x1: float,
+    latest_timestamp: float | None,
+) -> None:
+    left_text = "● LIVE"
+    draw_list.add_rect_filled(
+        x0 + 8.0,
+        y0 + 8.0,
+        x0 + 76.0,
+        y0 + 24.0,
+        rgba_u32(imgui, theme.PANEL_BG),
+    )
+    draw_list.add_rect(
+        x0 + 8.0,
+        y0 + 8.0,
+        x0 + 76.0,
+        y0 + 24.0,
+        rgba_u32(imgui, theme.ACID),
+    )
+    draw_list.add_text(x0 + 14.0, y0 + 10.0, rgba_u32(imgui, theme.ACID), left_text)
+    if latest_timestamp is None:
+        return
+    right_text = f"T={latest_timestamp:0.2f}"
+    text_width = max(40.0, len(right_text) * 6.0)
+    draw_list.add_rect_filled(
+        x1 - text_width - 18.0,
+        y0 + 8.0,
+        x1 - 8.0,
+        y0 + 24.0,
+        rgba_u32(imgui, theme.PANEL_BG),
+    )
+    draw_list.add_rect(
+        x1 - text_width - 18.0,
+        y0 + 8.0,
+        x1 - 8.0,
+        y0 + 24.0,
+        rgba_u32(imgui, theme.PANEL_BORDER),
+    )
+    draw_list.add_text(
+        x1 - text_width - 12.0,
+        y0 + 10.0,
+        rgba_u32(imgui, theme.INK_2),
+        right_text,
+    )
 
 
 def _map_segment_to_screen(

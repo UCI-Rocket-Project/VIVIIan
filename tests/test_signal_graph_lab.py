@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+import subprocess
+import sys
 import unittest
 
 import numpy as np
@@ -115,6 +119,31 @@ class SignalGraphLabAppTests(unittest.TestCase):
 
         self.assertTrue(generated)
         self.assertEqual(len(app.generators), 8)
+
+
+class GuiRunnableLauncherTests(unittest.TestCase):
+    def test_gui_runnables_show_help_when_executed_directly(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        env = os.environ.copy()
+        env.pop("PYTHONPATH", None)
+
+        for script in (
+            "tests/gui_runnables/signal_graph_lab.py",
+            "tests/gui_runnables/gauge_lab.py",
+            "tests/gui_runnables/rocket_viewer_lab.py",
+            "tests/gui_runnables/frontend_lab.py",
+        ):
+            with self.subTest(script=script):
+                completed = subprocess.run(
+                    [sys.executable, script, "--help"],
+                    cwd=repo_root,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode, 0, msg=completed.stderr)
+                self.assertIn("usage:", completed.stdout)
 
 
 if __name__ == "__main__":

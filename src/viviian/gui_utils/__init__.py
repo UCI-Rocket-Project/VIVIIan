@@ -5,9 +5,29 @@ import importlib.util
 from pathlib import Path
 import sys
 
-from .buttons import ButtonStateUpdate, MomentaryButton, StateButton, ToggleButton
+from . import theme
+from .buttons import ButtonStateUpdate, MomentaryButton, SetpointButton, StateButton, ToggleButton
 from .gauges import AnalogNeedleGauge, LedBarGauge, SensorGauge, reconstruct_gauge
 from .graphs import GraphSeries, SensorGraph
+from .operator import (
+    ConsoleComponent,
+    EventLogPanel,
+    EventRecord,
+    KeyValuePanel,
+    KeyValueRow,
+    MicroButton,
+    OperatorToolbar,
+    ProcedureCarousel,
+    ProcedureStep,
+    ReadoutCard,
+    Subbar,
+    TelemetryCard,
+    TelemetryFilmstrip,
+    TelemetryTicker,
+    ToolbarButton,
+    ToolbarMeter,
+    ToolbarSearch,
+)
 
 _model3d = None
 _model3d_name = f"{__name__}._3dmodel"
@@ -51,6 +71,7 @@ if _model3d is not None:
 __all__ = [
     "ButtonStateUpdate",
     "MomentaryButton",
+    "SetpointButton",
     "StateButton",
     "ToggleButton",
     "AnalogNeedleGauge",
@@ -59,6 +80,24 @@ __all__ = [
     "SensorGraph",
     "SensorGauge",
     "reconstruct_gauge",
+    "ConsoleComponent",
+    "EventLogPanel",
+    "EventRecord",
+    "KeyValuePanel",
+    "KeyValueRow",
+    "MicroButton",
+    "OperatorToolbar",
+    "ProcedureCarousel",
+    "ProcedureStep",
+    "ReadoutCard",
+    "Subbar",
+    "TelemetryCard",
+    "TelemetryFilmstrip",
+    "TelemetryTicker",
+    "ToolbarButton",
+    "ToolbarMeter",
+    "ToolbarSearch",
+    "theme",
 ]
 
 if _model3d is not None:

@@ -7,6 +7,7 @@ import numpy as np
 
 from .backends import BackendSpec, GlfwBackend
 from .components import BaseComponentAdapter, RenderContext, adapt_component
+from viviian.gui_utils._streaming import fan_out_reader_groups
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,12 +181,13 @@ class FrontendTask:
 
     def __call__(self, **bindings: Any) -> None:
         readers = self._resolve_reader_bindings(bindings)
+        component_readers = self._fan_out_reader_bindings(readers)
         writer = self._resolve_writer_binding(bindings)
         backend_session = self.backend.create(self.window_title)
 
         try:
             for adapter in self.adapters:
-                adapter.bind(readers)
+                adapter.bind(component_readers[adapter.component_id])
 
             snapshot_dirty = bool(self.output_slots)
             if snapshot_dirty and writer is not None:
@@ -230,6 +232,19 @@ class FrontendTask:
             names = ", ".join(repr(name) for name in missing)
             raise KeyError(f"Frontend task is missing required reader bindings: {names}.")
         return readers
+
+    def _fan_out_reader_bindings(
+        self,
+        readers: Mapping[str, Any],
+    ) -> dict[str, Mapping[str, Any]]:
+        reader_groups = fan_out_reader_groups(
+            readers,
+            tuple(adapter.required_stream_names for adapter in self.adapters),
+        )
+        return {
+            adapter.component_id: group
+            for adapter, group in zip(self.adapters, reader_groups)
+        }
 
     def _resolve_writer_binding(self, bindings: Mapping[str, Any]) -> Any | None:
         if not self.output_slots:

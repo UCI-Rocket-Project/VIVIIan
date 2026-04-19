@@ -8,6 +8,11 @@ import numpy as np
 from viviian.frontend import Frontend, HeadlessBackend
 from viviian.gui_utils import AnalogNeedleGauge, GraphSeries, MomentaryButton, SensorGraph, ToggleButton
 from pythusa import Pipeline
+from tests.gui_runnables.tau_ceti_showcase import (
+    build_showcase_dashboard,
+    build_showcase_frontend,
+    build_showcase_pipeline,
+)
 
 
 _PIPELINE_SIGNAL_FRAME = np.array(
@@ -287,6 +292,87 @@ class FrontendRuntimeTests(unittest.TestCase):
         self.assertEqual(graph_reader.blocking_calls, [False])
         self.assertEqual(gauge_reader.blocking_calls, [False])
 
+    def test_tau_ceti_gauge_display_moves_across_frames(self) -> None:
+        gauge = AnalogNeedleGauge(
+            gauge_id="pressure_gauge",
+            label="Pressure",
+            stream_name="pressure_stream",
+            low_value=0.0,
+            high_value=100.0,
+            theme_name="tau_ceti",
+            animation_response_hz=4.0,
+        )
+        frontend = Frontend("desk")
+        frontend.add(gauge)
+        task = frontend.build_task(
+            backend=HeadlessBackend(max_frames=3, delta_time=0.1, theme_name="tau_ceti"),
+        )
+        gauge_reader = FakeReader(
+            shape=(2, 4),
+            dtype=np.float64,
+            frames=[
+                np.array(
+                    [[0.0, 1.0, 2.0, 3.0], [10.0, 30.0, 60.0, 80.0]],
+                    dtype=np.float64,
+                )
+            ],
+        )
+
+        task(pressure_stream=gauge_reader)
+
+        self.assertEqual(gauge.target_value, 80.0)
+        self.assertGreater(gauge.display_value, 0.0)
+        self.assertLess(gauge.display_value, 80.0)
+        self.assertEqual(gauge.formatted_rate(), "Δ +20.00 / SEC")
+
+    def test_frontend_fans_out_shared_stream_reader_to_multiple_widgets(self) -> None:
+        graph = SensorGraph(
+            "signal_graph",
+            title="Signal Graph",
+            series=(
+                GraphSeries(
+                    series_id="signal",
+                    label="Signal",
+                    stream_name="signal_stream",
+                    color_rgba=(0.9, 0.2, 0.2, 1.0),
+                ),
+            ),
+            stable_y=False,
+        )
+        gauge = AnalogNeedleGauge(
+            gauge_id="signal_gauge",
+            label="Signal",
+            stream_name="signal_stream",
+            low_value=0.0,
+            high_value=100.0,
+            theme_name="tau_ceti",
+        )
+        frontend = Frontend("desk")
+        frontend.add(graph)
+        frontend.add(gauge)
+        task = frontend.build_task(backend=HeadlessBackend(max_frames=1, theme_name="tau_ceti"))
+        reader = FakeReader(
+            shape=(2, 4),
+            dtype=np.float64,
+            frames=[
+                np.array(
+                    [[0.0, 1.0, 2.0, 3.0], [10.0, 25.0, 50.0, 75.0]],
+                    dtype=np.float64,
+                )
+            ],
+        )
+
+        task(signal_stream=reader)
+
+        np.testing.assert_allclose(
+            graph.series_snapshot("signal"),
+            np.array(
+                [[0.0, 1.0, 2.0, 3.0], [10.0, 25.0, 50.0, 75.0]],
+                dtype=np.float64,
+            ),
+        )
+        self.assertEqual(gauge.target_value, 75.0)
+
     def test_initial_snapshot_emits_current_control_state(self) -> None:
         frontend = Frontend("desk")
         frontend.add(
@@ -376,6 +462,72 @@ class FrontendRuntimeTests(unittest.TestCase):
 
 
 class FrontendPipelineIntegrationTests(unittest.TestCase):
+    def test_tau_ceti_showcase_frontend_compiles_as_generic_component(self) -> None:
+        frontend = build_showcase_frontend()
+
+        frontend.compile()
+
+        self.assertEqual(
+            frontend.required_reads,
+            ("px_chamber", "t_engine", "lox_level", "v_axial", "i_bus28", "t_bearing"),
+        )
+        self.assertEqual(frontend.output_shape, (0,))
+        self.assertEqual(len(frontend.output_slots), 0)
+
+    def test_tau_ceti_showcase_dashboard_consumes_live_batches(self) -> None:
+        dashboard = build_showcase_dashboard()
+        readers = {
+            "px_chamber": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [100.0, 150.0, 200.0, 250.0]])],
+            ),
+            "t_engine": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [600.0, 650.0, 700.0, 750.0]])],
+            ),
+            "lox_level": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [90.0, 88.0, 86.0, 84.0]])],
+            ),
+            "v_axial": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [0.2, 0.3, 0.4, 0.5]])],
+            ),
+            "i_bus28": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [10.0, 12.0, 14.0, 16.0]])],
+            ),
+            "t_bearing": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [70.0, 72.0, 74.0, 76.0]])],
+            ),
+        }
+        dashboard.bind(readers)
+
+        changed = dashboard.consume()
+
+        self.assertTrue(changed)
+        self.assertEqual(dashboard.pressure_gauge.target_value, 250.0)
+        self.assertEqual(dashboard.temperature_gauge.target_value, 750.0)
+        self.assertEqual(dashboard.level_gauge.target_value, 84.0)
+        self.assertIn("PX_CHAMBER", dashboard.ticker.items[0])
+        self.assertGreaterEqual(len(dashboard.event_log.records), 1)
+
+    def test_tau_ceti_showcase_pipeline_declares_expected_tasks_and_streams(self) -> None:
+        pipe = build_showcase_pipeline()
+
+        self.assertEqual(set(pipe._tasks), {"source", "frontend"})
+        self.assertEqual(
+            set(pipe._streams),
+            {"px_chamber", "t_engine", "lox_level", "v_axial", "i_bus28", "t_bearing"},
+        )
+
     def test_frontend_task_runs_inside_pipeline(self) -> None:
         frontend = Frontend("desk")
         frontend.add(

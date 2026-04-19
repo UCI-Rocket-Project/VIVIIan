@@ -20,12 +20,13 @@ from .configure import (
     toml_string,
     write_toml_document,
 )
+from .theme import GuiThemeName
 
 BackpressureMode = Literal["latest_only", "blocking"]
 ColorRGBA = tuple[float, float, float, float]
 
-_DEFAULT_CAD_DIR = Path("gui_assets/cad")
-_DEFAULT_COMPILED_DIR = Path("gui_assets/compiled")
+_DEFAULT_CAD_DIR = Path(__file__).resolve().parents[2] / "gui_assets" / "cad"
+_DEFAULT_COMPILED_DIR = Path(__file__).resolve().parents[2] / "gui_assets" / "compiled"
 _MODEL_VIEWER_KIND = "model_viewer"
 _LEGACY_VIEWER_KIND = "rocket_viewer"
 _MODEL_MESH_MANIFEST_KIND = "model_mesh_manifest"
@@ -292,6 +293,7 @@ class ModelViewerConfig:
     show_axes: bool
     background_color_rgba: ColorRGBA
     body_bindings: tuple[ModelBodyBinding, ...]
+    theme_name: GuiThemeName
 
     def __init__(
         self,
@@ -315,6 +317,7 @@ class ModelViewerConfig:
         background_color_rgba: Sequence[float] = _DEFAULT_BACKGROUND_COLOR,
         body_bindings: Sequence[ModelBodyBinding | Mapping[str, Any]] | None = None,
         parts: Sequence[ModelBodyBinding | Mapping[str, Any]] | None = None,
+        theme_name: GuiThemeName = "legacy",
     ) -> None:
         resolved_viewer_id = str(viewer_id).strip()
         resolved_title = str(title).strip()
@@ -371,6 +374,7 @@ class ModelViewerConfig:
         object.__setattr__(self, "show_axes", bool(show_axes))
         object.__setattr__(self, "background_color_rgba", parsed_background_color)
         object.__setattr__(self, "body_bindings", parsed_bindings)
+        object.__setattr__(self, "theme_name", theme_name)
 
     def __repr__(self) -> str:
         return (
@@ -412,6 +416,7 @@ class ModelViewerConfig:
                 f"show_legend = {toml_bool(self.show_legend)}",
                 f"show_axes = {toml_bool(self.show_axes)}",
                 f"background_color_rgba = {toml_float_array(self.background_color_rgba)}",
+                f"theme_name = {toml_string(self.theme_name)}",
                 "",
             ]
         )
@@ -473,6 +478,7 @@ class ModelViewerConfig:
                 ModelBodyBinding.from_dict(item)
                 for item in data.get("body_bindings", data.get("parts", ()))
             ),
+            theme_name=str(data.get("theme_name", "legacy")),
         )
 
 
@@ -812,6 +818,7 @@ class ModelViewer:
         self.show_axes = config.show_axes
         self.background_color_rgba = config.background_color_rgba
         self.body_bindings = config.body_bindings
+        self.theme_name: GuiThemeName = config.theme_name
 
         self._manifest = _load_mesh_manifest(self.manifest_path)
         _validate_config_paths(config, self._manifest)
@@ -891,6 +898,12 @@ class ModelViewer:
 
     def render(self) -> None:
         imgui = _require_imgui()
+        if self.theme_name == "tau_ceti":
+            self._render_tau_ceti(imgui)
+        else:
+            self._render_legacy(imgui)
+
+    def _render_legacy(self, imgui: Any) -> None:
         imgui.text_unformatted(self.title)
         if imgui.button("Reset Camera", width=0.0, height=28.0):
             self.reset_camera()
@@ -917,6 +930,76 @@ class ModelViewer:
 
         if self.show_legend and self.body_bindings:
             self._render_legend(imgui)
+
+    def _render_tau_ceti(self, imgui: Any) -> None:
+        from . import chrome, theme as _theme
+
+        HEADER_H = 28.0
+        FOOTER_ROW_H = 18.0
+        FOOTER_PAD = 10.0
+        PANEL_PAD = 10.0
+
+        panel_w = chrome.available_width(imgui, fallback=640.0)
+        viewport_w = int(max(320.0, panel_w - 2.0))
+        viewport_h = int(_DEFAULT_VIEWPORT_HEIGHT)
+
+        legend_rows = len(self.body_bindings) if (self.show_legend and self.body_bindings) else 0
+        footer_h = (FOOTER_ROW_H * legend_rows + FOOTER_PAD * 2.0) if legend_rows else 0.0
+        panel_h = HEADER_H + viewport_h + footer_h
+
+        start_pos = imgui.get_cursor_screen_pos()
+        x0, y0 = chrome.xy(start_pos)
+        x1 = x0 + panel_w
+
+        dl = imgui.get_window_draw_list()
+
+        # Panel background + border
+        dl.add_rect_filled(x0, y0, x1, y0 + panel_h, chrome.rgba_u32(imgui, _theme.PANEL_BG))
+        dl.add_rect(x0, y0, x1, y0 + panel_h, chrome.rgba_u32(imgui, _theme.PANEL_BORDER))
+
+        # Header strip
+        header_y = y0 + HEADER_H
+        dl.add_line(x0, header_y, x1, header_y, chrome.rgba_u32(imgui, _theme.PANEL_BORDER), 1.0)
+        dl.add_rect_filled(
+            x0 + PANEL_PAD, y0 + 8.0,
+            x0 + PANEL_PAD + 6.0, y0 + 14.0,
+            chrome.rgba_u32(imgui, _theme.ACID),
+        )
+        dl.add_text(x0 + PANEL_PAD + 10.0, y0 + 6.0, chrome.rgba_u32(imgui, _theme.INK_2), self.title.upper())
+
+        reset_label = "RESET CAM"
+        rw, _ = chrome.estimate_text_size(imgui, reset_label)
+        dl.add_text(x1 - PANEL_PAD - rw, y0 + 6.0, chrome.rgba_u32(imgui, _theme.INK_3), reset_label)
+
+        # Invisible reset-cam button in header right zone
+        btn_x = x1 - PANEL_PAD - rw - 4.0
+        imgui.set_cursor_screen_pos((btn_x, y0))
+        if imgui.invisible_button(f"##{self.viewer_id}_reset", rw + 8.0, HEADER_H):
+            self.reset_camera()
+
+        # Footer legend via draw_list (rendered regardless of cursor position)
+        if legend_rows:
+            footer_top = y0 + HEADER_H + viewport_h
+            dl.add_line(x0, footer_top, x1, footer_top, chrome.rgba_u32(imgui, _theme.PANEL_BORDER), 1.0)
+            fy = footer_top + FOOTER_PAD
+            for binding in self.body_bindings:
+                snapshot = self.body_snapshot(binding.binding_id)
+                color = snapshot.color_rgba
+                label_text = f"\u25a0  {binding.binding_id}"
+                if snapshot.value is not None:
+                    label_text += f"  {snapshot.value:.2f}"
+                dl.add_text(x0 + PANEL_PAD, fy, chrome.rgba_u32(imgui, color), label_text)
+                fy += FOOTER_ROW_H
+
+        # 3D viewport image widget
+        texture_id = self._render_to_texture(viewport_w, viewport_h)
+        imgui.set_cursor_screen_pos((x0 + 1.0, y0 + HEADER_H))
+        imgui.image(texture_id, float(viewport_w), float(viewport_h), uv0=(0.0, 1.0), uv1=(1.0, 0.0))
+        self._apply_viewport_controls(imgui)
+
+        # Advance layout past the whole panel
+        imgui.set_cursor_screen_pos((x0, y0 + panel_h))
+        imgui.dummy(panel_w, 0.0)
 
     def build_dashboard_hooks(
         self,

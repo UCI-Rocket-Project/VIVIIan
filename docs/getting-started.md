@@ -126,6 +126,8 @@ python -m py_compile \
 ## Run The Manual GUI Example
 
 The current operator-desk example is:
+Run it from the repo root; the script resolves the repo root and `src/`
+automatically when launched directly.
 
 ```bash
 python tests/gui_runnables/signal_graph_lab.py

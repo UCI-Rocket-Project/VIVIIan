@@ -18,10 +18,18 @@ for the cached triangles.
 
 import argparse
 from pathlib import Path
+import sys
 import time
 from typing import Any, Sequence
 
 import numpy as np
+
+if __package__ in {None, ""}:
+    _REPO_ROOT = Path(__file__).resolve().parents[2]
+    for _path in (_REPO_ROOT, _REPO_ROOT / "src"):
+        _path_str = str(_path)
+        if _path_str not in sys.path:
+            sys.path.insert(0, _path_str)
 
 from viviian.gui_utils import (
     ModelBodyBinding,

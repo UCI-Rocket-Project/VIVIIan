@@ -258,6 +258,9 @@ Use `frontend.output_slots` to map vector indices back to component and state ID
 
 ## Interactive Lab
 
+Run the lab from the repo root; the script resolves the repo root and `src/`
+automatically when launched directly.
+
 ```bash
 python tests/gui_runnables/frontend_lab.py
 ```
