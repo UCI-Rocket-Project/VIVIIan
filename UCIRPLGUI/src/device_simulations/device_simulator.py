@@ -62,8 +62,8 @@ class SimulatorConfig:
     ecu_port: int = 10004
     extr_ecu_port: int = 10006
     loadcell_port: int = 10069
-    update_hz: float = 20.0
-    telemetry_hz: float = 5.0
+    update_hz: float = 2000.0
+    telemetry_hz: float = 1000.0
     seed: int = 42
 
 
@@ -690,8 +690,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ecu-port", type=int, default=10004)
     parser.add_argument("--extr-ecu-port", type=int, default=10006)
     parser.add_argument("--loadcell-port", type=int, default=10069)
-    parser.add_argument("--update-hz", type=float, default=20.0)
-    parser.add_argument("--telemetry-hz", type=float, default=5.0)
+    parser.add_argument("--update-hz", type=float, default=2000.0)
+    parser.add_argument("--telemetry-hz", type=float, default=1000.0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--skip-self-checks", action="store_true")
     return parser.parse_args()

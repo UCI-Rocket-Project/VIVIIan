@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from .dashboard import DASHBOARD_RENDER_ORDER
+from .dashboard import UCIRPLDashboard, build_dashboard
 
 __all__ = [
-    "DASHBOARD_RENDER_ORDER",
+    "UCIRPLDashboard",
+    "build_dashboard",
 ]

@@ -1,9 +1,17 @@
 from __future__ import annotations
 
-from .backend_sim_device import BackendSimDeviceInterface
-from .frontend_operator_desk import FrontendOperatorDesk
+from .device_interfacees import (
+    ECUDeviceInterface,
+    EXTRECUDeviceInterface,
+    GSEDeviceInterface,
+    LoadCellDeviceInterface,
+    run_device_interface,
+)
 
 __all__ = [
-    "BackendSimDeviceInterface",
-    "FrontendOperatorDesk",
+    "ECUDeviceInterface",
+    "EXTRECUDeviceInterface",
+    "GSEDeviceInterface",
+    "LoadCellDeviceInterface",
+    "run_device_interface",
 ]
