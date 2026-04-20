@@ -65,7 +65,7 @@ class MicroButton(ConsoleComponent):
         )
         pressed = imgui.button(self._display_text(), width=self.SIZE, height=self.SIZE)
         _pop_button_colors(imgui, color_count=color_count, var_count=var_count)
-        if pressed and not self.disabled:
+        if pressed and not self.disabled and _ctrl_held(imgui):
             if self.toggle_on_press:
                 self.active = not self.active
             if self.on_press is not None:
@@ -170,7 +170,7 @@ class ToolbarButton:
         )
         pressed = imgui.button(self._display_text(), width=0.0, height=32.0)
         _pop_button_colors(imgui, color_count=color_count, var_count=var_count)
-        if pressed and not self.disabled:
+        if pressed and not self.disabled and _ctrl_held(imgui):
             if self.on_press is not None:
                 self.on_press(self)
             return True
@@ -273,7 +273,7 @@ class Subbar(ConsoleComponent):
                 text=(theme.ACID if index == self.active_tab else theme.INK_2),
                 border=(theme.ACID if index == self.active_tab else theme.PANEL_BORDER),
             )
-            if imgui.button(tab, width=0.0, height=28.0):
+            if imgui.button(tab, width=0.0, height=28.0) and _ctrl_held(imgui):
                 self.active_tab = index
             _pop_button_colors(imgui, color_count=color_count, var_count=var_count)
             if index < len(self.tabs) - 1:
@@ -324,7 +324,7 @@ class EventLogPanel(ConsoleComponent):
                 text=_severity_color(severity),
                 border=_severity_color(severity),
             )
-            if imgui.button(f"{severity.upper()} {count}", width=0.0, height=24.0):
+            if imgui.button(f"{severity.upper()} {count}", width=0.0, height=24.0) and _ctrl_held(imgui):
                 if active:
                     self.active_filters.discard(severity)
                 else:
@@ -376,16 +376,16 @@ class ProcedureCarousel(ConsoleComponent):
                 text=color,
                 border=color,
             )
-            if imgui.button(f"{index + 1:02d} {step.title}", width=0.0, height=34.0):
+            if imgui.button(f"{index + 1:02d} {step.title}", width=0.0, height=34.0) and _ctrl_held(imgui):
                 self.active_index = index
             _pop_button_colors(imgui, color_count=color_count, var_count=var_count)
             imgui.text_disabled(step.subtitle)
         if self.active_index > 0:
-            if imgui.button("Prev", width=70.0, height=28.0):
+            if imgui.button("Prev", width=70.0, height=28.0) and _ctrl_held(imgui):
                 self.active_index -= 1
             imgui.same_line()
         if self.active_index < len(self.steps) - 1:
-            if imgui.button("Next", width=70.0, height=28.0):
+            if imgui.button("Next", width=70.0, height=28.0) and _ctrl_held(imgui):
                 self.active_index += 1
 
 
@@ -584,6 +584,12 @@ def _require_imgui() -> Any:
             "imgui is required for operator widget rendering. Install a Dear ImGui binding."
         ) from exc
     return imgui
+
+
+def _ctrl_held(imgui: Any) -> bool:
+    """Return True when the Ctrl modifier is currently held."""
+    io = imgui.get_io()
+    return bool(getattr(io, 'key_ctrl', False))
 
 
 __all__ = [

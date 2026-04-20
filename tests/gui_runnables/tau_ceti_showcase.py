@@ -434,10 +434,11 @@ class TauCetiShowcaseDashboard(ConsoleComponent):
         imgui.spacing()
 
         gate_states = {"safe_key": True, "go_flight": True, "flight_mode": True}
+        imgui.columns(len(self.buttons), "buttons_row", border=False)
         for index, button in enumerate(self.buttons):
             button.render(gate_states=gate_states, interlock_states=gate_states)
-            if index < len(self.buttons) - 1:
-                imgui.same_line()
+            imgui.next_column()
+        imgui.columns(1)
         imgui.spacing()
 
         for button in self.setpoint_buttons:
@@ -530,6 +531,7 @@ def build_showcase_pipeline() -> Pipeline:
             theme_name="tau_ceti",
         ),
         window_title=_WINDOW_TITLE,
+        fill_backend_window=True,
     )
     pipe = Pipeline("tau-ceti-showcase")
     for stream_name in frontend.required_reads:

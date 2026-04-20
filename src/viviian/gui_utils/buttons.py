@@ -146,7 +146,7 @@ class StateButton:
         imgui.pop_style_color(3)
 
         self._render_status_text(imgui, enabled=enabled)
-        if not enabled or not pressed:
+        if not enabled or not pressed or not _ctrl_held(imgui):
             return None
         return self._emit_update()
 
@@ -233,7 +233,7 @@ class StateButton:
         if color_count > 0:
             imgui.pop_style_color(color_count)
 
-        if not enabled or not pressed:
+        if not enabled or not pressed or not _ctrl_held(imgui):
             return None
         return self._emit_update()
 
@@ -602,7 +602,7 @@ class SetpointButton(StateButton):
         imgui.push_style_color(imgui.COLOR_BUTTON, *adj_base)
         imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *adj_hover)
         imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *adj_active)
-        decrement = imgui.button(f"-##{self.button_id}", width=28.0, height=28.0)
+        decrement = imgui.button(f"-##{self.button_id}", width=28.0, height=28.0) and _ctrl_held(imgui)
         imgui.pop_style_color(3)
 
         imgui.same_line()
@@ -613,7 +613,7 @@ class SetpointButton(StateButton):
         imgui.push_style_color(imgui.COLOR_BUTTON, *adj_base)
         imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *adj_hover)
         imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *adj_active)
-        increment = imgui.button(f"+##{self.button_id}", width=28.0, height=28.0)
+        increment = imgui.button(f"+##{self.button_id}", width=28.0, height=28.0) and _ctrl_held(imgui)
         imgui.pop_style_color(3)
 
         imgui.same_line()
@@ -621,7 +621,7 @@ class SetpointButton(StateButton):
         imgui.push_style_color(imgui.COLOR_BUTTON, *set_base)
         imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *set_hover)
         imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *set_active)
-        set_pressed = imgui.button(f"SET##{self.button_id}", width=40.0, height=28.0)
+        set_pressed = imgui.button(f"SET##{self.button_id}", width=40.0, height=28.0) and _ctrl_held(imgui)
         imgui.pop_style_color(3)
 
         if enabled:
@@ -634,7 +634,7 @@ class SetpointButton(StateButton):
 
         self._render_status_text(imgui, enabled=enabled)
 
-        if enabled and (decrement or input_changed or increment or set_pressed):
+        if enabled and set_pressed:
             return self._commit()
         return None
 
@@ -657,21 +657,27 @@ class SetpointButton(StateButton):
 
         # Background drawn first so controls appear on top
         base_bg, _, _ = self._button_colors(enabled=enabled)
+        border = self._border_color(enabled=enabled)
         draw_list.add_rect_filled(x0, y0, x1, y1, rgba_u32(imgui, base_bg))
 
-        # Layout geometry — unit is embedded in the input format string
+        # Layout geometry
+        state_field_width = 56.0
+        state_x0 = x1 - state_field_width
         led_x1 = x0 + theme.BUTTON_LED_TAB_PX
         label_x = led_x1 + 14.0
-        controls_total_w = (
-            _SETPOINT_MINI_BTN_W + 60.0 + _SETPOINT_MINI_BTN_W
-            + _SETPOINT_SET_BTN_GAP + _SETPOINT_SET_BTN_W
-        )
-        controls_x = max(label_x + 110.0, x1 - controls_total_w - 14.0)
-        input_w = max(
-            60.0,
-            x1 - 14.0 - controls_x - _SETPOINT_MINI_BTN_W - _SETPOINT_MINI_BTN_W
-            - _SETPOINT_SET_BTN_GAP - _SETPOINT_SET_BTN_W,
-        )
+        
+        # Controls group: [-], input, [+]
+        # We ensure they don't bleed into the SET field or the label area
+        controls_padding = 12.0
+        max_controls_w = state_x0 - label_x - 110.0 - controls_padding
+        mini_buttons_w = _SETPOINT_MINI_BTN_W * 2.0
+
+
+        # controls the length of the input field, (ie where you intput the value for the sensor/actuator)
+        input_w = min(60, max_controls_w - mini_buttons_w)
+        
+        controls_total_w = mini_buttons_w + input_w
+        controls_x = state_x0 - controls_total_w - controls_padding
         controls_y = y0 + (widget_height - _SETPOINT_MINI_BTN_H) * 0.5
 
         fmt = f"%.6g {self.unit}" if self.unit else "%.6g"
@@ -694,38 +700,33 @@ class SetpointButton(StateButton):
             var_count += 1
 
         imgui.set_cursor_screen_pos((controls_x, controls_y))
-        decrement = imgui.button(f"-##{self.button_id}", width=_SETPOINT_MINI_BTN_W, height=_SETPOINT_MINI_BTN_H)
+        decrement = imgui.button(f"-##{self.button_id}", width=_SETPOINT_MINI_BTN_W, height=_SETPOINT_MINI_BTN_H) and _ctrl_held(imgui)
         imgui.same_line()
         imgui.set_next_item_width(input_w)
         input_changed, typed = imgui.input_float(f"##{self.button_id}_in", self._pending_value, 0.0, 0.0, fmt)
         imgui.same_line()
-        increment = imgui.button(f"+##{self.button_id}", width=_SETPOINT_MINI_BTN_W, height=_SETPOINT_MINI_BTN_H)
+        increment = imgui.button(f"+##{self.button_id}", width=_SETPOINT_MINI_BTN_W, height=_SETPOINT_MINI_BTN_H) and _ctrl_held(imgui)
 
         if var_count > 0:
             imgui.pop_style_var(var_count)
         if color_count > 0:
             imgui.pop_style_color(color_count)
 
-        # SET button with variant accent color
-        imgui.same_line()
-        set_color_count = 0
-        set_base, set_hover, set_active = self._set_button_colors(enabled=enabled)
-        imgui.push_style_color(imgui.COLOR_BUTTON, *set_base)
-        set_color_count += 1
-        imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *set_hover)
-        set_color_count += 1
-        imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *set_active)
-        set_color_count += 1
-        if hasattr(imgui, "STYLE_FRAME_ROUNDING"):
-            imgui.push_style_var(imgui.STYLE_FRAME_ROUNDING, 0.0)
-        if hasattr(imgui, "STYLE_FRAME_BORDER_SIZE"):
-            imgui.push_style_var(imgui.STYLE_FRAME_BORDER_SIZE, 1.0)
-        set_pressed = imgui.button(f"SET##{self.button_id}", width=_SETPOINT_SET_BTN_W, height=_SETPOINT_MINI_BTN_H)
-        if hasattr(imgui, "STYLE_FRAME_BORDER_SIZE"):
-            imgui.pop_style_var()
-        if hasattr(imgui, "STYLE_FRAME_ROUNDING"):
-            imgui.pop_style_var()
-        imgui.pop_style_color(set_color_count)
+        # SET field background and border (flush right, full height)
+        state_bg, state_fg = self._state_field_colors(enabled=enabled)
+        draw_list.add_rect_filled(state_x0, y0, x1, y1, rgba_u32(imgui, state_bg))
+        draw_list.add_line(state_x0, y0, state_x0, y1, rgba_u32(imgui, border), 1.0)
+
+        # Invisible button for click handling
+        imgui.set_cursor_screen_pos((state_x0, y0))
+        set_pressed = imgui.invisible_button(f"SET##{self.button_id}", state_field_width, widget_height) and _ctrl_held(imgui)
+
+        # Draw "SET" text centered in the field
+        text = "SET"
+        tw, th = estimate_text_size(imgui, text)
+        tx = state_x0 + (state_field_width - tw) * 0.5
+        ty = y0 + (widget_height - th) * 0.5
+        draw_list.add_text(tx, ty, rgba_u32(imgui, state_fg), text)
 
         if enabled:
             if decrement:
@@ -757,7 +758,7 @@ class SetpointButton(StateButton):
             stripe_color=led_color,
         )
 
-        if enabled and (decrement or input_changed or increment or set_pressed):
+        if enabled and set_pressed:
             return self._commit()
         return None
 
@@ -823,3 +824,9 @@ def _require_imgui() -> Any:
             "imgui is required for button rendering. Install a Dear ImGui binding."
         ) from exc
     return imgui
+
+
+def _ctrl_held(imgui: Any) -> bool:
+    """Return True when the Ctrl modifier is currently held."""
+    io = imgui.get_io()
+    return bool(getattr(io, 'key_ctrl', False))

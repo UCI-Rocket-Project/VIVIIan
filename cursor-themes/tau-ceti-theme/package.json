@@ -1,0 +1,22 @@
+{
+  "name": "tau-ceti-cursor-theme",
+  "displayName": "Tau-Ceti Theme",
+  "description": "High-contrast dark Cursor/VS Code theme inspired by the Tau-Ceti operator desk palette.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "label": "Tau-Ceti",
+        "uiTheme": "vs-dark",
+        "path": "./themes/tau-ceti-color-theme.json"
+      }
+    ]
+  }
+}

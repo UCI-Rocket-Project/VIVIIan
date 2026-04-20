@@ -905,7 +905,7 @@ class ModelViewer:
 
     def _render_legacy(self, imgui: Any) -> None:
         imgui.text_unformatted(self.title)
-        if imgui.button("Reset Camera", width=0.0, height=28.0):
+        if imgui.button("Reset Camera", width=0.0, height=28.0) and _ctrl_held(imgui):
             self.reset_camera()
 
         if self.show_legend and self.body_bindings:
@@ -974,7 +974,7 @@ class ModelViewer:
         # Invisible reset-cam button in header right zone
         btn_x = x1 - PANEL_PAD - rw - 4.0
         imgui.set_cursor_screen_pos((btn_x, y0))
-        if imgui.invisible_button(f"##{self.viewer_id}_reset", rw + 8.0, HEADER_H):
+        if imgui.invisible_button(f"##{self.viewer_id}_reset", rw + 8.0, HEADER_H) and _ctrl_held(imgui):
             self.reset_camera()
 
         # Footer legend via draw_list (rendered regardless of cursor position)
@@ -2015,6 +2015,12 @@ RocketPartBinding = ModelBodyBinding
 RocketPartSnapshot = ModelBodySnapshot
 RocketViewerConfig = ModelViewerConfig
 RocketViewer = ModelViewer
+
+def _ctrl_held(imgui: Any) -> bool:
+    """Return True when the Ctrl modifier is currently held."""
+    io = imgui.get_io()
+    return bool(getattr(io, 'key_ctrl', False))
+
 
 __all__ = [
     "GradientStop",

@@ -526,7 +526,7 @@ class SensorGraph:
                 imgui.pop_style_var(var_count)
             if color_count > 0:
                 imgui.pop_style_color(color_count)
-            if pressed:
+            if pressed and _ctrl_held(imgui):
                 runtime.visible = not runtime.visible
                 self._y_limits = self._target_display_limits()
             if index < len(self.series) - 1:
@@ -799,3 +799,9 @@ def _require_imgui() -> Any:
             "imgui is required for SensorGraph rendering. Install a Dear ImGui binding."
         ) from exc
     return imgui
+
+
+def _ctrl_held(imgui: Any) -> bool:
+    """Return True when the Ctrl modifier is currently held."""
+    io = imgui.get_io()
+    return bool(getattr(io, 'key_ctrl', False))

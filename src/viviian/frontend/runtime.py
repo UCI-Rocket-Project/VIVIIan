@@ -90,6 +90,7 @@ class Frontend:
         output_binding: str = "output",
         backend: BackendSpec | None = None,
         window_title: str | None = None,
+        fill_backend_window: bool = False,
     ) -> "FrontendTask":
         self.compile()
         return FrontendTask(
@@ -100,6 +101,7 @@ class Frontend:
             output_slots=self._output_slots,
             output_binding=output_binding,
             backend=(backend or GlfwBackend()),
+            fill_backend_window=bool(fill_backend_window),
         )
 
     def output_ring_size(self, *, headroom_frames: int = 8) -> int:
@@ -178,6 +180,7 @@ class FrontendTask:
     output_slots: tuple[OutputSlotSpec, ...]
     output_binding: str
     backend: BackendSpec
+    fill_backend_window: bool = False
 
     def __call__(self, **bindings: Any) -> None:
         readers = self._resolve_reader_bindings(bindings)
@@ -199,7 +202,18 @@ class FrontendTask:
 
                 backend_session.begin_frame()
                 imgui = backend_session.imgui
-                imgui.begin(self.window_title)
+                begin_kwargs: dict[str, Any] = {}
+                if self.fill_backend_window:
+                    display_size = getattr(imgui.get_io(), "display_size", (0.0, 0.0))
+                    width = float(display_size[0]) if len(display_size) > 0 else 0.0
+                    height = float(display_size[1]) if len(display_size) > 1 else 0.0
+                    if width > 0.0 and height > 0.0:
+                        if hasattr(imgui, "set_next_window_position"):
+                            imgui.set_next_window_position(0.0, 0.0)
+                        if hasattr(imgui, "set_next_window_size"):
+                            imgui.set_next_window_size(width, height)
+                    begin_kwargs["flags"] = self._fullscreen_window_flags(imgui)
+                imgui.begin(self.window_title, **begin_kwargs)
                 for index, adapter in enumerate(self.adapters):
                     context = self._render_context()
                     if adapter.render(context):
@@ -289,6 +303,20 @@ class FrontendTask:
             if adapter.after_snapshot_written():
                 had_reset = True
         return had_reset
+
+    @staticmethod
+    def _fullscreen_window_flags(imgui: Any) -> int:
+        flags = 0
+        for name in (
+            "WINDOW_NO_TITLE_BAR",
+            "WINDOW_NO_RESIZE",
+            "WINDOW_NO_MOVE",
+            "WINDOW_NO_COLLAPSE",
+            "WINDOW_NO_BRING_TO_FRONT_ON_FOCUS",
+            "WINDOW_NO_SAVED_SETTINGS",
+        ):
+            flags |= int(getattr(imgui, name, 0))
+        return flags
 
 
 __all__ = [

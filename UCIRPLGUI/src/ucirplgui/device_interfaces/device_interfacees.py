@@ -3,19 +3,13 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from ucirplgui import config
+from viviian.deviceinterface import DeviceInterface
 
+class ECUDeviceInterface(DeviceInterface):
+    """Scaffold for the ECU device boundary.
 
-class BackendSimDeviceInterface:
-    """Scaffold for the backend device boundary.
-
-    This class is the intended home for a simulated telemetry source first,
-    and later for hardware-facing integration or a wrapped DeviceInterface.
-    """
-
-    interface_id = "backend_sim_device"
-
-    def stream_names(self) -> tuple[str, ...]:
-        return config.TELEMETRY_STREAMS
+    This class is the intended home a wrapped DeviceInterface.
+    """    
 
     def build_source_task(self) -> Callable[..., None]:
         # TODO: Replace this placeholder with a real source task that writes
