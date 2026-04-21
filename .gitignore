@@ -36,6 +36,8 @@ Thumbs.db
 *.log
 imgui.ini
 
+UCIRPLGUI/data/device_link/
+
 
 /site
 

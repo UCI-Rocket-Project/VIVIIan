@@ -6,7 +6,7 @@ A reusable dark high-contrast Cursor/VS Code theme based on the Tau-Ceti operato
 
 The theme colors are derived from:
 
-- `src/viviian/gui_utils/theme.py`
+- `packages/viviian_core/src/viviian/gui_utils/theme.py`
 - `VOID`, `PANEL_BG*`, `PANEL_BORDER`
 - `INK`, `INK_2`, `INK_3`
 - `ACID`, `ALERT`, `WARN`, `CRIT`

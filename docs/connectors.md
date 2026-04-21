@@ -1,5 +1,10 @@
 # Connectors
 
+If you are trying to add a stream, wire a sender/receiver pair, or understand what
+shape your telemetry batch should have, start with
+[Build With VIVIIan -> Telemetry](build-telemetry.md).
+This page is the transport reference.
+
 This page documents the connector runtime that exists in the repo today.
 It fits the `deviceinterface` / `orchestrator` architecture, but it is not the
 full future transport story described in [Architecture](architecture.md).
@@ -8,7 +13,7 @@ full future transport story described in [Architecture](architecture.md).
 
 The current connector runtime lives in:
 
-- `src/viviian/connector_utils/connectors.py`
+- `packages/viviian_core/src/viviian/connector_utils/connectors.py`
 
 It provides three public objects:
 
@@ -354,3 +359,9 @@ The benchmark reserves the first two columns of each batch for:
 
 That is benchmark instrumentation only.
 It is not a required connector runtime convention for normal application use.
+
+## What To Read Next
+
+- [Telemetry](build-telemetry.md) — task-driven guide for defining and wiring streams
+- [Backend](build-backend.md) — where connector pairs usually get composed in an app
+- [Device Interfaces](build-device-interfaces.md) — when the producer is a board, socket, or simulator

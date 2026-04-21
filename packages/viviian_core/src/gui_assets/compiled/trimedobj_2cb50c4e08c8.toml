@@ -1,0 +1,6520 @@
+format_version = 1
+kind = "rocket_mesh_manifest"
+
+mesh_cache_version = 1
+source_asset_kind = "obj"
+source_asset_path = "/Users/daciwolf/Documents/VIVIIan/gui_assets/cad/trimedobj.obj"
+source_sha256 = "2cb50c4e08c8ed21d59f0e070a6c1ffb112f5fa0798ad2d6a4897b28bd7d3039"
+cache_file = "trimedobj_2cb50c4e08c8.npz"
+
+[[mesh_parts]]
+part_id = "g_Body1"
+mesh_part_name = "g_Body1"
+vertex_start = 0
+vertex_count = 23022
+index_start = 0
+index_count = 23022
+
+[[mesh_parts]]
+part_id = "g_Body1:1"
+mesh_part_name = "g_Body1:1"
+vertex_start = 23022
+vertex_count = 26490
+index_start = 23022
+index_count = 26490
+
+[[mesh_parts]]
+part_id = "g_Body1:2"
+mesh_part_name = "g_Body1:2"
+vertex_start = 49512
+vertex_count = 26250
+index_start = 49512
+index_count = 26250
+
+[[mesh_parts]]
+part_id = "g_Body1:3"
+mesh_part_name = "g_Body1:3"
+vertex_start = 75762
+vertex_count = 23832
+index_start = 75762
+index_count = 23832
+
+[[mesh_parts]]
+part_id = "g_Body1:4"
+mesh_part_name = "g_Body1:4"
+vertex_start = 99594
+vertex_count = 23826
+index_start = 99594
+index_count = 23826
+
+[[mesh_parts]]
+part_id = "g_Body1:5"
+mesh_part_name = "g_Body1:5"
+vertex_start = 123420
+vertex_count = 23814
+index_start = 123420
+index_count = 23814
+
+[[mesh_parts]]
+part_id = "g_Body1:6"
+mesh_part_name = "g_Body1:6"
+vertex_start = 147234
+vertex_count = 26472
+index_start = 147234
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:7"
+mesh_part_name = "g_Body1:7"
+vertex_start = 173706
+vertex_count = 56502
+index_start = 173706
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:8"
+mesh_part_name = "g_Body1:8"
+vertex_start = 230208
+vertex_count = 23022
+index_start = 230208
+index_count = 23022
+
+[[mesh_parts]]
+part_id = "g_Body1:9"
+mesh_part_name = "g_Body1:9"
+vertex_start = 253230
+vertex_count = 23022
+index_start = 253230
+index_count = 23022
+
+[[mesh_parts]]
+part_id = "g_Body1:10"
+mesh_part_name = "g_Body1:10"
+vertex_start = 276252
+vertex_count = 26472
+index_start = 276252
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:11"
+mesh_part_name = "g_Body1:11"
+vertex_start = 302724
+vertex_count = 26472
+index_start = 302724
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:12"
+mesh_part_name = "g_Body1:12"
+vertex_start = 329196
+vertex_count = 26472
+index_start = 329196
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:13"
+mesh_part_name = "g_Body1:13"
+vertex_start = 355668
+vertex_count = 26472
+index_start = 355668
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:14"
+mesh_part_name = "g_Body1:14"
+vertex_start = 382140
+vertex_count = 26472
+index_start = 382140
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:15"
+mesh_part_name = "g_Body1:15"
+vertex_start = 408612
+vertex_count = 26472
+index_start = 408612
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:16"
+mesh_part_name = "g_Body1:16"
+vertex_start = 435084
+vertex_count = 26472
+index_start = 435084
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:17"
+mesh_part_name = "g_Body1:17"
+vertex_start = 461556
+vertex_count = 26472
+index_start = 461556
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:18"
+mesh_part_name = "g_Body1:18"
+vertex_start = 488028
+vertex_count = 26472
+index_start = 488028
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:19"
+mesh_part_name = "g_Body1:19"
+vertex_start = 514500
+vertex_count = 26472
+index_start = 514500
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:20"
+mesh_part_name = "g_Body1:20"
+vertex_start = 540972
+vertex_count = 26472
+index_start = 540972
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:21"
+mesh_part_name = "g_Body1:21"
+vertex_start = 567444
+vertex_count = 26472
+index_start = 567444
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:22"
+mesh_part_name = "g_Body1:22"
+vertex_start = 593916
+vertex_count = 26472
+index_start = 593916
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:23"
+mesh_part_name = "g_Body1:23"
+vertex_start = 620388
+vertex_count = 26472
+index_start = 620388
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:24"
+mesh_part_name = "g_Body1:24"
+vertex_start = 646860
+vertex_count = 26472
+index_start = 646860
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:25"
+mesh_part_name = "g_Body1:25"
+vertex_start = 673332
+vertex_count = 26472
+index_start = 673332
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:26"
+mesh_part_name = "g_Body1:26"
+vertex_start = 699804
+vertex_count = 26472
+index_start = 699804
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:27"
+mesh_part_name = "g_Body1:27"
+vertex_start = 726276
+vertex_count = 26472
+index_start = 726276
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:28"
+mesh_part_name = "g_Body1:28"
+vertex_start = 752748
+vertex_count = 26472
+index_start = 752748
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:29"
+mesh_part_name = "g_Body1:29"
+vertex_start = 779220
+vertex_count = 26472
+index_start = 779220
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:30"
+mesh_part_name = "g_Body1:30"
+vertex_start = 805692
+vertex_count = 26472
+index_start = 805692
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:31"
+mesh_part_name = "g_Body1:31"
+vertex_start = 832164
+vertex_count = 26472
+index_start = 832164
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:32"
+mesh_part_name = "g_Body1:32"
+vertex_start = 858636
+vertex_count = 26472
+index_start = 858636
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:33"
+mesh_part_name = "g_Body1:33"
+vertex_start = 885108
+vertex_count = 26472
+index_start = 885108
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:34"
+mesh_part_name = "g_Body1:34"
+vertex_start = 911580
+vertex_count = 26472
+index_start = 911580
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:35"
+mesh_part_name = "g_Body1:35"
+vertex_start = 938052
+vertex_count = 26472
+index_start = 938052
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:36"
+mesh_part_name = "g_Body1:36"
+vertex_start = 964524
+vertex_count = 26472
+index_start = 964524
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:37"
+mesh_part_name = "g_Body1:37"
+vertex_start = 990996
+vertex_count = 26472
+index_start = 990996
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:38"
+mesh_part_name = "g_Body1:38"
+vertex_start = 1017468
+vertex_count = 26472
+index_start = 1017468
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:39"
+mesh_part_name = "g_Body1:39"
+vertex_start = 1043940
+vertex_count = 26472
+index_start = 1043940
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:40"
+mesh_part_name = "g_Body1:40"
+vertex_start = 1070412
+vertex_count = 26472
+index_start = 1070412
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:41"
+mesh_part_name = "g_Body1:41"
+vertex_start = 1096884
+vertex_count = 26472
+index_start = 1096884
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:42"
+mesh_part_name = "g_Body1:42"
+vertex_start = 1123356
+vertex_count = 26472
+index_start = 1123356
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:43"
+mesh_part_name = "g_Body1:43"
+vertex_start = 1149828
+vertex_count = 26472
+index_start = 1149828
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:44"
+mesh_part_name = "g_Body1:44"
+vertex_start = 1176300
+vertex_count = 26472
+index_start = 1176300
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:45"
+mesh_part_name = "g_Body1:45"
+vertex_start = 1202772
+vertex_count = 26472
+index_start = 1202772
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:46"
+mesh_part_name = "g_Body1:46"
+vertex_start = 1229244
+vertex_count = 26472
+index_start = 1229244
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:47"
+mesh_part_name = "g_Body1:47"
+vertex_start = 1255716
+vertex_count = 26472
+index_start = 1255716
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:48"
+mesh_part_name = "g_Body1:48"
+vertex_start = 1282188
+vertex_count = 26472
+index_start = 1282188
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:49"
+mesh_part_name = "g_Body1:49"
+vertex_start = 1308660
+vertex_count = 26472
+index_start = 1308660
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:50"
+mesh_part_name = "g_Body1:50"
+vertex_start = 1335132
+vertex_count = 26472
+index_start = 1335132
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:51"
+mesh_part_name = "g_Body1:51"
+vertex_start = 1361604
+vertex_count = 26472
+index_start = 1361604
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:52"
+mesh_part_name = "g_Body1:52"
+vertex_start = 1388076
+vertex_count = 26472
+index_start = 1388076
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:53"
+mesh_part_name = "g_Body1:53"
+vertex_start = 1414548
+vertex_count = 26472
+index_start = 1414548
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:54"
+mesh_part_name = "g_Body1:54"
+vertex_start = 1441020
+vertex_count = 26472
+index_start = 1441020
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:55"
+mesh_part_name = "g_Body1:55"
+vertex_start = 1467492
+vertex_count = 26472
+index_start = 1467492
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:56"
+mesh_part_name = "g_Body1:56"
+vertex_start = 1493964
+vertex_count = 26472
+index_start = 1493964
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:57"
+mesh_part_name = "g_Body1:57"
+vertex_start = 1520436
+vertex_count = 26472
+index_start = 1520436
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:58"
+mesh_part_name = "g_Body1:58"
+vertex_start = 1546908
+vertex_count = 26472
+index_start = 1546908
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:59"
+mesh_part_name = "g_Body1:59"
+vertex_start = 1573380
+vertex_count = 26472
+index_start = 1573380
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:60"
+mesh_part_name = "g_Body1:60"
+vertex_start = 1599852
+vertex_count = 26472
+index_start = 1599852
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:61"
+mesh_part_name = "g_Body1:61"
+vertex_start = 1626324
+vertex_count = 26472
+index_start = 1626324
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:62"
+mesh_part_name = "g_Body1:62"
+vertex_start = 1652796
+vertex_count = 26472
+index_start = 1652796
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:63"
+mesh_part_name = "g_Body1:63"
+vertex_start = 1679268
+vertex_count = 26472
+index_start = 1679268
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:64"
+mesh_part_name = "g_Body1:64"
+vertex_start = 1705740
+vertex_count = 26472
+index_start = 1705740
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:65"
+mesh_part_name = "g_Body1:65"
+vertex_start = 1732212
+vertex_count = 26472
+index_start = 1732212
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:66"
+mesh_part_name = "g_Body1:66"
+vertex_start = 1758684
+vertex_count = 26472
+index_start = 1758684
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:67"
+mesh_part_name = "g_Body1:67"
+vertex_start = 1785156
+vertex_count = 26472
+index_start = 1785156
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:68"
+mesh_part_name = "g_Body1:68"
+vertex_start = 1811628
+vertex_count = 26472
+index_start = 1811628
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:69"
+mesh_part_name = "g_Body1:69"
+vertex_start = 1838100
+vertex_count = 26472
+index_start = 1838100
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:70"
+mesh_part_name = "g_Body1:70"
+vertex_start = 1864572
+vertex_count = 26472
+index_start = 1864572
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:71"
+mesh_part_name = "g_Body1:71"
+vertex_start = 1891044
+vertex_count = 26472
+index_start = 1891044
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:72"
+mesh_part_name = "g_Body1:72"
+vertex_start = 1917516
+vertex_count = 26472
+index_start = 1917516
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:73"
+mesh_part_name = "g_Body1:73"
+vertex_start = 1943988
+vertex_count = 26472
+index_start = 1943988
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:74"
+mesh_part_name = "g_Body1:74"
+vertex_start = 1970460
+vertex_count = 26472
+index_start = 1970460
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:75"
+mesh_part_name = "g_Body1:75"
+vertex_start = 1996932
+vertex_count = 56502
+index_start = 1996932
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:76"
+mesh_part_name = "g_Body1:76"
+vertex_start = 2053434
+vertex_count = 56502
+index_start = 2053434
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:77"
+mesh_part_name = "g_Body1:77"
+vertex_start = 2109936
+vertex_count = 56502
+index_start = 2109936
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:78"
+mesh_part_name = "g_Body1:78"
+vertex_start = 2166438
+vertex_count = 56502
+index_start = 2166438
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:79"
+mesh_part_name = "g_Body1:79"
+vertex_start = 2222940
+vertex_count = 56502
+index_start = 2222940
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:80"
+mesh_part_name = "g_Body1:80"
+vertex_start = 2279442
+vertex_count = 56502
+index_start = 2279442
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:81"
+mesh_part_name = "g_Body1:81"
+vertex_start = 2335944
+vertex_count = 56502
+index_start = 2335944
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:82"
+mesh_part_name = "g_Body1:82"
+vertex_start = 2392446
+vertex_count = 56502
+index_start = 2392446
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:83"
+mesh_part_name = "g_Body1:83"
+vertex_start = 2448948
+vertex_count = 56502
+index_start = 2448948
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:84"
+mesh_part_name = "g_Body1:84"
+vertex_start = 2505450
+vertex_count = 56502
+index_start = 2505450
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:85"
+mesh_part_name = "g_Body1:85"
+vertex_start = 2561952
+vertex_count = 56502
+index_start = 2561952
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:86"
+mesh_part_name = "g_Body1:86"
+vertex_start = 2618454
+vertex_count = 56502
+index_start = 2618454
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:87"
+mesh_part_name = "g_Body1:87"
+vertex_start = 2674956
+vertex_count = 56502
+index_start = 2674956
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:88"
+mesh_part_name = "g_Body1:88"
+vertex_start = 2731458
+vertex_count = 56502
+index_start = 2731458
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:89"
+mesh_part_name = "g_Body1:89"
+vertex_start = 2787960
+vertex_count = 56502
+index_start = 2787960
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:90"
+mesh_part_name = "g_Body1:90"
+vertex_start = 2844462
+vertex_count = 56502
+index_start = 2844462
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:91"
+mesh_part_name = "g_Body1:91"
+vertex_start = 2900964
+vertex_count = 56502
+index_start = 2900964
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:92"
+mesh_part_name = "g_Body1:92"
+vertex_start = 2957466
+vertex_count = 56502
+index_start = 2957466
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:93"
+mesh_part_name = "g_Body1:93"
+vertex_start = 3013968
+vertex_count = 56502
+index_start = 3013968
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:94"
+mesh_part_name = "g_Body1:94"
+vertex_start = 3070470
+vertex_count = 56502
+index_start = 3070470
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:95"
+mesh_part_name = "g_Body1:95"
+vertex_start = 3126972
+vertex_count = 56502
+index_start = 3126972
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:96"
+mesh_part_name = "g_Body1:96"
+vertex_start = 3183474
+vertex_count = 56502
+index_start = 3183474
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:97"
+mesh_part_name = "g_Body1:97"
+vertex_start = 3239976
+vertex_count = 56502
+index_start = 3239976
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:98"
+mesh_part_name = "g_Body1:98"
+vertex_start = 3296478
+vertex_count = 56502
+index_start = 3296478
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:99"
+mesh_part_name = "g_Body1:99"
+vertex_start = 3352980
+vertex_count = 56502
+index_start = 3352980
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:100"
+mesh_part_name = "g_Body1:100"
+vertex_start = 3409482
+vertex_count = 56502
+index_start = 3409482
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:101"
+mesh_part_name = "g_Body1:101"
+vertex_start = 3465984
+vertex_count = 56502
+index_start = 3465984
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:102"
+mesh_part_name = "g_Body1:102"
+vertex_start = 3522486
+vertex_count = 56502
+index_start = 3522486
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:103"
+mesh_part_name = "g_Body1:103"
+vertex_start = 3578988
+vertex_count = 56502
+index_start = 3578988
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:104"
+mesh_part_name = "g_Body1:104"
+vertex_start = 3635490
+vertex_count = 26472
+index_start = 3635490
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:105"
+mesh_part_name = "g_Body1:105"
+vertex_start = 3661962
+vertex_count = 26472
+index_start = 3661962
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:106"
+mesh_part_name = "g_Body1:106"
+vertex_start = 3688434
+vertex_count = 26472
+index_start = 3688434
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:107"
+mesh_part_name = "g_Body1:107"
+vertex_start = 3714906
+vertex_count = 26472
+index_start = 3714906
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:108"
+mesh_part_name = "g_Body1:108"
+vertex_start = 3741378
+vertex_count = 26472
+index_start = 3741378
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:109"
+mesh_part_name = "g_Body1:109"
+vertex_start = 3767850
+vertex_count = 26472
+index_start = 3767850
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:110"
+mesh_part_name = "g_Body1:110"
+vertex_start = 3794322
+vertex_count = 26472
+index_start = 3794322
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:111"
+mesh_part_name = "g_Body1:111"
+vertex_start = 3820794
+vertex_count = 26472
+index_start = 3820794
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:112"
+mesh_part_name = "g_Body1:112"
+vertex_start = 3847266
+vertex_count = 26472
+index_start = 3847266
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:113"
+mesh_part_name = "g_Body1:113"
+vertex_start = 3873738
+vertex_count = 26472
+index_start = 3873738
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:114"
+mesh_part_name = "g_Body1:114"
+vertex_start = 3900210
+vertex_count = 26472
+index_start = 3900210
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:115"
+mesh_part_name = "g_Body1:115"
+vertex_start = 3926682
+vertex_count = 26472
+index_start = 3926682
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:116"
+mesh_part_name = "g_Body1:116"
+vertex_start = 3953154
+vertex_count = 26472
+index_start = 3953154
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:117"
+mesh_part_name = "g_Body1:117"
+vertex_start = 3979626
+vertex_count = 26472
+index_start = 3979626
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:118"
+mesh_part_name = "g_Body1:118"
+vertex_start = 4006098
+vertex_count = 26472
+index_start = 4006098
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:119"
+mesh_part_name = "g_Body1:119"
+vertex_start = 4032570
+vertex_count = 26472
+index_start = 4032570
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:120"
+mesh_part_name = "g_Body1:120"
+vertex_start = 4059042
+vertex_count = 26472
+index_start = 4059042
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:121"
+mesh_part_name = "g_Body1:121"
+vertex_start = 4085514
+vertex_count = 26472
+index_start = 4085514
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:122"
+mesh_part_name = "g_Body1:122"
+vertex_start = 4111986
+vertex_count = 26472
+index_start = 4111986
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:123"
+mesh_part_name = "g_Body1:123"
+vertex_start = 4138458
+vertex_count = 26472
+index_start = 4138458
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:124"
+mesh_part_name = "g_Body1:124"
+vertex_start = 4164930
+vertex_count = 26472
+index_start = 4164930
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:125"
+mesh_part_name = "g_Body1:125"
+vertex_start = 4191402
+vertex_count = 26472
+index_start = 4191402
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:126"
+mesh_part_name = "g_Body1:126"
+vertex_start = 4217874
+vertex_count = 26472
+index_start = 4217874
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:127"
+mesh_part_name = "g_Body1:127"
+vertex_start = 4244346
+vertex_count = 26472
+index_start = 4244346
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:128"
+mesh_part_name = "g_Body1:128"
+vertex_start = 4270818
+vertex_count = 26472
+index_start = 4270818
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:129"
+mesh_part_name = "g_Body1:129"
+vertex_start = 4297290
+vertex_count = 26472
+index_start = 4297290
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:130"
+mesh_part_name = "g_Body1:130"
+vertex_start = 4323762
+vertex_count = 26472
+index_start = 4323762
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:131"
+mesh_part_name = "g_Body1:131"
+vertex_start = 4350234
+vertex_count = 26472
+index_start = 4350234
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:132"
+mesh_part_name = "g_Body1:132"
+vertex_start = 4376706
+vertex_count = 26472
+index_start = 4376706
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:133"
+mesh_part_name = "g_Body1:133"
+vertex_start = 4403178
+vertex_count = 26472
+index_start = 4403178
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:134"
+mesh_part_name = "g_Body1:134"
+vertex_start = 4429650
+vertex_count = 31242
+index_start = 4429650
+index_count = 31242
+
+[[mesh_parts]]
+part_id = "g_Body1:135"
+mesh_part_name = "g_Body1:135"
+vertex_start = 4460892
+vertex_count = 41382
+index_start = 4460892
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body2"
+mesh_part_name = "g_Body2"
+vertex_start = 4502274
+vertex_count = 41382
+index_start = 4502274
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body1:136"
+mesh_part_name = "g_Body1:136"
+vertex_start = 4543656
+vertex_count = 22110
+index_start = 4543656
+index_count = 22110
+
+[[mesh_parts]]
+part_id = "g_Body1:137"
+mesh_part_name = "g_Body1:137"
+vertex_start = 4565766
+vertex_count = 7146
+index_start = 4565766
+index_count = 7146
+
+[[mesh_parts]]
+part_id = "g_Body1:138"
+mesh_part_name = "g_Body1:138"
+vertex_start = 4572912
+vertex_count = 17322
+index_start = 4572912
+index_count = 17322
+
+[[mesh_parts]]
+part_id = "g_Body1:139"
+mesh_part_name = "g_Body1:139"
+vertex_start = 4590234
+vertex_count = 25674
+index_start = 4590234
+index_count = 25674
+
+[[mesh_parts]]
+part_id = "g_Body1:140"
+mesh_part_name = "g_Body1:140"
+vertex_start = 4615908
+vertex_count = 1308
+index_start = 4615908
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:141"
+mesh_part_name = "g_Body1:141"
+vertex_start = 4617216
+vertex_count = 14544
+index_start = 4617216
+index_count = 14544
+
+[[mesh_parts]]
+part_id = "g_Body1:142"
+mesh_part_name = "g_Body1:142"
+vertex_start = 4631760
+vertex_count = 1392
+index_start = 4631760
+index_count = 1392
+
+[[mesh_parts]]
+part_id = "g_Body1:143"
+mesh_part_name = "g_Body1:143"
+vertex_start = 4633152
+vertex_count = 1392
+index_start = 4633152
+index_count = 1392
+
+[[mesh_parts]]
+part_id = "g_Body1:144"
+mesh_part_name = "g_Body1:144"
+vertex_start = 4634544
+vertex_count = 1392
+index_start = 4634544
+index_count = 1392
+
+[[mesh_parts]]
+part_id = "g_Body1:145"
+mesh_part_name = "g_Body1:145"
+vertex_start = 4635936
+vertex_count = 1392
+index_start = 4635936
+index_count = 1392
+
+[[mesh_parts]]
+part_id = "g_Body1:146"
+mesh_part_name = "g_Body1:146"
+vertex_start = 4637328
+vertex_count = 62784
+index_start = 4637328
+index_count = 62784
+
+[[mesh_parts]]
+part_id = "g_Body1:147"
+mesh_part_name = "g_Body1:147"
+vertex_start = 4700112
+vertex_count = 62466
+index_start = 4700112
+index_count = 62466
+
+[[mesh_parts]]
+part_id = "g_Body1:148"
+mesh_part_name = "g_Body1:148"
+vertex_start = 4762578
+vertex_count = 13938
+index_start = 4762578
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:149"
+mesh_part_name = "g_Body1:149"
+vertex_start = 4776516
+vertex_count = 15258
+index_start = 4776516
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:150"
+mesh_part_name = "g_Body1:150"
+vertex_start = 4791774
+vertex_count = 41382
+index_start = 4791774
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body2:1"
+mesh_part_name = "g_Body2:1"
+vertex_start = 4833156
+vertex_count = 41382
+index_start = 4833156
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body1:151"
+mesh_part_name = "g_Body1:151"
+vertex_start = 4874538
+vertex_count = 41382
+index_start = 4874538
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body2:2"
+mesh_part_name = "g_Body2:2"
+vertex_start = 4915920
+vertex_count = 41382
+index_start = 4915920
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body1:152"
+mesh_part_name = "g_Body1:152"
+vertex_start = 4957302
+vertex_count = 41382
+index_start = 4957302
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body2:3"
+mesh_part_name = "g_Body2:3"
+vertex_start = 4998684
+vertex_count = 41382
+index_start = 4998684
+index_count = 41382
+
+[[mesh_parts]]
+part_id = "g_Body1:153"
+mesh_part_name = "g_Body1:153"
+vertex_start = 5040066
+vertex_count = 1308
+index_start = 5040066
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:154"
+mesh_part_name = "g_Body1:154"
+vertex_start = 5041374
+vertex_count = 1308
+index_start = 5041374
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:155"
+mesh_part_name = "g_Body1:155"
+vertex_start = 5042682
+vertex_count = 1308
+index_start = 5042682
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:156"
+mesh_part_name = "g_Body1:156"
+vertex_start = 5043990
+vertex_count = 1308
+index_start = 5043990
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:157"
+mesh_part_name = "g_Body1:157"
+vertex_start = 5045298
+vertex_count = 1308
+index_start = 5045298
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:158"
+mesh_part_name = "g_Body1:158"
+vertex_start = 5046606
+vertex_count = 1308
+index_start = 5046606
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:159"
+mesh_part_name = "g_Body1:159"
+vertex_start = 5047914
+vertex_count = 1308
+index_start = 5047914
+index_count = 1308
+
+[[mesh_parts]]
+part_id = "g_Body1:160"
+mesh_part_name = "g_Body1:160"
+vertex_start = 5049222
+vertex_count = 13938
+index_start = 5049222
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:161"
+mesh_part_name = "g_Body1:161"
+vertex_start = 5063160
+vertex_count = 13938
+index_start = 5063160
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:162"
+mesh_part_name = "g_Body1:162"
+vertex_start = 5077098
+vertex_count = 13938
+index_start = 5077098
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:163"
+mesh_part_name = "g_Body1:163"
+vertex_start = 5091036
+vertex_count = 13938
+index_start = 5091036
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:164"
+mesh_part_name = "g_Body1:164"
+vertex_start = 5104974
+vertex_count = 13938
+index_start = 5104974
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:165"
+mesh_part_name = "g_Body1:165"
+vertex_start = 5118912
+vertex_count = 13938
+index_start = 5118912
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:166"
+mesh_part_name = "g_Body1:166"
+vertex_start = 5132850
+vertex_count = 13938
+index_start = 5132850
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:167"
+mesh_part_name = "g_Body1:167"
+vertex_start = 5146788
+vertex_count = 13938
+index_start = 5146788
+index_count = 13938
+
+[[mesh_parts]]
+part_id = "g_Body1:168"
+mesh_part_name = "g_Body1:168"
+vertex_start = 5160726
+vertex_count = 15258
+index_start = 5160726
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:169"
+mesh_part_name = "g_Body1:169"
+vertex_start = 5175984
+vertex_count = 15258
+index_start = 5175984
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:170"
+mesh_part_name = "g_Body1:170"
+vertex_start = 5191242
+vertex_count = 15258
+index_start = 5191242
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:171"
+mesh_part_name = "g_Body1:171"
+vertex_start = 5206500
+vertex_count = 15258
+index_start = 5206500
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:172"
+mesh_part_name = "g_Body1:172"
+vertex_start = 5221758
+vertex_count = 15258
+index_start = 5221758
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:173"
+mesh_part_name = "g_Body1:173"
+vertex_start = 5237016
+vertex_count = 15258
+index_start = 5237016
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:174"
+mesh_part_name = "g_Body1:174"
+vertex_start = 5252274
+vertex_count = 15258
+index_start = 5252274
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:175"
+mesh_part_name = "g_Body1:175"
+vertex_start = 5267532
+vertex_count = 15258
+index_start = 5267532
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:176"
+mesh_part_name = "g_Body1:176"
+vertex_start = 5282790
+vertex_count = 15258
+index_start = 5282790
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:177"
+mesh_part_name = "g_Body1:177"
+vertex_start = 5298048
+vertex_count = 15258
+index_start = 5298048
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:178"
+mesh_part_name = "g_Body1:178"
+vertex_start = 5313306
+vertex_count = 15258
+index_start = 5313306
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:179"
+mesh_part_name = "g_Body1:179"
+vertex_start = 5328564
+vertex_count = 15258
+index_start = 5328564
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:180"
+mesh_part_name = "g_Body1:180"
+vertex_start = 5343822
+vertex_count = 15258
+index_start = 5343822
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:181"
+mesh_part_name = "g_Body1:181"
+vertex_start = 5359080
+vertex_count = 15258
+index_start = 5359080
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:182"
+mesh_part_name = "g_Body1:182"
+vertex_start = 5374338
+vertex_count = 15258
+index_start = 5374338
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:183"
+mesh_part_name = "g_Body1:183"
+vertex_start = 5389596
+vertex_count = 26472
+index_start = 5389596
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:184"
+mesh_part_name = "g_Body1:184"
+vertex_start = 5416068
+vertex_count = 26472
+index_start = 5416068
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:185"
+mesh_part_name = "g_Body1:185"
+vertex_start = 5442540
+vertex_count = 26472
+index_start = 5442540
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:186"
+mesh_part_name = "g_Body1:186"
+vertex_start = 5469012
+vertex_count = 26472
+index_start = 5469012
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:187"
+mesh_part_name = "g_Body1:187"
+vertex_start = 5495484
+vertex_count = 26472
+index_start = 5495484
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:188"
+mesh_part_name = "g_Body1:188"
+vertex_start = 5521956
+vertex_count = 26472
+index_start = 5521956
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:189"
+mesh_part_name = "g_Body1:189"
+vertex_start = 5548428
+vertex_count = 26472
+index_start = 5548428
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:190"
+mesh_part_name = "g_Body1:190"
+vertex_start = 5574900
+vertex_count = 26472
+index_start = 5574900
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:191"
+mesh_part_name = "g_Body1:191"
+vertex_start = 5601372
+vertex_count = 26472
+index_start = 5601372
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:192"
+mesh_part_name = "g_Body1:192"
+vertex_start = 5627844
+vertex_count = 26472
+index_start = 5627844
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:193"
+mesh_part_name = "g_Body1:193"
+vertex_start = 5654316
+vertex_count = 26472
+index_start = 5654316
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:194"
+mesh_part_name = "g_Body1:194"
+vertex_start = 5680788
+vertex_count = 26472
+index_start = 5680788
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:195"
+mesh_part_name = "g_Body1:195"
+vertex_start = 5707260
+vertex_count = 26472
+index_start = 5707260
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:196"
+mesh_part_name = "g_Body1:196"
+vertex_start = 5733732
+vertex_count = 26472
+index_start = 5733732
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:197"
+mesh_part_name = "g_Body1:197"
+vertex_start = 5760204
+vertex_count = 26472
+index_start = 5760204
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:198"
+mesh_part_name = "g_Body1:198"
+vertex_start = 5786676
+vertex_count = 26472
+index_start = 5786676
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:199"
+mesh_part_name = "g_Body1:199"
+vertex_start = 5813148
+vertex_count = 26472
+index_start = 5813148
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:200"
+mesh_part_name = "g_Body1:200"
+vertex_start = 5839620
+vertex_count = 26472
+index_start = 5839620
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:201"
+mesh_part_name = "g_Body1:201"
+vertex_start = 5866092
+vertex_count = 26472
+index_start = 5866092
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:202"
+mesh_part_name = "g_Body1:202"
+vertex_start = 5892564
+vertex_count = 26472
+index_start = 5892564
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:203"
+mesh_part_name = "g_Body1:203"
+vertex_start = 5919036
+vertex_count = 26472
+index_start = 5919036
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:204"
+mesh_part_name = "g_Body1:204"
+vertex_start = 5945508
+vertex_count = 26472
+index_start = 5945508
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:205"
+mesh_part_name = "g_Body1:205"
+vertex_start = 5971980
+vertex_count = 26472
+index_start = 5971980
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:206"
+mesh_part_name = "g_Body1:206"
+vertex_start = 5998452
+vertex_count = 26472
+index_start = 5998452
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:207"
+mesh_part_name = "g_Body1:207"
+vertex_start = 6024924
+vertex_count = 26472
+index_start = 6024924
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:208"
+mesh_part_name = "g_Body1:208"
+vertex_start = 6051396
+vertex_count = 26472
+index_start = 6051396
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:209"
+mesh_part_name = "g_Body1:209"
+vertex_start = 6077868
+vertex_count = 26472
+index_start = 6077868
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:210"
+mesh_part_name = "g_Body1:210"
+vertex_start = 6104340
+vertex_count = 26472
+index_start = 6104340
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:211"
+mesh_part_name = "g_Body1:211"
+vertex_start = 6130812
+vertex_count = 26472
+index_start = 6130812
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:212"
+mesh_part_name = "g_Body1:212"
+vertex_start = 6157284
+vertex_count = 26472
+index_start = 6157284
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:213"
+mesh_part_name = "g_Body1:213"
+vertex_start = 6183756
+vertex_count = 26472
+index_start = 6183756
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:214"
+mesh_part_name = "g_Body1:214"
+vertex_start = 6210228
+vertex_count = 26472
+index_start = 6210228
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:215"
+mesh_part_name = "g_Body1:215"
+vertex_start = 6236700
+vertex_count = 26472
+index_start = 6236700
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:216"
+mesh_part_name = "g_Body1:216"
+vertex_start = 6263172
+vertex_count = 26472
+index_start = 6263172
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:217"
+mesh_part_name = "g_Body1:217"
+vertex_start = 6289644
+vertex_count = 56502
+index_start = 6289644
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:218"
+mesh_part_name = "g_Body1:218"
+vertex_start = 6346146
+vertex_count = 56502
+index_start = 6346146
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:219"
+mesh_part_name = "g_Body1:219"
+vertex_start = 6402648
+vertex_count = 56502
+index_start = 6402648
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:220"
+mesh_part_name = "g_Body1:220"
+vertex_start = 6459150
+vertex_count = 56502
+index_start = 6459150
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:221"
+mesh_part_name = "g_Body1:221"
+vertex_start = 6515652
+vertex_count = 56502
+index_start = 6515652
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:222"
+mesh_part_name = "g_Body1:222"
+vertex_start = 6572154
+vertex_count = 56502
+index_start = 6572154
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:223"
+mesh_part_name = "g_Body1:223"
+vertex_start = 6628656
+vertex_count = 56502
+index_start = 6628656
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:224"
+mesh_part_name = "g_Body1:224"
+vertex_start = 6685158
+vertex_count = 56502
+index_start = 6685158
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:225"
+mesh_part_name = "g_Body1:225"
+vertex_start = 6741660
+vertex_count = 56502
+index_start = 6741660
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:226"
+mesh_part_name = "g_Body1:226"
+vertex_start = 6798162
+vertex_count = 56502
+index_start = 6798162
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:227"
+mesh_part_name = "g_Body1:227"
+vertex_start = 6854664
+vertex_count = 56502
+index_start = 6854664
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:228"
+mesh_part_name = "g_Body1:228"
+vertex_start = 6911166
+vertex_count = 56502
+index_start = 6911166
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:229"
+mesh_part_name = "g_Body1:229"
+vertex_start = 6967668
+vertex_count = 56502
+index_start = 6967668
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:230"
+mesh_part_name = "g_Body1:230"
+vertex_start = 7024170
+vertex_count = 56502
+index_start = 7024170
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:231"
+mesh_part_name = "g_Body1:231"
+vertex_start = 7080672
+vertex_count = 56502
+index_start = 7080672
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:232"
+mesh_part_name = "g_Body1:232"
+vertex_start = 7137174
+vertex_count = 56502
+index_start = 7137174
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:233"
+mesh_part_name = "g_Body1:233"
+vertex_start = 7193676
+vertex_count = 56502
+index_start = 7193676
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:234"
+mesh_part_name = "g_Body1:234"
+vertex_start = 7250178
+vertex_count = 56502
+index_start = 7250178
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:235"
+mesh_part_name = "g_Body1:235"
+vertex_start = 7306680
+vertex_count = 56502
+index_start = 7306680
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:236"
+mesh_part_name = "g_Body1:236"
+vertex_start = 7363182
+vertex_count = 56502
+index_start = 7363182
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:237"
+mesh_part_name = "g_Body1:237"
+vertex_start = 7419684
+vertex_count = 56502
+index_start = 7419684
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:238"
+mesh_part_name = "g_Body1:238"
+vertex_start = 7476186
+vertex_count = 56502
+index_start = 7476186
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:239"
+mesh_part_name = "g_Body1:239"
+vertex_start = 7532688
+vertex_count = 56502
+index_start = 7532688
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:240"
+mesh_part_name = "g_Body1:240"
+vertex_start = 7589190
+vertex_count = 56502
+index_start = 7589190
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:241"
+mesh_part_name = "g_Body1:241"
+vertex_start = 7645692
+vertex_count = 56502
+index_start = 7645692
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:242"
+mesh_part_name = "g_Body1:242"
+vertex_start = 7702194
+vertex_count = 56502
+index_start = 7702194
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:243"
+mesh_part_name = "g_Body1:243"
+vertex_start = 7758696
+vertex_count = 56502
+index_start = 7758696
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:244"
+mesh_part_name = "g_Body1:244"
+vertex_start = 7815198
+vertex_count = 56502
+index_start = 7815198
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:245"
+mesh_part_name = "g_Body1:245"
+vertex_start = 7871700
+vertex_count = 56502
+index_start = 7871700
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:246"
+mesh_part_name = "g_Body1:246"
+vertex_start = 7928202
+vertex_count = 56502
+index_start = 7928202
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:247"
+mesh_part_name = "g_Body1:247"
+vertex_start = 7984704
+vertex_count = 56502
+index_start = 7984704
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:248"
+mesh_part_name = "g_Body1:248"
+vertex_start = 8041206
+vertex_count = 56502
+index_start = 8041206
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:249"
+mesh_part_name = "g_Body1:249"
+vertex_start = 8097708
+vertex_count = 56502
+index_start = 8097708
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:250"
+mesh_part_name = "g_Body1:250"
+vertex_start = 8154210
+vertex_count = 56502
+index_start = 8154210
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:251"
+mesh_part_name = "g_Body1:251"
+vertex_start = 8210712
+vertex_count = 56502
+index_start = 8210712
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:252"
+mesh_part_name = "g_Body1:252"
+vertex_start = 8267214
+vertex_count = 56502
+index_start = 8267214
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:253"
+mesh_part_name = "g_Body1:253"
+vertex_start = 8323716
+vertex_count = 56502
+index_start = 8323716
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:254"
+mesh_part_name = "g_Body1:254"
+vertex_start = 8380218
+vertex_count = 56502
+index_start = 8380218
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:255"
+mesh_part_name = "g_Body1:255"
+vertex_start = 8436720
+vertex_count = 56502
+index_start = 8436720
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:256"
+mesh_part_name = "g_Body1:256"
+vertex_start = 8493222
+vertex_count = 56502
+index_start = 8493222
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:257"
+mesh_part_name = "g_Body1:257"
+vertex_start = 8549724
+vertex_count = 56502
+index_start = 8549724
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:258"
+mesh_part_name = "g_Body1:258"
+vertex_start = 8606226
+vertex_count = 56502
+index_start = 8606226
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:259"
+mesh_part_name = "g_Body1:259"
+vertex_start = 8662728
+vertex_count = 56502
+index_start = 8662728
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:260"
+mesh_part_name = "g_Body1:260"
+vertex_start = 8719230
+vertex_count = 56502
+index_start = 8719230
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:261"
+mesh_part_name = "g_Body1:261"
+vertex_start = 8775732
+vertex_count = 56502
+index_start = 8775732
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:262"
+mesh_part_name = "g_Body1:262"
+vertex_start = 8832234
+vertex_count = 56502
+index_start = 8832234
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:263"
+mesh_part_name = "g_Body1:263"
+vertex_start = 8888736
+vertex_count = 56502
+index_start = 8888736
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:264"
+mesh_part_name = "g_Body1:264"
+vertex_start = 8945238
+vertex_count = 56502
+index_start = 8945238
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:265"
+mesh_part_name = "g_Body1:265"
+vertex_start = 9001740
+vertex_count = 56502
+index_start = 9001740
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:266"
+mesh_part_name = "g_Body1:266"
+vertex_start = 9058242
+vertex_count = 56502
+index_start = 9058242
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:267"
+mesh_part_name = "g_Body1:267"
+vertex_start = 9114744
+vertex_count = 56502
+index_start = 9114744
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:268"
+mesh_part_name = "g_Body1:268"
+vertex_start = 9171246
+vertex_count = 56502
+index_start = 9171246
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:269"
+mesh_part_name = "g_Body1:269"
+vertex_start = 9227748
+vertex_count = 56502
+index_start = 9227748
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:270"
+mesh_part_name = "g_Body1:270"
+vertex_start = 9284250
+vertex_count = 56502
+index_start = 9284250
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:271"
+mesh_part_name = "g_Body1:271"
+vertex_start = 9340752
+vertex_count = 56502
+index_start = 9340752
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:272"
+mesh_part_name = "g_Body1:272"
+vertex_start = 9397254
+vertex_count = 56502
+index_start = 9397254
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:273"
+mesh_part_name = "g_Body1:273"
+vertex_start = 9453756
+vertex_count = 56502
+index_start = 9453756
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:274"
+mesh_part_name = "g_Body1:274"
+vertex_start = 9510258
+vertex_count = 56502
+index_start = 9510258
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:275"
+mesh_part_name = "g_Body1:275"
+vertex_start = 9566760
+vertex_count = 56502
+index_start = 9566760
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:276"
+mesh_part_name = "g_Body1:276"
+vertex_start = 9623262
+vertex_count = 56502
+index_start = 9623262
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:277"
+mesh_part_name = "g_Body1:277"
+vertex_start = 9679764
+vertex_count = 56502
+index_start = 9679764
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:278"
+mesh_part_name = "g_Body1:278"
+vertex_start = 9736266
+vertex_count = 56502
+index_start = 9736266
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:279"
+mesh_part_name = "g_Body1:279"
+vertex_start = 9792768
+vertex_count = 56502
+index_start = 9792768
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:280"
+mesh_part_name = "g_Body1:280"
+vertex_start = 9849270
+vertex_count = 56502
+index_start = 9849270
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:281"
+mesh_part_name = "g_Body1:281"
+vertex_start = 9905772
+vertex_count = 56502
+index_start = 9905772
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:282"
+mesh_part_name = "g_Body1:282"
+vertex_start = 9962274
+vertex_count = 56502
+index_start = 9962274
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:283"
+mesh_part_name = "g_Body1:283"
+vertex_start = 10018776
+vertex_count = 56502
+index_start = 10018776
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:284"
+mesh_part_name = "g_Body1:284"
+vertex_start = 10075278
+vertex_count = 56502
+index_start = 10075278
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:285"
+mesh_part_name = "g_Body1:285"
+vertex_start = 10131780
+vertex_count = 56502
+index_start = 10131780
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:286"
+mesh_part_name = "g_Body1:286"
+vertex_start = 10188282
+vertex_count = 56502
+index_start = 10188282
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:287"
+mesh_part_name = "g_Body1:287"
+vertex_start = 10244784
+vertex_count = 56502
+index_start = 10244784
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:288"
+mesh_part_name = "g_Body1:288"
+vertex_start = 10301286
+vertex_count = 56502
+index_start = 10301286
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:289"
+mesh_part_name = "g_Body1:289"
+vertex_start = 10357788
+vertex_count = 56502
+index_start = 10357788
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:290"
+mesh_part_name = "g_Body1:290"
+vertex_start = 10414290
+vertex_count = 56502
+index_start = 10414290
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:291"
+mesh_part_name = "g_Body1:291"
+vertex_start = 10470792
+vertex_count = 56502
+index_start = 10470792
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:292"
+mesh_part_name = "g_Body1:292"
+vertex_start = 10527294
+vertex_count = 56502
+index_start = 10527294
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:293"
+mesh_part_name = "g_Body1:293"
+vertex_start = 10583796
+vertex_count = 56502
+index_start = 10583796
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:294"
+mesh_part_name = "g_Body1:294"
+vertex_start = 10640298
+vertex_count = 56502
+index_start = 10640298
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:295"
+mesh_part_name = "g_Body1:295"
+vertex_start = 10696800
+vertex_count = 56502
+index_start = 10696800
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:296"
+mesh_part_name = "g_Body1:296"
+vertex_start = 10753302
+vertex_count = 56502
+index_start = 10753302
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:297"
+mesh_part_name = "g_Body1:297"
+vertex_start = 10809804
+vertex_count = 56502
+index_start = 10809804
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:298"
+mesh_part_name = "g_Body1:298"
+vertex_start = 10866306
+vertex_count = 56502
+index_start = 10866306
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:299"
+mesh_part_name = "g_Body1:299"
+vertex_start = 10922808
+vertex_count = 56502
+index_start = 10922808
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:300"
+mesh_part_name = "g_Body1:300"
+vertex_start = 10979310
+vertex_count = 56502
+index_start = 10979310
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:301"
+mesh_part_name = "g_Body1:301"
+vertex_start = 11035812
+vertex_count = 56502
+index_start = 11035812
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:302"
+mesh_part_name = "g_Body1:302"
+vertex_start = 11092314
+vertex_count = 56502
+index_start = 11092314
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:303"
+mesh_part_name = "g_Body1:303"
+vertex_start = 11148816
+vertex_count = 56502
+index_start = 11148816
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:304"
+mesh_part_name = "g_Body1:304"
+vertex_start = 11205318
+vertex_count = 56502
+index_start = 11205318
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:305"
+mesh_part_name = "g_Body1:305"
+vertex_start = 11261820
+vertex_count = 56502
+index_start = 11261820
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:306"
+mesh_part_name = "g_Body1:306"
+vertex_start = 11318322
+vertex_count = 56502
+index_start = 11318322
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:307"
+mesh_part_name = "g_Body1:307"
+vertex_start = 11374824
+vertex_count = 56502
+index_start = 11374824
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:308"
+mesh_part_name = "g_Body1:308"
+vertex_start = 11431326
+vertex_count = 56502
+index_start = 11431326
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:309"
+mesh_part_name = "g_Body1:309"
+vertex_start = 11487828
+vertex_count = 56502
+index_start = 11487828
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:310"
+mesh_part_name = "g_Body1:310"
+vertex_start = 11544330
+vertex_count = 56502
+index_start = 11544330
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:311"
+mesh_part_name = "g_Body1:311"
+vertex_start = 11600832
+vertex_count = 56502
+index_start = 11600832
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:312"
+mesh_part_name = "g_Body1:312"
+vertex_start = 11657334
+vertex_count = 56502
+index_start = 11657334
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:313"
+mesh_part_name = "g_Body1:313"
+vertex_start = 11713836
+vertex_count = 56502
+index_start = 11713836
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:314"
+mesh_part_name = "g_Body1:314"
+vertex_start = 11770338
+vertex_count = 56502
+index_start = 11770338
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:315"
+mesh_part_name = "g_Body1:315"
+vertex_start = 11826840
+vertex_count = 56502
+index_start = 11826840
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:316"
+mesh_part_name = "g_Body1:316"
+vertex_start = 11883342
+vertex_count = 56502
+index_start = 11883342
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:317"
+mesh_part_name = "g_Body1:317"
+vertex_start = 11939844
+vertex_count = 56502
+index_start = 11939844
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:318"
+mesh_part_name = "g_Body1:318"
+vertex_start = 11996346
+vertex_count = 56502
+index_start = 11996346
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:319"
+mesh_part_name = "g_Body1:319"
+vertex_start = 12052848
+vertex_count = 56502
+index_start = 12052848
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:320"
+mesh_part_name = "g_Body1:320"
+vertex_start = 12109350
+vertex_count = 56502
+index_start = 12109350
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:321"
+mesh_part_name = "g_Body1:321"
+vertex_start = 12165852
+vertex_count = 56502
+index_start = 12165852
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:322"
+mesh_part_name = "g_Body1:322"
+vertex_start = 12222354
+vertex_count = 56502
+index_start = 12222354
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:323"
+mesh_part_name = "g_Body1:323"
+vertex_start = 12278856
+vertex_count = 56502
+index_start = 12278856
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:324"
+mesh_part_name = "g_Body1:324"
+vertex_start = 12335358
+vertex_count = 56502
+index_start = 12335358
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:325"
+mesh_part_name = "g_Body1:325"
+vertex_start = 12391860
+vertex_count = 56502
+index_start = 12391860
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:326"
+mesh_part_name = "g_Body1:326"
+vertex_start = 12448362
+vertex_count = 56502
+index_start = 12448362
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:327"
+mesh_part_name = "g_Body1:327"
+vertex_start = 12504864
+vertex_count = 56502
+index_start = 12504864
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:328"
+mesh_part_name = "g_Body1:328"
+vertex_start = 12561366
+vertex_count = 56502
+index_start = 12561366
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:329"
+mesh_part_name = "g_Body1:329"
+vertex_start = 12617868
+vertex_count = 56502
+index_start = 12617868
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:330"
+mesh_part_name = "g_Body1:330"
+vertex_start = 12674370
+vertex_count = 56502
+index_start = 12674370
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:331"
+mesh_part_name = "g_Body1:331"
+vertex_start = 12730872
+vertex_count = 56502
+index_start = 12730872
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:332"
+mesh_part_name = "g_Body1:332"
+vertex_start = 12787374
+vertex_count = 56502
+index_start = 12787374
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:333"
+mesh_part_name = "g_Body1:333"
+vertex_start = 12843876
+vertex_count = 56502
+index_start = 12843876
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:334"
+mesh_part_name = "g_Body1:334"
+vertex_start = 12900378
+vertex_count = 56502
+index_start = 12900378
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:335"
+mesh_part_name = "g_Body1:335"
+vertex_start = 12956880
+vertex_count = 56502
+index_start = 12956880
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:336"
+mesh_part_name = "g_Body1:336"
+vertex_start = 13013382
+vertex_count = 56502
+index_start = 13013382
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:337"
+mesh_part_name = "g_Body1:337"
+vertex_start = 13069884
+vertex_count = 56502
+index_start = 13069884
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:338"
+mesh_part_name = "g_Body1:338"
+vertex_start = 13126386
+vertex_count = 56502
+index_start = 13126386
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:339"
+mesh_part_name = "g_Body1:339"
+vertex_start = 13182888
+vertex_count = 56502
+index_start = 13182888
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:340"
+mesh_part_name = "g_Body1:340"
+vertex_start = 13239390
+vertex_count = 56502
+index_start = 13239390
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:341"
+mesh_part_name = "g_Body1:341"
+vertex_start = 13295892
+vertex_count = 56502
+index_start = 13295892
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:342"
+mesh_part_name = "g_Body1:342"
+vertex_start = 13352394
+vertex_count = 56502
+index_start = 13352394
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:343"
+mesh_part_name = "g_Body1:343"
+vertex_start = 13408896
+vertex_count = 56502
+index_start = 13408896
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:344"
+mesh_part_name = "g_Body1:344"
+vertex_start = 13465398
+vertex_count = 56502
+index_start = 13465398
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:345"
+mesh_part_name = "g_Body1:345"
+vertex_start = 13521900
+vertex_count = 56502
+index_start = 13521900
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:346"
+mesh_part_name = "g_Body1:346"
+vertex_start = 13578402
+vertex_count = 56502
+index_start = 13578402
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:347"
+mesh_part_name = "g_Body1:347"
+vertex_start = 13634904
+vertex_count = 56502
+index_start = 13634904
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:348"
+mesh_part_name = "g_Body1:348"
+vertex_start = 13691406
+vertex_count = 56502
+index_start = 13691406
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:349"
+mesh_part_name = "g_Body1:349"
+vertex_start = 13747908
+vertex_count = 56502
+index_start = 13747908
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:350"
+mesh_part_name = "g_Body1:350"
+vertex_start = 13804410
+vertex_count = 56502
+index_start = 13804410
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:351"
+mesh_part_name = "g_Body1:351"
+vertex_start = 13860912
+vertex_count = 56502
+index_start = 13860912
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:352"
+mesh_part_name = "g_Body1:352"
+vertex_start = 13917414
+vertex_count = 56502
+index_start = 13917414
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:353"
+mesh_part_name = "g_Body1:353"
+vertex_start = 13973916
+vertex_count = 56502
+index_start = 13973916
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:354"
+mesh_part_name = "g_Body1:354"
+vertex_start = 14030418
+vertex_count = 56502
+index_start = 14030418
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:355"
+mesh_part_name = "g_Body1:355"
+vertex_start = 14086920
+vertex_count = 56502
+index_start = 14086920
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:356"
+mesh_part_name = "g_Body1:356"
+vertex_start = 14143422
+vertex_count = 56502
+index_start = 14143422
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:357"
+mesh_part_name = "g_Body1:357"
+vertex_start = 14199924
+vertex_count = 56502
+index_start = 14199924
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:358"
+mesh_part_name = "g_Body1:358"
+vertex_start = 14256426
+vertex_count = 56502
+index_start = 14256426
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:359"
+mesh_part_name = "g_Body1:359"
+vertex_start = 14312928
+vertex_count = 56502
+index_start = 14312928
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:360"
+mesh_part_name = "g_Body1:360"
+vertex_start = 14369430
+vertex_count = 56502
+index_start = 14369430
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:361"
+mesh_part_name = "g_Body1:361"
+vertex_start = 14425932
+vertex_count = 56502
+index_start = 14425932
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:362"
+mesh_part_name = "g_Body1:362"
+vertex_start = 14482434
+vertex_count = 56502
+index_start = 14482434
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:363"
+mesh_part_name = "g_Body1:363"
+vertex_start = 14538936
+vertex_count = 56502
+index_start = 14538936
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:364"
+mesh_part_name = "g_Body1:364"
+vertex_start = 14595438
+vertex_count = 56502
+index_start = 14595438
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:365"
+mesh_part_name = "g_Body1:365"
+vertex_start = 14651940
+vertex_count = 56502
+index_start = 14651940
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:366"
+mesh_part_name = "g_Body1:366"
+vertex_start = 14708442
+vertex_count = 56502
+index_start = 14708442
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:367"
+mesh_part_name = "g_Body1:367"
+vertex_start = 14764944
+vertex_count = 26472
+index_start = 14764944
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:368"
+mesh_part_name = "g_Body1:368"
+vertex_start = 14791416
+vertex_count = 26472
+index_start = 14791416
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:369"
+mesh_part_name = "g_Body1:369"
+vertex_start = 14817888
+vertex_count = 26472
+index_start = 14817888
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:370"
+mesh_part_name = "g_Body1:370"
+vertex_start = 14844360
+vertex_count = 26472
+index_start = 14844360
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:371"
+mesh_part_name = "g_Body1:371"
+vertex_start = 14870832
+vertex_count = 26472
+index_start = 14870832
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:372"
+mesh_part_name = "g_Body1:372"
+vertex_start = 14897304
+vertex_count = 26472
+index_start = 14897304
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:373"
+mesh_part_name = "g_Body1:373"
+vertex_start = 14923776
+vertex_count = 26472
+index_start = 14923776
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:374"
+mesh_part_name = "g_Body1:374"
+vertex_start = 14950248
+vertex_count = 26472
+index_start = 14950248
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:375"
+mesh_part_name = "g_Body1:375"
+vertex_start = 14976720
+vertex_count = 26472
+index_start = 14976720
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:376"
+mesh_part_name = "g_Body1:376"
+vertex_start = 15003192
+vertex_count = 26472
+index_start = 15003192
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:377"
+mesh_part_name = "g_Body1:377"
+vertex_start = 15029664
+vertex_count = 26472
+index_start = 15029664
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:378"
+mesh_part_name = "g_Body1:378"
+vertex_start = 15056136
+vertex_count = 26472
+index_start = 15056136
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:379"
+mesh_part_name = "g_Body1:379"
+vertex_start = 15082608
+vertex_count = 26472
+index_start = 15082608
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:380"
+mesh_part_name = "g_Body1:380"
+vertex_start = 15109080
+vertex_count = 26472
+index_start = 15109080
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:381"
+mesh_part_name = "g_Body1:381"
+vertex_start = 15135552
+vertex_count = 26472
+index_start = 15135552
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:382"
+mesh_part_name = "g_Body1:382"
+vertex_start = 15162024
+vertex_count = 26472
+index_start = 15162024
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:383"
+mesh_part_name = "g_Body1:383"
+vertex_start = 15188496
+vertex_count = 26472
+index_start = 15188496
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:384"
+mesh_part_name = "g_Body1:384"
+vertex_start = 15214968
+vertex_count = 26472
+index_start = 15214968
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:385"
+mesh_part_name = "g_Body1:385"
+vertex_start = 15241440
+vertex_count = 26472
+index_start = 15241440
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:386"
+mesh_part_name = "g_Body1:386"
+vertex_start = 15267912
+vertex_count = 26472
+index_start = 15267912
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:387"
+mesh_part_name = "g_Body1:387"
+vertex_start = 15294384
+vertex_count = 26472
+index_start = 15294384
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:388"
+mesh_part_name = "g_Body1:388"
+vertex_start = 15320856
+vertex_count = 26472
+index_start = 15320856
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:389"
+mesh_part_name = "g_Body1:389"
+vertex_start = 15347328
+vertex_count = 26472
+index_start = 15347328
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:390"
+mesh_part_name = "g_Body1:390"
+vertex_start = 15373800
+vertex_count = 26472
+index_start = 15373800
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:391"
+mesh_part_name = "g_Body1:391"
+vertex_start = 15400272
+vertex_count = 26472
+index_start = 15400272
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:392"
+mesh_part_name = "g_Body1:392"
+vertex_start = 15426744
+vertex_count = 26472
+index_start = 15426744
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:393"
+mesh_part_name = "g_Body1:393"
+vertex_start = 15453216
+vertex_count = 26472
+index_start = 15453216
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:394"
+mesh_part_name = "g_Body1:394"
+vertex_start = 15479688
+vertex_count = 26472
+index_start = 15479688
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:395"
+mesh_part_name = "g_Body1:395"
+vertex_start = 15506160
+vertex_count = 26472
+index_start = 15506160
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:396"
+mesh_part_name = "g_Body1:396"
+vertex_start = 15532632
+vertex_count = 26472
+index_start = 15532632
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:397"
+mesh_part_name = "g_Body1:397"
+vertex_start = 15559104
+vertex_count = 26472
+index_start = 15559104
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:398"
+mesh_part_name = "g_Body1:398"
+vertex_start = 15585576
+vertex_count = 26472
+index_start = 15585576
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:399"
+mesh_part_name = "g_Body1:399"
+vertex_start = 15612048
+vertex_count = 26472
+index_start = 15612048
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:400"
+mesh_part_name = "g_Body1:400"
+vertex_start = 15638520
+vertex_count = 26472
+index_start = 15638520
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:401"
+mesh_part_name = "g_Body1:401"
+vertex_start = 15664992
+vertex_count = 26472
+index_start = 15664992
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:402"
+mesh_part_name = "g_Body1:402"
+vertex_start = 15691464
+vertex_count = 26472
+index_start = 15691464
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:403"
+mesh_part_name = "g_Body1:403"
+vertex_start = 15717936
+vertex_count = 26472
+index_start = 15717936
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:404"
+mesh_part_name = "g_Body1:404"
+vertex_start = 15744408
+vertex_count = 26472
+index_start = 15744408
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:405"
+mesh_part_name = "g_Body1:405"
+vertex_start = 15770880
+vertex_count = 26472
+index_start = 15770880
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:406"
+mesh_part_name = "g_Body1:406"
+vertex_start = 15797352
+vertex_count = 26472
+index_start = 15797352
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:407"
+mesh_part_name = "g_Body1:407"
+vertex_start = 15823824
+vertex_count = 26472
+index_start = 15823824
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:408"
+mesh_part_name = "g_Body1:408"
+vertex_start = 15850296
+vertex_count = 26472
+index_start = 15850296
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:409"
+mesh_part_name = "g_Body1:409"
+vertex_start = 15876768
+vertex_count = 26472
+index_start = 15876768
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:410"
+mesh_part_name = "g_Body1:410"
+vertex_start = 15903240
+vertex_count = 26472
+index_start = 15903240
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:411"
+mesh_part_name = "g_Body1:411"
+vertex_start = 15929712
+vertex_count = 26472
+index_start = 15929712
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:412"
+mesh_part_name = "g_Body1:412"
+vertex_start = 15956184
+vertex_count = 26472
+index_start = 15956184
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:413"
+mesh_part_name = "g_Body1:413"
+vertex_start = 15982656
+vertex_count = 26472
+index_start = 15982656
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:414"
+mesh_part_name = "g_Body1:414"
+vertex_start = 16009128
+vertex_count = 26472
+index_start = 16009128
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:415"
+mesh_part_name = "g_Body1:415"
+vertex_start = 16035600
+vertex_count = 26472
+index_start = 16035600
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:416"
+mesh_part_name = "g_Body1:416"
+vertex_start = 16062072
+vertex_count = 26472
+index_start = 16062072
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:417"
+mesh_part_name = "g_Body1:417"
+vertex_start = 16088544
+vertex_count = 26472
+index_start = 16088544
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:418"
+mesh_part_name = "g_Body1:418"
+vertex_start = 16115016
+vertex_count = 26472
+index_start = 16115016
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:419"
+mesh_part_name = "g_Body1:419"
+vertex_start = 16141488
+vertex_count = 26472
+index_start = 16141488
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:420"
+mesh_part_name = "g_Body1:420"
+vertex_start = 16167960
+vertex_count = 26472
+index_start = 16167960
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:421"
+mesh_part_name = "g_Body1:421"
+vertex_start = 16194432
+vertex_count = 26472
+index_start = 16194432
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:422"
+mesh_part_name = "g_Body1:422"
+vertex_start = 16220904
+vertex_count = 26472
+index_start = 16220904
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:423"
+mesh_part_name = "g_Body1:423"
+vertex_start = 16247376
+vertex_count = 26472
+index_start = 16247376
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:424"
+mesh_part_name = "g_Body1:424"
+vertex_start = 16273848
+vertex_count = 26472
+index_start = 16273848
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:425"
+mesh_part_name = "g_Body1:425"
+vertex_start = 16300320
+vertex_count = 26472
+index_start = 16300320
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:426"
+mesh_part_name = "g_Body1:426"
+vertex_start = 16326792
+vertex_count = 26472
+index_start = 16326792
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:427"
+mesh_part_name = "g_Body1:427"
+vertex_start = 16353264
+vertex_count = 26472
+index_start = 16353264
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:428"
+mesh_part_name = "g_Body1:428"
+vertex_start = 16379736
+vertex_count = 26472
+index_start = 16379736
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:429"
+mesh_part_name = "g_Body1:429"
+vertex_start = 16406208
+vertex_count = 26472
+index_start = 16406208
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:430"
+mesh_part_name = "g_Body1:430"
+vertex_start = 16432680
+vertex_count = 26472
+index_start = 16432680
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:431"
+mesh_part_name = "g_Body1:431"
+vertex_start = 16459152
+vertex_count = 26472
+index_start = 16459152
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:432"
+mesh_part_name = "g_Body1:432"
+vertex_start = 16485624
+vertex_count = 26472
+index_start = 16485624
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:433"
+mesh_part_name = "g_Body1:433"
+vertex_start = 16512096
+vertex_count = 26472
+index_start = 16512096
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:434"
+mesh_part_name = "g_Body1:434"
+vertex_start = 16538568
+vertex_count = 26472
+index_start = 16538568
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:435"
+mesh_part_name = "g_Body1:435"
+vertex_start = 16565040
+vertex_count = 26472
+index_start = 16565040
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:436"
+mesh_part_name = "g_Body1:436"
+vertex_start = 16591512
+vertex_count = 26472
+index_start = 16591512
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:437"
+mesh_part_name = "g_Body1:437"
+vertex_start = 16617984
+vertex_count = 26472
+index_start = 16617984
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:438"
+mesh_part_name = "g_Body1:438"
+vertex_start = 16644456
+vertex_count = 26472
+index_start = 16644456
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:439"
+mesh_part_name = "g_Body1:439"
+vertex_start = 16670928
+vertex_count = 26472
+index_start = 16670928
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:440"
+mesh_part_name = "g_Body1:440"
+vertex_start = 16697400
+vertex_count = 26472
+index_start = 16697400
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:441"
+mesh_part_name = "g_Body1:441"
+vertex_start = 16723872
+vertex_count = 26472
+index_start = 16723872
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:442"
+mesh_part_name = "g_Body1:442"
+vertex_start = 16750344
+vertex_count = 26472
+index_start = 16750344
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:443"
+mesh_part_name = "g_Body1:443"
+vertex_start = 16776816
+vertex_count = 26472
+index_start = 16776816
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:444"
+mesh_part_name = "g_Body1:444"
+vertex_start = 16803288
+vertex_count = 26472
+index_start = 16803288
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:445"
+mesh_part_name = "g_Body1:445"
+vertex_start = 16829760
+vertex_count = 26472
+index_start = 16829760
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:446"
+mesh_part_name = "g_Body1:446"
+vertex_start = 16856232
+vertex_count = 26472
+index_start = 16856232
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:447"
+mesh_part_name = "g_Body1:447"
+vertex_start = 16882704
+vertex_count = 26472
+index_start = 16882704
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:448"
+mesh_part_name = "g_Body1:448"
+vertex_start = 16909176
+vertex_count = 26472
+index_start = 16909176
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:449"
+mesh_part_name = "g_Body1:449"
+vertex_start = 16935648
+vertex_count = 26472
+index_start = 16935648
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:450"
+mesh_part_name = "g_Body1:450"
+vertex_start = 16962120
+vertex_count = 26472
+index_start = 16962120
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:451"
+mesh_part_name = "g_Body1:451"
+vertex_start = 16988592
+vertex_count = 26472
+index_start = 16988592
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:452"
+mesh_part_name = "g_Body1:452"
+vertex_start = 17015064
+vertex_count = 26472
+index_start = 17015064
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:453"
+mesh_part_name = "g_Body1:453"
+vertex_start = 17041536
+vertex_count = 26472
+index_start = 17041536
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:454"
+mesh_part_name = "g_Body1:454"
+vertex_start = 17068008
+vertex_count = 26472
+index_start = 17068008
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:455"
+mesh_part_name = "g_Body1:455"
+vertex_start = 17094480
+vertex_count = 26472
+index_start = 17094480
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:456"
+mesh_part_name = "g_Body1:456"
+vertex_start = 17120952
+vertex_count = 26472
+index_start = 17120952
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:457"
+mesh_part_name = "g_Body1:457"
+vertex_start = 17147424
+vertex_count = 26472
+index_start = 17147424
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:458"
+mesh_part_name = "g_Body1:458"
+vertex_start = 17173896
+vertex_count = 26472
+index_start = 17173896
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:459"
+mesh_part_name = "g_Body1:459"
+vertex_start = 17200368
+vertex_count = 26472
+index_start = 17200368
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:460"
+mesh_part_name = "g_Body1:460"
+vertex_start = 17226840
+vertex_count = 26472
+index_start = 17226840
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:461"
+mesh_part_name = "g_Body1:461"
+vertex_start = 17253312
+vertex_count = 26472
+index_start = 17253312
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:462"
+mesh_part_name = "g_Body1:462"
+vertex_start = 17279784
+vertex_count = 26472
+index_start = 17279784
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:463"
+mesh_part_name = "g_Body1:463"
+vertex_start = 17306256
+vertex_count = 26472
+index_start = 17306256
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:464"
+mesh_part_name = "g_Body1:464"
+vertex_start = 17332728
+vertex_count = 26472
+index_start = 17332728
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:465"
+mesh_part_name = "g_Body1:465"
+vertex_start = 17359200
+vertex_count = 26472
+index_start = 17359200
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:466"
+mesh_part_name = "g_Body1:466"
+vertex_start = 17385672
+vertex_count = 26472
+index_start = 17385672
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:467"
+mesh_part_name = "g_Body1:467"
+vertex_start = 17412144
+vertex_count = 26472
+index_start = 17412144
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:468"
+mesh_part_name = "g_Body1:468"
+vertex_start = 17438616
+vertex_count = 26472
+index_start = 17438616
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:469"
+mesh_part_name = "g_Body1:469"
+vertex_start = 17465088
+vertex_count = 26472
+index_start = 17465088
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:470"
+mesh_part_name = "g_Body1:470"
+vertex_start = 17491560
+vertex_count = 26472
+index_start = 17491560
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:471"
+mesh_part_name = "g_Body1:471"
+vertex_start = 17518032
+vertex_count = 26472
+index_start = 17518032
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:472"
+mesh_part_name = "g_Body1:472"
+vertex_start = 17544504
+vertex_count = 26472
+index_start = 17544504
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:473"
+mesh_part_name = "g_Body1:473"
+vertex_start = 17570976
+vertex_count = 26472
+index_start = 17570976
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:474"
+mesh_part_name = "g_Body1:474"
+vertex_start = 17597448
+vertex_count = 26472
+index_start = 17597448
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:475"
+mesh_part_name = "g_Body1:475"
+vertex_start = 17623920
+vertex_count = 26472
+index_start = 17623920
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:476"
+mesh_part_name = "g_Body1:476"
+vertex_start = 17650392
+vertex_count = 26472
+index_start = 17650392
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:477"
+mesh_part_name = "g_Body1:477"
+vertex_start = 17676864
+vertex_count = 26472
+index_start = 17676864
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:478"
+mesh_part_name = "g_Body1:478"
+vertex_start = 17703336
+vertex_count = 26472
+index_start = 17703336
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:479"
+mesh_part_name = "g_Body1:479"
+vertex_start = 17729808
+vertex_count = 26472
+index_start = 17729808
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:480"
+mesh_part_name = "g_Body1:480"
+vertex_start = 17756280
+vertex_count = 26472
+index_start = 17756280
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:481"
+mesh_part_name = "g_Body1:481"
+vertex_start = 17782752
+vertex_count = 26472
+index_start = 17782752
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:482"
+mesh_part_name = "g_Body1:482"
+vertex_start = 17809224
+vertex_count = 26472
+index_start = 17809224
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:483"
+mesh_part_name = "g_Body1:483"
+vertex_start = 17835696
+vertex_count = 26472
+index_start = 17835696
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:484"
+mesh_part_name = "g_Body1:484"
+vertex_start = 17862168
+vertex_count = 26472
+index_start = 17862168
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:485"
+mesh_part_name = "g_Body1:485"
+vertex_start = 17888640
+vertex_count = 26472
+index_start = 17888640
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:486"
+mesh_part_name = "g_Body1:486"
+vertex_start = 17915112
+vertex_count = 26472
+index_start = 17915112
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:487"
+mesh_part_name = "g_Body1:487"
+vertex_start = 17941584
+vertex_count = 26472
+index_start = 17941584
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:488"
+mesh_part_name = "g_Body1:488"
+vertex_start = 17968056
+vertex_count = 26472
+index_start = 17968056
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:489"
+mesh_part_name = "g_Body1:489"
+vertex_start = 17994528
+vertex_count = 26472
+index_start = 17994528
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:490"
+mesh_part_name = "g_Body1:490"
+vertex_start = 18021000
+vertex_count = 26472
+index_start = 18021000
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:491"
+mesh_part_name = "g_Body1:491"
+vertex_start = 18047472
+vertex_count = 26472
+index_start = 18047472
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:492"
+mesh_part_name = "g_Body1:492"
+vertex_start = 18073944
+vertex_count = 26472
+index_start = 18073944
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:493"
+mesh_part_name = "g_Body1:493"
+vertex_start = 18100416
+vertex_count = 26472
+index_start = 18100416
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:494"
+mesh_part_name = "g_Body1:494"
+vertex_start = 18126888
+vertex_count = 26472
+index_start = 18126888
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:495"
+mesh_part_name = "g_Body1:495"
+vertex_start = 18153360
+vertex_count = 26472
+index_start = 18153360
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:496"
+mesh_part_name = "g_Body1:496"
+vertex_start = 18179832
+vertex_count = 26472
+index_start = 18179832
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:497"
+mesh_part_name = "g_Body1:497"
+vertex_start = 18206304
+vertex_count = 26472
+index_start = 18206304
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:498"
+mesh_part_name = "g_Body1:498"
+vertex_start = 18232776
+vertex_count = 26472
+index_start = 18232776
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:499"
+mesh_part_name = "g_Body1:499"
+vertex_start = 18259248
+vertex_count = 26472
+index_start = 18259248
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:500"
+mesh_part_name = "g_Body1:500"
+vertex_start = 18285720
+vertex_count = 26472
+index_start = 18285720
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:501"
+mesh_part_name = "g_Body1:501"
+vertex_start = 18312192
+vertex_count = 26472
+index_start = 18312192
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:502"
+mesh_part_name = "g_Body1:502"
+vertex_start = 18338664
+vertex_count = 26472
+index_start = 18338664
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:503"
+mesh_part_name = "g_Body1:503"
+vertex_start = 18365136
+vertex_count = 26472
+index_start = 18365136
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:504"
+mesh_part_name = "g_Body1:504"
+vertex_start = 18391608
+vertex_count = 26472
+index_start = 18391608
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:505"
+mesh_part_name = "g_Body1:505"
+vertex_start = 18418080
+vertex_count = 26472
+index_start = 18418080
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:506"
+mesh_part_name = "g_Body1:506"
+vertex_start = 18444552
+vertex_count = 26472
+index_start = 18444552
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:507"
+mesh_part_name = "g_Body1:507"
+vertex_start = 18471024
+vertex_count = 26472
+index_start = 18471024
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:508"
+mesh_part_name = "g_Body1:508"
+vertex_start = 18497496
+vertex_count = 26472
+index_start = 18497496
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:509"
+mesh_part_name = "g_Body1:509"
+vertex_start = 18523968
+vertex_count = 26472
+index_start = 18523968
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:510"
+mesh_part_name = "g_Body1:510"
+vertex_start = 18550440
+vertex_count = 26472
+index_start = 18550440
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:511"
+mesh_part_name = "g_Body1:511"
+vertex_start = 18576912
+vertex_count = 26472
+index_start = 18576912
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:512"
+mesh_part_name = "g_Body1:512"
+vertex_start = 18603384
+vertex_count = 26472
+index_start = 18603384
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:513"
+mesh_part_name = "g_Body1:513"
+vertex_start = 18629856
+vertex_count = 26472
+index_start = 18629856
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:514"
+mesh_part_name = "g_Body1:514"
+vertex_start = 18656328
+vertex_count = 26472
+index_start = 18656328
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:515"
+mesh_part_name = "g_Body1:515"
+vertex_start = 18682800
+vertex_count = 26472
+index_start = 18682800
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:516"
+mesh_part_name = "g_Body1:516"
+vertex_start = 18709272
+vertex_count = 26472
+index_start = 18709272
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:517"
+mesh_part_name = "g_Body1:517"
+vertex_start = 18735744
+vertex_count = 26472
+index_start = 18735744
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:518"
+mesh_part_name = "g_Body1:518"
+vertex_start = 18762216
+vertex_count = 26472
+index_start = 18762216
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:519"
+mesh_part_name = "g_Body1:519"
+vertex_start = 18788688
+vertex_count = 26472
+index_start = 18788688
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:520"
+mesh_part_name = "g_Body1:520"
+vertex_start = 18815160
+vertex_count = 26472
+index_start = 18815160
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:521"
+mesh_part_name = "g_Body1:521"
+vertex_start = 18841632
+vertex_count = 26472
+index_start = 18841632
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:522"
+mesh_part_name = "g_Body1:522"
+vertex_start = 18868104
+vertex_count = 26472
+index_start = 18868104
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:523"
+mesh_part_name = "g_Body1:523"
+vertex_start = 18894576
+vertex_count = 26472
+index_start = 18894576
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:524"
+mesh_part_name = "g_Body1:524"
+vertex_start = 18921048
+vertex_count = 26472
+index_start = 18921048
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:525"
+mesh_part_name = "g_Body1:525"
+vertex_start = 18947520
+vertex_count = 26472
+index_start = 18947520
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:526"
+mesh_part_name = "g_Body1:526"
+vertex_start = 18973992
+vertex_count = 26472
+index_start = 18973992
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:527"
+mesh_part_name = "g_Body1:527"
+vertex_start = 19000464
+vertex_count = 52332
+index_start = 19000464
+index_count = 52332
+
+[[mesh_parts]]
+part_id = "g_Body1:528"
+mesh_part_name = "g_Body1:528"
+vertex_start = 19052796
+vertex_count = 24222
+index_start = 19052796
+index_count = 24222
+
+[[mesh_parts]]
+part_id = "g_Body1:529"
+mesh_part_name = "g_Body1:529"
+vertex_start = 19077018
+vertex_count = 2244
+index_start = 19077018
+index_count = 2244
+
+[[mesh_parts]]
+part_id = "g_Body1:530"
+mesh_part_name = "g_Body1:530"
+vertex_start = 19079262
+vertex_count = 28692
+index_start = 19079262
+index_count = 28692
+
+[[mesh_parts]]
+part_id = "g_Body1:531"
+mesh_part_name = "g_Body1:531"
+vertex_start = 19107954
+vertex_count = 18414
+index_start = 19107954
+index_count = 18414
+
+[[mesh_parts]]
+part_id = "g_Body1:532"
+mesh_part_name = "g_Body1:532"
+vertex_start = 19126368
+vertex_count = 14910
+index_start = 19126368
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "g_Body1:533"
+mesh_part_name = "g_Body1:533"
+vertex_start = 19141278
+vertex_count = 792
+index_start = 19141278
+index_count = 792
+
+[[mesh_parts]]
+part_id = "g_Body1:534"
+mesh_part_name = "g_Body1:534"
+vertex_start = 19142070
+vertex_count = 149448
+index_start = 19142070
+index_count = 149448
+
+[[mesh_parts]]
+part_id = "g_Body1:535"
+mesh_part_name = "g_Body1:535"
+vertex_start = 19291518
+vertex_count = 13896
+index_start = 19291518
+index_count = 13896
+
+[[mesh_parts]]
+part_id = "g_Body1:536"
+mesh_part_name = "g_Body1:536"
+vertex_start = 19305414
+vertex_count = 53184
+index_start = 19305414
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:537"
+mesh_part_name = "g_Body1:537"
+vertex_start = 19358598
+vertex_count = 52332
+index_start = 19358598
+index_count = 52332
+
+[[mesh_parts]]
+part_id = "g_Body1:538"
+mesh_part_name = "g_Body1:538"
+vertex_start = 19410930
+vertex_count = 52332
+index_start = 19410930
+index_count = 52332
+
+[[mesh_parts]]
+part_id = "g_Body1:539"
+mesh_part_name = "g_Body1:539"
+vertex_start = 19463262
+vertex_count = 2244
+index_start = 19463262
+index_count = 2244
+
+[[mesh_parts]]
+part_id = "g_Body1:540"
+mesh_part_name = "g_Body1:540"
+vertex_start = 19465506
+vertex_count = 2244
+index_start = 19465506
+index_count = 2244
+
+[[mesh_parts]]
+part_id = "g_Body1:541"
+mesh_part_name = "g_Body1:541"
+vertex_start = 19467750
+vertex_count = 14910
+index_start = 19467750
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "g_Body1:542"
+mesh_part_name = "g_Body1:542"
+vertex_start = 19482660
+vertex_count = 14910
+index_start = 19482660
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "g_Body1:543"
+mesh_part_name = "g_Body1:543"
+vertex_start = 19497570
+vertex_count = 14910
+index_start = 19497570
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "g_Body1:544"
+mesh_part_name = "g_Body1:544"
+vertex_start = 19512480
+vertex_count = 14910
+index_start = 19512480
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "g_Body1:545"
+mesh_part_name = "g_Body1:545"
+vertex_start = 19527390
+vertex_count = 14910
+index_start = 19527390
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "g_Body1:546"
+mesh_part_name = "g_Body1:546"
+vertex_start = 19542300
+vertex_count = 792
+index_start = 19542300
+index_count = 792
+
+[[mesh_parts]]
+part_id = "g_Body1:547"
+mesh_part_name = "g_Body1:547"
+vertex_start = 19543092
+vertex_count = 792
+index_start = 19543092
+index_count = 792
+
+[[mesh_parts]]
+part_id = "g_Body1:548"
+mesh_part_name = "g_Body1:548"
+vertex_start = 19543884
+vertex_count = 792
+index_start = 19543884
+index_count = 792
+
+[[mesh_parts]]
+part_id = "g_Body1:549"
+mesh_part_name = "g_Body1:549"
+vertex_start = 19544676
+vertex_count = 792
+index_start = 19544676
+index_count = 792
+
+[[mesh_parts]]
+part_id = "g_Body1:550"
+mesh_part_name = "g_Body1:550"
+vertex_start = 19545468
+vertex_count = 792
+index_start = 19545468
+index_count = 792
+
+[[mesh_parts]]
+part_id = "g_Body1:551"
+mesh_part_name = "g_Body1:551"
+vertex_start = 19546260
+vertex_count = 13896
+index_start = 19546260
+index_count = 13896
+
+[[mesh_parts]]
+part_id = "g_Body1:552"
+mesh_part_name = "g_Body1:552"
+vertex_start = 19560156
+vertex_count = 13896
+index_start = 19560156
+index_count = 13896
+
+[[mesh_parts]]
+part_id = "g_Body1:553"
+mesh_part_name = "g_Body1:553"
+vertex_start = 19574052
+vertex_count = 56502
+index_start = 19574052
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:554"
+mesh_part_name = "g_Body1:554"
+vertex_start = 19630554
+vertex_count = 56502
+index_start = 19630554
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:555"
+mesh_part_name = "g_Body1:555"
+vertex_start = 19687056
+vertex_count = 56502
+index_start = 19687056
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:556"
+mesh_part_name = "g_Body1:556"
+vertex_start = 19743558
+vertex_count = 56502
+index_start = 19743558
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:557"
+mesh_part_name = "g_Body1:557"
+vertex_start = 19800060
+vertex_count = 56502
+index_start = 19800060
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:558"
+mesh_part_name = "g_Body1:558"
+vertex_start = 19856562
+vertex_count = 56502
+index_start = 19856562
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:559"
+mesh_part_name = "g_Body1:559"
+vertex_start = 19913064
+vertex_count = 56502
+index_start = 19913064
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:560"
+mesh_part_name = "g_Body1:560"
+vertex_start = 19969566
+vertex_count = 56502
+index_start = 19969566
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:561"
+mesh_part_name = "g_Body1:561"
+vertex_start = 20026068
+vertex_count = 56502
+index_start = 20026068
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:562"
+mesh_part_name = "g_Body1:562"
+vertex_start = 20082570
+vertex_count = 56502
+index_start = 20082570
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:563"
+mesh_part_name = "g_Body1:563"
+vertex_start = 20139072
+vertex_count = 56502
+index_start = 20139072
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:564"
+mesh_part_name = "g_Body1:564"
+vertex_start = 20195574
+vertex_count = 56502
+index_start = 20195574
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:565"
+mesh_part_name = "g_Body1:565"
+vertex_start = 20252076
+vertex_count = 56502
+index_start = 20252076
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:566"
+mesh_part_name = "g_Body1:566"
+vertex_start = 20308578
+vertex_count = 56502
+index_start = 20308578
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:567"
+mesh_part_name = "g_Body1:567"
+vertex_start = 20365080
+vertex_count = 56502
+index_start = 20365080
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:568"
+mesh_part_name = "g_Body1:568"
+vertex_start = 20421582
+vertex_count = 56502
+index_start = 20421582
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:569"
+mesh_part_name = "g_Body1:569"
+vertex_start = 20478084
+vertex_count = 56502
+index_start = 20478084
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:570"
+mesh_part_name = "g_Body1:570"
+vertex_start = 20534586
+vertex_count = 56502
+index_start = 20534586
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:571"
+mesh_part_name = "g_Body1:571"
+vertex_start = 20591088
+vertex_count = 56502
+index_start = 20591088
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:572"
+mesh_part_name = "g_Body1:572"
+vertex_start = 20647590
+vertex_count = 56502
+index_start = 20647590
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:573"
+mesh_part_name = "g_Body1:573"
+vertex_start = 20704092
+vertex_count = 56502
+index_start = 20704092
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:574"
+mesh_part_name = "g_Body1:574"
+vertex_start = 20760594
+vertex_count = 56502
+index_start = 20760594
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:575"
+mesh_part_name = "g_Body1:575"
+vertex_start = 20817096
+vertex_count = 56502
+index_start = 20817096
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:576"
+mesh_part_name = "g_Body1:576"
+vertex_start = 20873598
+vertex_count = 56502
+index_start = 20873598
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:577"
+mesh_part_name = "g_Body1:577"
+vertex_start = 20930100
+vertex_count = 56502
+index_start = 20930100
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:578"
+mesh_part_name = "g_Body1:578"
+vertex_start = 20986602
+vertex_count = 56502
+index_start = 20986602
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:579"
+mesh_part_name = "g_Body1:579"
+vertex_start = 21043104
+vertex_count = 56502
+index_start = 21043104
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:580"
+mesh_part_name = "g_Body1:580"
+vertex_start = 21099606
+vertex_count = 56502
+index_start = 21099606
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:581"
+mesh_part_name = "g_Body1:581"
+vertex_start = 21156108
+vertex_count = 56502
+index_start = 21156108
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:582"
+mesh_part_name = "g_Body1:582"
+vertex_start = 21212610
+vertex_count = 56502
+index_start = 21212610
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:583"
+mesh_part_name = "g_Body1:583"
+vertex_start = 21269112
+vertex_count = 56502
+index_start = 21269112
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:584"
+mesh_part_name = "g_Body1:584"
+vertex_start = 21325614
+vertex_count = 56502
+index_start = 21325614
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:585"
+mesh_part_name = "g_Body1:585"
+vertex_start = 21382116
+vertex_count = 56502
+index_start = 21382116
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:586"
+mesh_part_name = "g_Body1:586"
+vertex_start = 21438618
+vertex_count = 56502
+index_start = 21438618
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:587"
+mesh_part_name = "g_Body1:587"
+vertex_start = 21495120
+vertex_count = 56502
+index_start = 21495120
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:588"
+mesh_part_name = "g_Body1:588"
+vertex_start = 21551622
+vertex_count = 56502
+index_start = 21551622
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:589"
+mesh_part_name = "g_Body1:589"
+vertex_start = 21608124
+vertex_count = 56502
+index_start = 21608124
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:590"
+mesh_part_name = "g_Body1:590"
+vertex_start = 21664626
+vertex_count = 56502
+index_start = 21664626
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:591"
+mesh_part_name = "g_Body1:591"
+vertex_start = 21721128
+vertex_count = 56502
+index_start = 21721128
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:592"
+mesh_part_name = "g_Body1:592"
+vertex_start = 21777630
+vertex_count = 56502
+index_start = 21777630
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:593"
+mesh_part_name = "g_Body1:593"
+vertex_start = 21834132
+vertex_count = 56502
+index_start = 21834132
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:594"
+mesh_part_name = "g_Body1:594"
+vertex_start = 21890634
+vertex_count = 56502
+index_start = 21890634
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:595"
+mesh_part_name = "g_Body1:595"
+vertex_start = 21947136
+vertex_count = 56502
+index_start = 21947136
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:596"
+mesh_part_name = "g_Body1:596"
+vertex_start = 22003638
+vertex_count = 56502
+index_start = 22003638
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:597"
+mesh_part_name = "g_Body1:597"
+vertex_start = 22060140
+vertex_count = 56502
+index_start = 22060140
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:598"
+mesh_part_name = "g_Body1:598"
+vertex_start = 22116642
+vertex_count = 56502
+index_start = 22116642
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:599"
+mesh_part_name = "g_Body1:599"
+vertex_start = 22173144
+vertex_count = 56502
+index_start = 22173144
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:600"
+mesh_part_name = "g_Body1:600"
+vertex_start = 22229646
+vertex_count = 56502
+index_start = 22229646
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:601"
+mesh_part_name = "g_Body1:601"
+vertex_start = 22286148
+vertex_count = 56502
+index_start = 22286148
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:602"
+mesh_part_name = "g_Body1:602"
+vertex_start = 22342650
+vertex_count = 56502
+index_start = 22342650
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:603"
+mesh_part_name = "g_Body1:603"
+vertex_start = 22399152
+vertex_count = 56502
+index_start = 22399152
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:604"
+mesh_part_name = "g_Body1:604"
+vertex_start = 22455654
+vertex_count = 56502
+index_start = 22455654
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:605"
+mesh_part_name = "g_Body1:605"
+vertex_start = 22512156
+vertex_count = 56502
+index_start = 22512156
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:606"
+mesh_part_name = "g_Body1:606"
+vertex_start = 22568658
+vertex_count = 56502
+index_start = 22568658
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:607"
+mesh_part_name = "g_Body1:607"
+vertex_start = 22625160
+vertex_count = 56502
+index_start = 22625160
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:608"
+mesh_part_name = "g_Body1:608"
+vertex_start = 22681662
+vertex_count = 56502
+index_start = 22681662
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:609"
+mesh_part_name = "g_Body1:609"
+vertex_start = 22738164
+vertex_count = 56502
+index_start = 22738164
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:610"
+mesh_part_name = "g_Body1:610"
+vertex_start = 22794666
+vertex_count = 56502
+index_start = 22794666
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:611"
+mesh_part_name = "g_Body1:611"
+vertex_start = 22851168
+vertex_count = 56502
+index_start = 22851168
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:612"
+mesh_part_name = "g_Body1:612"
+vertex_start = 22907670
+vertex_count = 56502
+index_start = 22907670
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:613"
+mesh_part_name = "g_Body1:613"
+vertex_start = 22964172
+vertex_count = 56502
+index_start = 22964172
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:614"
+mesh_part_name = "g_Body1:614"
+vertex_start = 23020674
+vertex_count = 56502
+index_start = 23020674
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:615"
+mesh_part_name = "g_Body1:615"
+vertex_start = 23077176
+vertex_count = 56502
+index_start = 23077176
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:616"
+mesh_part_name = "g_Body1:616"
+vertex_start = 23133678
+vertex_count = 56502
+index_start = 23133678
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:617"
+mesh_part_name = "g_Body1:617"
+vertex_start = 23190180
+vertex_count = 56502
+index_start = 23190180
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:618"
+mesh_part_name = "g_Body1:618"
+vertex_start = 23246682
+vertex_count = 56502
+index_start = 23246682
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:619"
+mesh_part_name = "g_Body1:619"
+vertex_start = 23303184
+vertex_count = 56502
+index_start = 23303184
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:620"
+mesh_part_name = "g_Body1:620"
+vertex_start = 23359686
+vertex_count = 56502
+index_start = 23359686
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:621"
+mesh_part_name = "g_Body1:621"
+vertex_start = 23416188
+vertex_count = 56502
+index_start = 23416188
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:622"
+mesh_part_name = "g_Body1:622"
+vertex_start = 23472690
+vertex_count = 56502
+index_start = 23472690
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:623"
+mesh_part_name = "g_Body1:623"
+vertex_start = 23529192
+vertex_count = 56502
+index_start = 23529192
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:624"
+mesh_part_name = "g_Body1:624"
+vertex_start = 23585694
+vertex_count = 56502
+index_start = 23585694
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:625"
+mesh_part_name = "g_Body1:625"
+vertex_start = 23642196
+vertex_count = 56502
+index_start = 23642196
+index_count = 56502
+
+[[mesh_parts]]
+part_id = "g_Body1:626"
+mesh_part_name = "g_Body1:626"
+vertex_start = 23698698
+vertex_count = 15258
+index_start = 23698698
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:627"
+mesh_part_name = "g_Body1:627"
+vertex_start = 23713956
+vertex_count = 15258
+index_start = 23713956
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:628"
+mesh_part_name = "g_Body1:628"
+vertex_start = 23729214
+vertex_count = 15258
+index_start = 23729214
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:629"
+mesh_part_name = "g_Body1:629"
+vertex_start = 23744472
+vertex_count = 15258
+index_start = 23744472
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:630"
+mesh_part_name = "g_Body1:630"
+vertex_start = 23759730
+vertex_count = 15258
+index_start = 23759730
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:631"
+mesh_part_name = "g_Body1:631"
+vertex_start = 23774988
+vertex_count = 15258
+index_start = 23774988
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:632"
+mesh_part_name = "g_Body1:632"
+vertex_start = 23790246
+vertex_count = 15258
+index_start = 23790246
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:633"
+mesh_part_name = "g_Body1:633"
+vertex_start = 23805504
+vertex_count = 15258
+index_start = 23805504
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:634"
+mesh_part_name = "g_Body1:634"
+vertex_start = 23820762
+vertex_count = 15258
+index_start = 23820762
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:635"
+mesh_part_name = "g_Body1:635"
+vertex_start = 23836020
+vertex_count = 15258
+index_start = 23836020
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:636"
+mesh_part_name = "g_Body1:636"
+vertex_start = 23851278
+vertex_count = 15258
+index_start = 23851278
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:637"
+mesh_part_name = "g_Body1:637"
+vertex_start = 23866536
+vertex_count = 15258
+index_start = 23866536
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:638"
+mesh_part_name = "g_Body1:638"
+vertex_start = 23881794
+vertex_count = 15258
+index_start = 23881794
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:639"
+mesh_part_name = "g_Body1:639"
+vertex_start = 23897052
+vertex_count = 15258
+index_start = 23897052
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:640"
+mesh_part_name = "g_Body1:640"
+vertex_start = 23912310
+vertex_count = 15258
+index_start = 23912310
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:641"
+mesh_part_name = "g_Body1:641"
+vertex_start = 23927568
+vertex_count = 15258
+index_start = 23927568
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:642"
+mesh_part_name = "g_Body1:642"
+vertex_start = 23942826
+vertex_count = 15258
+index_start = 23942826
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:643"
+mesh_part_name = "g_Body1:643"
+vertex_start = 23958084
+vertex_count = 15258
+index_start = 23958084
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:644"
+mesh_part_name = "g_Body1:644"
+vertex_start = 23973342
+vertex_count = 15258
+index_start = 23973342
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:645"
+mesh_part_name = "g_Body1:645"
+vertex_start = 23988600
+vertex_count = 15258
+index_start = 23988600
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:646"
+mesh_part_name = "g_Body1:646"
+vertex_start = 24003858
+vertex_count = 15258
+index_start = 24003858
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:647"
+mesh_part_name = "g_Body1:647"
+vertex_start = 24019116
+vertex_count = 15258
+index_start = 24019116
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:648"
+mesh_part_name = "g_Body1:648"
+vertex_start = 24034374
+vertex_count = 15258
+index_start = 24034374
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:649"
+mesh_part_name = "g_Body1:649"
+vertex_start = 24049632
+vertex_count = 15258
+index_start = 24049632
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:650"
+mesh_part_name = "g_Body1:650"
+vertex_start = 24064890
+vertex_count = 15258
+index_start = 24064890
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:651"
+mesh_part_name = "g_Body1:651"
+vertex_start = 24080148
+vertex_count = 15258
+index_start = 24080148
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:652"
+mesh_part_name = "g_Body1:652"
+vertex_start = 24095406
+vertex_count = 15258
+index_start = 24095406
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:653"
+mesh_part_name = "g_Body1:653"
+vertex_start = 24110664
+vertex_count = 15258
+index_start = 24110664
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:654"
+mesh_part_name = "g_Body1:654"
+vertex_start = 24125922
+vertex_count = 15258
+index_start = 24125922
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:655"
+mesh_part_name = "g_Body1:655"
+vertex_start = 24141180
+vertex_count = 15258
+index_start = 24141180
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:656"
+mesh_part_name = "g_Body1:656"
+vertex_start = 24156438
+vertex_count = 15258
+index_start = 24156438
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:657"
+mesh_part_name = "g_Body1:657"
+vertex_start = 24171696
+vertex_count = 15258
+index_start = 24171696
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:658"
+mesh_part_name = "g_Body1:658"
+vertex_start = 24186954
+vertex_count = 15258
+index_start = 24186954
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:659"
+mesh_part_name = "g_Body1:659"
+vertex_start = 24202212
+vertex_count = 15258
+index_start = 24202212
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:660"
+mesh_part_name = "g_Body1:660"
+vertex_start = 24217470
+vertex_count = 15258
+index_start = 24217470
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:661"
+mesh_part_name = "g_Body1:661"
+vertex_start = 24232728
+vertex_count = 15258
+index_start = 24232728
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:662"
+mesh_part_name = "g_Body1:662"
+vertex_start = 24247986
+vertex_count = 15258
+index_start = 24247986
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:663"
+mesh_part_name = "g_Body1:663"
+vertex_start = 24263244
+vertex_count = 15258
+index_start = 24263244
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:664"
+mesh_part_name = "g_Body1:664"
+vertex_start = 24278502
+vertex_count = 15258
+index_start = 24278502
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:665"
+mesh_part_name = "g_Body1:665"
+vertex_start = 24293760
+vertex_count = 15258
+index_start = 24293760
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:666"
+mesh_part_name = "g_Body1:666"
+vertex_start = 24309018
+vertex_count = 15258
+index_start = 24309018
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:667"
+mesh_part_name = "g_Body1:667"
+vertex_start = 24324276
+vertex_count = 15258
+index_start = 24324276
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:668"
+mesh_part_name = "g_Body1:668"
+vertex_start = 24339534
+vertex_count = 15258
+index_start = 24339534
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:669"
+mesh_part_name = "g_Body1:669"
+vertex_start = 24354792
+vertex_count = 15258
+index_start = 24354792
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:670"
+mesh_part_name = "g_Body1:670"
+vertex_start = 24370050
+vertex_count = 15258
+index_start = 24370050
+index_count = 15258
+
+[[mesh_parts]]
+part_id = "g_Body1:671"
+mesh_part_name = "g_Body1:671"
+vertex_start = 24385308
+vertex_count = 26472
+index_start = 24385308
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:672"
+mesh_part_name = "g_Body1:672"
+vertex_start = 24411780
+vertex_count = 26472
+index_start = 24411780
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:673"
+mesh_part_name = "g_Body1:673"
+vertex_start = 24438252
+vertex_count = 26472
+index_start = 24438252
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:674"
+mesh_part_name = "g_Body1:674"
+vertex_start = 24464724
+vertex_count = 26472
+index_start = 24464724
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:675"
+mesh_part_name = "g_Body1:675"
+vertex_start = 24491196
+vertex_count = 26472
+index_start = 24491196
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:676"
+mesh_part_name = "g_Body1:676"
+vertex_start = 24517668
+vertex_count = 26472
+index_start = 24517668
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:677"
+mesh_part_name = "g_Body1:677"
+vertex_start = 24544140
+vertex_count = 26472
+index_start = 24544140
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:678"
+mesh_part_name = "g_Body1:678"
+vertex_start = 24570612
+vertex_count = 26472
+index_start = 24570612
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:679"
+mesh_part_name = "g_Body1:679"
+vertex_start = 24597084
+vertex_count = 26472
+index_start = 24597084
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:680"
+mesh_part_name = "g_Body1:680"
+vertex_start = 24623556
+vertex_count = 26472
+index_start = 24623556
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:681"
+mesh_part_name = "g_Body1:681"
+vertex_start = 24650028
+vertex_count = 26472
+index_start = 24650028
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:682"
+mesh_part_name = "g_Body1:682"
+vertex_start = 24676500
+vertex_count = 26472
+index_start = 24676500
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:683"
+mesh_part_name = "g_Body1:683"
+vertex_start = 24702972
+vertex_count = 26472
+index_start = 24702972
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:684"
+mesh_part_name = "g_Body1:684"
+vertex_start = 24729444
+vertex_count = 26472
+index_start = 24729444
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:685"
+mesh_part_name = "g_Body1:685"
+vertex_start = 24755916
+vertex_count = 26472
+index_start = 24755916
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:686"
+mesh_part_name = "g_Body1:686"
+vertex_start = 24782388
+vertex_count = 26472
+index_start = 24782388
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:687"
+mesh_part_name = "g_Body1:687"
+vertex_start = 24808860
+vertex_count = 26472
+index_start = 24808860
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:688"
+mesh_part_name = "g_Body1:688"
+vertex_start = 24835332
+vertex_count = 26472
+index_start = 24835332
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:689"
+mesh_part_name = "g_Body1:689"
+vertex_start = 24861804
+vertex_count = 26472
+index_start = 24861804
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:690"
+mesh_part_name = "g_Body1:690"
+vertex_start = 24888276
+vertex_count = 26472
+index_start = 24888276
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:691"
+mesh_part_name = "g_Body1:691"
+vertex_start = 24914748
+vertex_count = 26472
+index_start = 24914748
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:692"
+mesh_part_name = "g_Body1:692"
+vertex_start = 24941220
+vertex_count = 26472
+index_start = 24941220
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:693"
+mesh_part_name = "g_Body1:693"
+vertex_start = 24967692
+vertex_count = 26472
+index_start = 24967692
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:694"
+mesh_part_name = "g_Body1:694"
+vertex_start = 24994164
+vertex_count = 26472
+index_start = 24994164
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:695"
+mesh_part_name = "g_Body1:695"
+vertex_start = 25020636
+vertex_count = 26472
+index_start = 25020636
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:696"
+mesh_part_name = "g_Body1:696"
+vertex_start = 25047108
+vertex_count = 26472
+index_start = 25047108
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:697"
+mesh_part_name = "g_Body1:697"
+vertex_start = 25073580
+vertex_count = 26472
+index_start = 25073580
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:698"
+mesh_part_name = "g_Body1:698"
+vertex_start = 25100052
+vertex_count = 26472
+index_start = 25100052
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:699"
+mesh_part_name = "g_Body1:699"
+vertex_start = 25126524
+vertex_count = 26472
+index_start = 25126524
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:700"
+mesh_part_name = "g_Body1:700"
+vertex_start = 25152996
+vertex_count = 26472
+index_start = 25152996
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:701"
+mesh_part_name = "g_Body1:701"
+vertex_start = 25179468
+vertex_count = 26472
+index_start = 25179468
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:702"
+mesh_part_name = "g_Body1:702"
+vertex_start = 25205940
+vertex_count = 26472
+index_start = 25205940
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:703"
+mesh_part_name = "g_Body1:703"
+vertex_start = 25232412
+vertex_count = 26472
+index_start = 25232412
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:704"
+mesh_part_name = "g_Body1:704"
+vertex_start = 25258884
+vertex_count = 26472
+index_start = 25258884
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:705"
+mesh_part_name = "g_Body1:705"
+vertex_start = 25285356
+vertex_count = 26472
+index_start = 25285356
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:706"
+mesh_part_name = "g_Body1:706"
+vertex_start = 25311828
+vertex_count = 26472
+index_start = 25311828
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:707"
+mesh_part_name = "g_Body1:707"
+vertex_start = 25338300
+vertex_count = 26472
+index_start = 25338300
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:708"
+mesh_part_name = "g_Body1:708"
+vertex_start = 25364772
+vertex_count = 26472
+index_start = 25364772
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:709"
+mesh_part_name = "g_Body1:709"
+vertex_start = 25391244
+vertex_count = 26472
+index_start = 25391244
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:710"
+mesh_part_name = "g_Body1:710"
+vertex_start = 25417716
+vertex_count = 26472
+index_start = 25417716
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:711"
+mesh_part_name = "g_Body1:711"
+vertex_start = 25444188
+vertex_count = 26472
+index_start = 25444188
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:712"
+mesh_part_name = "g_Body1:712"
+vertex_start = 25470660
+vertex_count = 26472
+index_start = 25470660
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:713"
+mesh_part_name = "g_Body1:713"
+vertex_start = 25497132
+vertex_count = 26472
+index_start = 25497132
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:714"
+mesh_part_name = "g_Body1:714"
+vertex_start = 25523604
+vertex_count = 26472
+index_start = 25523604
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:715"
+mesh_part_name = "g_Body1:715"
+vertex_start = 25550076
+vertex_count = 26472
+index_start = 25550076
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:716"
+mesh_part_name = "g_Body1:716"
+vertex_start = 25576548
+vertex_count = 26472
+index_start = 25576548
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:717"
+mesh_part_name = "g_Body1:717"
+vertex_start = 25603020
+vertex_count = 26472
+index_start = 25603020
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:718"
+mesh_part_name = "g_Body1:718"
+vertex_start = 25629492
+vertex_count = 26472
+index_start = 25629492
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:719"
+mesh_part_name = "g_Body1:719"
+vertex_start = 25655964
+vertex_count = 26472
+index_start = 25655964
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:720"
+mesh_part_name = "g_Body1:720"
+vertex_start = 25682436
+vertex_count = 26472
+index_start = 25682436
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:721"
+mesh_part_name = "g_Body1:721"
+vertex_start = 25708908
+vertex_count = 26472
+index_start = 25708908
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:722"
+mesh_part_name = "g_Body1:722"
+vertex_start = 25735380
+vertex_count = 26472
+index_start = 25735380
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:723"
+mesh_part_name = "g_Body1:723"
+vertex_start = 25761852
+vertex_count = 26472
+index_start = 25761852
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:724"
+mesh_part_name = "g_Body1:724"
+vertex_start = 25788324
+vertex_count = 26472
+index_start = 25788324
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:725"
+mesh_part_name = "g_Body1:725"
+vertex_start = 25814796
+vertex_count = 26472
+index_start = 25814796
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:726"
+mesh_part_name = "g_Body1:726"
+vertex_start = 25841268
+vertex_count = 26472
+index_start = 25841268
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:727"
+mesh_part_name = "g_Body1:727"
+vertex_start = 25867740
+vertex_count = 26472
+index_start = 25867740
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:728"
+mesh_part_name = "g_Body1:728"
+vertex_start = 25894212
+vertex_count = 26472
+index_start = 25894212
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:729"
+mesh_part_name = "g_Body1:729"
+vertex_start = 25920684
+vertex_count = 26472
+index_start = 25920684
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:730"
+mesh_part_name = "g_Body1:730"
+vertex_start = 25947156
+vertex_count = 26472
+index_start = 25947156
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:731"
+mesh_part_name = "g_Body1:731"
+vertex_start = 25973628
+vertex_count = 26472
+index_start = 25973628
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:732"
+mesh_part_name = "g_Body1:732"
+vertex_start = 26000100
+vertex_count = 26472
+index_start = 26000100
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:733"
+mesh_part_name = "g_Body1:733"
+vertex_start = 26026572
+vertex_count = 26472
+index_start = 26026572
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:734"
+mesh_part_name = "g_Body1:734"
+vertex_start = 26053044
+vertex_count = 26472
+index_start = 26053044
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:735"
+mesh_part_name = "g_Body1:735"
+vertex_start = 26079516
+vertex_count = 26472
+index_start = 26079516
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:736"
+mesh_part_name = "g_Body1:736"
+vertex_start = 26105988
+vertex_count = 26472
+index_start = 26105988
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:737"
+mesh_part_name = "g_Body1:737"
+vertex_start = 26132460
+vertex_count = 26472
+index_start = 26132460
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:738"
+mesh_part_name = "g_Body1:738"
+vertex_start = 26158932
+vertex_count = 26472
+index_start = 26158932
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:739"
+mesh_part_name = "g_Body1:739"
+vertex_start = 26185404
+vertex_count = 26472
+index_start = 26185404
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:740"
+mesh_part_name = "g_Body1:740"
+vertex_start = 26211876
+vertex_count = 26472
+index_start = 26211876
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:741"
+mesh_part_name = "g_Body1:741"
+vertex_start = 26238348
+vertex_count = 26472
+index_start = 26238348
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:742"
+mesh_part_name = "g_Body1:742"
+vertex_start = 26264820
+vertex_count = 26472
+index_start = 26264820
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:743"
+mesh_part_name = "g_Body1:743"
+vertex_start = 26291292
+vertex_count = 26472
+index_start = 26291292
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:744"
+mesh_part_name = "g_Body1:744"
+vertex_start = 26317764
+vertex_count = 26472
+index_start = 26317764
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:745"
+mesh_part_name = "g_Body1:745"
+vertex_start = 26344236
+vertex_count = 26472
+index_start = 26344236
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:746"
+mesh_part_name = "g_Body1:746"
+vertex_start = 26370708
+vertex_count = 26472
+index_start = 26370708
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:747"
+mesh_part_name = "g_Body1:747"
+vertex_start = 26397180
+vertex_count = 26472
+index_start = 26397180
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:748"
+mesh_part_name = "g_Body1:748"
+vertex_start = 26423652
+vertex_count = 26472
+index_start = 26423652
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:749"
+mesh_part_name = "g_Body1:749"
+vertex_start = 26450124
+vertex_count = 26472
+index_start = 26450124
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:750"
+mesh_part_name = "g_Body1:750"
+vertex_start = 26476596
+vertex_count = 26472
+index_start = 26476596
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:751"
+mesh_part_name = "g_Body1:751"
+vertex_start = 26503068
+vertex_count = 26472
+index_start = 26503068
+index_count = 26472
+
+[[mesh_parts]]
+part_id = "g_Body1:752"
+mesh_part_name = "g_Body1:752"
+vertex_start = 26529540
+vertex_count = 53184
+index_start = 26529540
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:753"
+mesh_part_name = "g_Body1:753"
+vertex_start = 26582724
+vertex_count = 53184
+index_start = 26582724
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:754"
+mesh_part_name = "g_Body1:754"
+vertex_start = 26635908
+vertex_count = 53184
+index_start = 26635908
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:755"
+mesh_part_name = "g_Body1:755"
+vertex_start = 26689092
+vertex_count = 53184
+index_start = 26689092
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:756"
+mesh_part_name = "g_Body1:756"
+vertex_start = 26742276
+vertex_count = 53184
+index_start = 26742276
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:757"
+mesh_part_name = "g_Body1:757"
+vertex_start = 26795460
+vertex_count = 53184
+index_start = 26795460
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:758"
+mesh_part_name = "g_Body1:758"
+vertex_start = 26848644
+vertex_count = 53184
+index_start = 26848644
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:759"
+mesh_part_name = "g_Body1:759"
+vertex_start = 26901828
+vertex_count = 53184
+index_start = 26901828
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:760"
+mesh_part_name = "g_Body1:760"
+vertex_start = 26955012
+vertex_count = 53184
+index_start = 26955012
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:761"
+mesh_part_name = "g_Body1:761"
+vertex_start = 27008196
+vertex_count = 53184
+index_start = 27008196
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:762"
+mesh_part_name = "g_Body1:762"
+vertex_start = 27061380
+vertex_count = 53184
+index_start = 27061380
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:763"
+mesh_part_name = "g_Body1:763"
+vertex_start = 27114564
+vertex_count = 53184
+index_start = 27114564
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:764"
+mesh_part_name = "g_Body1:764"
+vertex_start = 27167748
+vertex_count = 53184
+index_start = 27167748
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:765"
+mesh_part_name = "g_Body1:765"
+vertex_start = 27220932
+vertex_count = 53184
+index_start = 27220932
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:766"
+mesh_part_name = "g_Body1:766"
+vertex_start = 27274116
+vertex_count = 53184
+index_start = 27274116
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:767"
+mesh_part_name = "g_Body1:767"
+vertex_start = 27327300
+vertex_count = 53184
+index_start = 27327300
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:768"
+mesh_part_name = "g_Body1:768"
+vertex_start = 27380484
+vertex_count = 53184
+index_start = 27380484
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:769"
+mesh_part_name = "g_Body1:769"
+vertex_start = 27433668
+vertex_count = 53184
+index_start = 27433668
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:770"
+mesh_part_name = "g_Body1:770"
+vertex_start = 27486852
+vertex_count = 53184
+index_start = 27486852
+index_count = 53184
+
+[[mesh_parts]]
+part_id = "g_Body1:771"
+mesh_part_name = "g_Body1:771"
+vertex_start = 27540036
+vertex_count = 1470
+index_start = 27540036
+index_count = 1470
+
+[[mesh_parts]]
+part_id = "g_Body1:772"
+mesh_part_name = "g_Body1:772"
+vertex_start = 27541506
+vertex_count = 1890
+index_start = 27541506
+index_count = 1890
+
+[[mesh_parts]]
+part_id = "g_Body1:773"
+mesh_part_name = "g_Body1:773"
+vertex_start = 27543396
+vertex_count = 6642
+index_start = 27543396
+index_count = 6642
+
+[[mesh_parts]]
+part_id = "g_Body1:774"
+mesh_part_name = "g_Body1:774"
+vertex_start = 27550038
+vertex_count = 5784
+index_start = 27550038
+index_count = 5784
+
+[[mesh_parts]]
+part_id = "g_Body1:775"
+mesh_part_name = "g_Body1:775"
+vertex_start = 27555822
+vertex_count = 5112
+index_start = 27555822
+index_count = 5112
+
+[[mesh_parts]]
+part_id = "g_Body1:776"
+mesh_part_name = "g_Body1:776"
+vertex_start = 27560934
+vertex_count = 129756
+index_start = 27560934
+index_count = 129756
+
+[[mesh_parts]]
+part_id = "g_Body1:777"
+mesh_part_name = "g_Body1:777"
+vertex_start = 27690690
+vertex_count = 7284
+index_start = 27690690
+index_count = 7284
+
+[[mesh_parts]]
+part_id = "g_Body1:778"
+mesh_part_name = "g_Body1:778"
+vertex_start = 27697974
+vertex_count = 7458
+index_start = 27697974
+index_count = 7458
+
+[[mesh_parts]]
+part_id = "g_Body1:779"
+mesh_part_name = "g_Body1:779"
+vertex_start = 27705432
+vertex_count = 5742
+index_start = 27705432
+index_count = 5742
+
+[[mesh_parts]]
+part_id = "g_Body1:780"
+mesh_part_name = "g_Body1:780"
+vertex_start = 27711174
+vertex_count = 5724
+index_start = 27711174
+index_count = 5724
+
+[[mesh_parts]]
+part_id = "g_Body1:781"
+mesh_part_name = "g_Body1:781"
+vertex_start = 27716898
+vertex_count = 5784
+index_start = 27716898
+index_count = 5784
+
+[[mesh_parts]]
+part_id = "g_Body1:782"
+mesh_part_name = "g_Body1:782"
+vertex_start = 27722682
+vertex_count = 2796
+index_start = 27722682
+index_count = 2796
+
+[[mesh_parts]]
+part_id = "g_Body1:783"
+mesh_part_name = "g_Body1:783"
+vertex_start = 27725478
+vertex_count = 348
+index_start = 27725478
+index_count = 348
+
+[[mesh_parts]]
+part_id = "g_Body1:784"
+mesh_part_name = "g_Body1:784"
+vertex_start = 27725826
+vertex_count = 2796
+index_start = 27725826
+index_count = 2796
+
+[[mesh_parts]]
+part_id = "g_Body1:785"
+mesh_part_name = "g_Body1:785"
+vertex_start = 27728622
+vertex_count = 30402
+index_start = 27728622
+index_count = 30402
+
+[[mesh_parts]]
+part_id = "g_Body1:786"
+mesh_part_name = "g_Body1:786"
+vertex_start = 27759024
+vertex_count = 6822
+index_start = 27759024
+index_count = 6822
+
+[[mesh_parts]]
+part_id = "g_Body1:787"
+mesh_part_name = "g_Body1:787"
+vertex_start = 27765846
+vertex_count = 9162
+index_start = 27765846
+index_count = 9162
+
+[[mesh_parts]]
+part_id = "g_Body1:788"
+mesh_part_name = "g_Body1:788"
+vertex_start = 27775008
+vertex_count = 7488
+index_start = 27775008
+index_count = 7488
+
+[[mesh_parts]]
+part_id = "g_Body2:4"
+mesh_part_name = "g_Body2:4"
+vertex_start = 27782496
+vertex_count = 7488
+index_start = 27782496
+index_count = 7488
+
+[[mesh_parts]]
+part_id = "g_Body1:789"
+mesh_part_name = "g_Body1:789"
+vertex_start = 27789984
+vertex_count = 7146
+index_start = 27789984
+index_count = 7146
+
+[[mesh_parts]]
+part_id = "g_Body1:790"
+mesh_part_name = "g_Body1:790"
+vertex_start = 27797130
+vertex_count = 7488
+index_start = 27797130
+index_count = 7488
+
+[[mesh_parts]]
+part_id = "g_Body2:5"
+mesh_part_name = "g_Body2:5"
+vertex_start = 27804618
+vertex_count = 7488
+index_start = 27804618
+index_count = 7488
+
+[[mesh_parts]]
+part_id = "g_Body1:791"
+mesh_part_name = "g_Body1:791"
+vertex_start = 27812106
+vertex_count = 204
+index_start = 27812106
+index_count = 204
+
+[[mesh_parts]]
+part_id = "g_Body2:6"
+mesh_part_name = "g_Body2:6"
+vertex_start = 27812310
+vertex_count = 204
+index_start = 27812310
+index_count = 204
+
+[[mesh_parts]]
+part_id = "g_Body3"
+mesh_part_name = "g_Body3"
+vertex_start = 27812514
+vertex_count = 204
+index_start = 27812514
+index_count = 204
+
+[[mesh_parts]]
+part_id = "g_Body4"
+mesh_part_name = "g_Body4"
+vertex_start = 27812718
+vertex_count = 21132
+index_start = 27812718
+index_count = 21132
+
+[[mesh_parts]]
+part_id = "g_Body1:792"
+mesh_part_name = "g_Body1:792"
+vertex_start = 27833850
+vertex_count = 12858
+index_start = 27833850
+index_count = 12858
+
+[[mesh_parts]]
+part_id = "g_Body1:793"
+mesh_part_name = "g_Body1:793"
+vertex_start = 27846708
+vertex_count = 5880
+index_start = 27846708
+index_count = 5880
+
+[[mesh_parts]]
+part_id = "g_Body2:7"
+mesh_part_name = "g_Body2:7"
+vertex_start = 27852588
+vertex_count = 5880
+index_start = 27852588
+index_count = 5880
+
+[[mesh_parts]]
+part_id = "g_Body1:794"
+mesh_part_name = "g_Body1:794"
+vertex_start = 27858468
+vertex_count = 2496
+index_start = 27858468
+index_count = 2496
+
+[[mesh_parts]]
+part_id = "g_Body1:795"
+mesh_part_name = "g_Body1:795"
+vertex_start = 27860964
+vertex_count = 3192
+index_start = 27860964
+index_count = 3192
+
+[[mesh_parts]]
+part_id = "g_Body2:8"
+mesh_part_name = "g_Body2:8"
+vertex_start = 27864156
+vertex_count = 3864
+index_start = 27864156
+index_count = 3864
+
+[[mesh_parts]]
+part_id = "g_Body1:796"
+mesh_part_name = "g_Body1:796"
+vertex_start = 27868020
+vertex_count = 21828
+index_start = 27868020
+index_count = 21828
+
+[[mesh_parts]]
+part_id = "g_Body1:797"
+mesh_part_name = "g_Body1:797"
+vertex_start = 27889848
+vertex_count = 2160
+index_start = 27889848
+index_count = 2160
+
+[[mesh_parts]]
+part_id = "g_Body1:798"
+mesh_part_name = "g_Body1:798"
+vertex_start = 27892008
+vertex_count = 2496
+index_start = 27892008
+index_count = 2496
+
+[[mesh_parts]]
+part_id = "g_Body1:799"
+mesh_part_name = "g_Body1:799"
+vertex_start = 27894504
+vertex_count = 3192
+index_start = 27894504
+index_count = 3192
+
+[[mesh_parts]]
+part_id = "g_Body2:9"
+mesh_part_name = "g_Body2:9"
+vertex_start = 27897696
+vertex_count = 3864
+index_start = 27897696
+index_count = 3864
+
+[[mesh_parts]]
+part_id = "g_Body1:800"
+mesh_part_name = "g_Body1:800"
+vertex_start = 27901560
+vertex_count = 3984
+index_start = 27901560
+index_count = 3984
+
+[[mesh_parts]]
+part_id = "g_Body2:10"
+mesh_part_name = "g_Body2:10"
+vertex_start = 27905544
+vertex_count = 3984
+index_start = 27905544
+index_count = 3984

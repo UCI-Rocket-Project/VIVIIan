@@ -1,9 +1,30 @@
 # Device Interface
 
-`DeviceInterface` is the hardware boundary layer.
-It accepts Arrow tables from device drivers and publishes them to downstream
-consumers over a local TCP stream — one live connection, Arrow IPC framing,
-no queue.
+If you are starting from zero, read
+[Build With VIVIIan -> Device Interfaces](build-device-interfaces.md) first.
+This page is the class reference for the shared `DeviceInterface` utility.
+
+`DeviceInterface` is the repo's generic batching boundary for code that already
+has `pyarrow.Table` telemetry in process.
+It does not know anything about board protocols, CRCs, socket reconnect policy,
+or command formats.
+
+Those behaviors belong in app-local adapters.
+
+## What `DeviceInterface` Does
+
+`DeviceInterface` accepts Arrow tables, validates them against a declared schema,
+batches them locally, and publishes them through an internal
+`SendConnector`.
+
+The important architectural split is:
+
+- ingress side: Arrow tables with schema checking and local batching
+- transport side: fixed-shape `float64` NumPy batches published through the connector runtime
+
+That means `DeviceInterface` is not a lossless history store.
+Once data leaves the local queue and enters the connector runtime, transport is
+latest-only.
 
 ## Install
 
@@ -15,147 +36,205 @@ pip install -e .
 from viviian.deviceinterface import DeviceInterface
 ```
 
-## Schema Contract
-
-The schema passed to `DeviceInterface` must contain at least one field typed
-`pa.time64("ns")`.
-Every ingressed table is cast to the declared schema on entry.
-Tables that fail the cast are dropped with an error log; they do not raise.
+## Constructor
 
 ```python
-import pyarrow as pa
-from viviian.deviceinterface import DeviceInterface
-
-schema = pa.schema([
-    pa.field("time_ns", pa.time64("ns")),
-    pa.field("pressure_kpa", pa.float64()),
-    pa.field("temperature_c", pa.float32()),
-])
+DeviceInterface(
+    schema,
+    tx_timeout=1.0,
+    max_rows=1000,
+    publish_host="127.0.0.1",
+    publish_port=6767,
+    stream_id="device",
+    sender=None,
+)
 ```
 
-## Basic Usage
+| Parameter | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `schema` | `pa.Schema` | required | Declared ingress schema. Must include at least one `pa.time64("ns")` field. |
+| `tx_timeout` | `float` | `1.0` | Flush queued rows when this many seconds have elapsed since the last send. |
+| `max_rows` | `int` | `1000` | Maximum rows per published chunk and the fixed transport row count. |
+| `publish_host` | `str` | `"127.0.0.1"` | Host used when `DeviceInterface` constructs its own `SendConnector`. |
+| `publish_port` | `int` | `6767` | Port used when `DeviceInterface` constructs its own `SendConnector`. |
+| `stream_id` | `str` | `"device"` | Stream name used in the internally created `StreamSpec`. |
+| `sender` | `SendConnector \| None` | `None` | Optional injected sender, useful for tests or custom transport ownership. |
 
-Use `DeviceInterface` as a context manager.
-Entering the context starts the background sender thread.
-Exiting flushes remaining queued data, joins the thread, and closes the socket.
+If `sender` is provided, `publish_host`, `publish_port`, and `stream_id` are no
+longer the active transport owner; the injected sender is.
+
+## Schema Contract
+
+The declared schema must contain at least one field typed `pa.time64("ns")`.
+Construction fails otherwise.
 
 ```python
 import pyarrow as pa
-import numpy as np
+
+schema = pa.schema(
+    [
+        pa.field("time_ns", pa.time64("ns")),
+        pa.field("pressure_kpa", pa.float64()),
+        pa.field("temperature_c", pa.float64()),
+    ]
+)
+```
+
+Why the timestamp requirement exists:
+
+- device telemetry without an explicit time basis is usually not usable downstream
+- the shared utility needs one strong invariant across applications
+
+The schema is also used as the cast target for every ingress table.
+If a table cannot be cast to the declared schema, the table is dropped and the
+error is logged; the call does not raise.
+
+## Minimal Example
+
+```python
+from __future__ import annotations
+
+import pyarrow as pa
+
 from viviian.deviceinterface import DeviceInterface
 
-schema = pa.schema([
-    pa.field("time_ns", pa.time64("ns")),
-    pa.field("value", pa.float64()),
-])
 
-with DeviceInterface(schema, publish_port=6767) as di:
-    table = pa.table({
-        "time_ns": pa.array([0, 1_000_000, 2_000_000], type=pa.time64("ns")),
-        "value": pa.array([1.0, 2.0, 3.0], type=pa.float64()),
-    })
+schema = pa.schema(
+    [
+        pa.field("time_ns", pa.time64("ns")),
+        pa.field("signal", pa.float64()),
+    ]
+)
+
+with DeviceInterface(
+    schema,
+    max_rows=4,
+    tx_timeout=0.25,
+    publish_port=6767,
+    stream_id="demo.device",
+) as di:
+    table = pa.table(
+        {
+            "time_ns": pa.array([0, 1_000_000, 2_000_000], type=pa.time64("ns")),
+            "signal": pa.array([1.0, 2.0, 3.0], type=pa.float64()),
+        }
+    )
     di.ingress_table(table)
 ```
 
-## Constructor Parameters
+Entering the context opens the sender and starts the background sender thread.
+Exiting the context:
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `schema` | `pa.Schema` | required | Schema for incoming tables. Must include a `time64("ns")` field. |
-| `tx_timeout` | `float` | `1.0` | Seconds before a non-empty queue flushes, even if `max_rows` is not reached. |
-| `max_rows` | `int` | `1000` | Row count that triggers an immediate flush. |
-| `publish_host` | `str` | `"127.0.0.1"` | TCP bind address. |
-| `publish_port` | `int` | `6767` | Data port. The metadata port is always `publish_port + 1`. |
+- signals the sender loop to stop
+- joins the thread
+- flushes remaining queued tables
+- closes the sender
 
-## How Data Moves
+## How Ingress, Batching, and Transport Work
 
-```text
-driver code
-    │
-    │  di.ingress_table(table)
-    ▼
- thread-safe queue   ◄─── background sender thread
-    │                         │
-    │   flush when:           │  concat + chunk
-    │   - max_rows reached    │
-    │   - tx_timeout elapsed  │
-    ▼                         ▼
- ArrowBatchStreamServer ──► TCP client (one connection)
-   port N  (data)            Arrow IPC frames, 4-byte length prefix
-   port N+1 (metadata)
-```
+### 1) Ingress
 
-The sender thread wakes every millisecond and checks two conditions:
+`ingress_table(table)`:
 
-- `queued_rows >= max_rows` — flush immediately
-- `queued_rows > 0 and elapsed > tx_timeout` — flush on timeout
+- casts the table to the declared schema
+- appends it to the internal pending list
+- increments `stats["queued_rows"]`
 
-On flush, pending tables are concatenated and chunked to `max_rows` before
-being sent.
+Ingress is fast and local.
+Network publication happens on the background thread.
 
-## Flush and Batching
+### 2) Flush Triggers
 
-`ingress_table` is non-blocking.
-The calling thread appends to an internal list and returns.
-The background thread owns all network I/O.
+The sender loop checks two conditions:
 
-If no client is connected when a flush fires, the batch is silently dropped.
-The server does not buffer for absent clients.
+- `queued_rows >= max_rows`
+- `queued_rows > 0 and elapsed > tx_timeout`
 
-## Port Layout
+If either condition is true, pending tables are flushed.
 
-`ArrowBatchStreamServer` opens two ports:
+### 3) Chunking
 
-| Port | Purpose |
-|------|---------|
-| `publish_port` | Arrow IPC data stream |
-| `publish_port + 1` | Metadata (reserved, not yet consumed by built-in receivers) |
+On flush:
 
-Both ports accept one client connection.
-Reconnections after a disconnect are accepted automatically on the next send.
+1. pending tables are concatenated
+2. the result is sliced into chunks of at most `max_rows`
+3. each chunk is converted to a fixed-shape NumPy batch
+
+### 4) Fixed Transport Shape
+
+The transport batch shape is always:
+
+- `(max_rows, number_of_schema_fields)`
+
+This is true even when the final chunk has fewer than `max_rows` rows.
+Unused rows are filled with `NaN`.
+
+That fixed shape exists because the current connector runtime requires exact
+batch shapes.
+
+### 5) Transport Normalization
+
+The internally created `StreamSpec` uses:
+
+- the provided `stream_id`
+- a `float64` transport schema derived from the Arrow schema
+- `shape=(max_rows, len(schema))`
+
+All transport columns are therefore published as `float64`, including the
+timestamp column.
+
+## Transport Semantics
+
+`DeviceInterface` publishes through `SendConnector`, so the cross-process
+semantics after flush are the connector semantics:
+
+- the newest batch is retained
+- transport is latest-only
+- history is not replayed
+- a newly connected receiver can observe the latest batch, not every batch that was sent before it connected
+
+That distinction matters:
+
+- local ingress queueing is batched
+- network transport is not a queue
+
+If you need full replay or archival, pair device output with a storage path such
+as [Data Storage](datastorage.md).
 
 ## Stats
 
-`di.stats` is a plain dict updated under the internal lock:
+`di.stats` is a mutable dict updated under the class lock.
 
 | Key | Meaning |
-|-----|---------|
-| `sent_batches` | Number of Arrow tables sent to the stream server |
-| `sent_rows` | Total rows sent |
-| `drops` | (reserved — not currently incremented) |
-| `queued_rows` | Rows currently in the pending queue |
+| --- | --- |
+| `sent_batches` | Number of fixed-shape transport batches sent |
+| `sent_rows` | Number of actual table rows sent before padding |
+| `drops` | Reserved; not currently incremented |
+| `queued_rows` | Current number of rows waiting to be flushed |
+
+Example:
 
 ```python
 print(di.stats)
-# {'sent_batches': 12, 'sent_rows': 4800, 'drops': 0, 'queued_rows': 0}
+# {'sent_batches': 3, 'sent_rows': 5, 'drops': 0, 'queued_rows': 0}
 ```
 
-## Wire Format
-
-Each sent frame is:
-
-```
-[4 bytes big-endian length] [Arrow IPC stream bytes]
-```
-
-The Arrow IPC stream includes the schema on every send — receivers do not need
-to maintain schema state across reconnects.
-
-## What This Is Not
+## What `DeviceInterface` Is Not
 
 `DeviceInterface` is not:
 
-- a queue or replay store — if no client is connected, data is dropped
-- a multi-client broadcaster — one live connection at a time
-- a lossless transport — intermediate batches can be overwritten before flush
+- a board protocol adapter
+- a command bridge
+- a reconnect manager for sockets or serial devices
+- a lossless history or replay system
+- a frontend-facing visualization API
 
-For persistent storage, pair it with
-[`ParquetDatabase`](datastorage.md).
-For in-process transport between components, use
-[connectors](connectors.md).
+If your integration needs protocol decode, command sendback, or link-state
+publishing, build an app-local adapter instead of forcing those concerns into
+this shared class.
 
 ## What To Read Next
 
-- [Data Storage](datastorage.md) — persist device output to Parquet files
-- [Connectors](connectors.md) — Arrow Flight transport between processes
-- [Architecture](architecture.md) — how device interfaces fit the full system
+- [Device Interfaces](build-device-interfaces.md) — task-driven guide for choosing between the generic class and app-local adapters
+- [Telemetry](build-telemetry.md) — stream contract and sender/receiver wiring
+- [Connectors](connectors.md) — transport-layer semantics

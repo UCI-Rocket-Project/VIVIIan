@@ -22,4 +22,4 @@ ni  = ["nidaqmx"]
 gui = ["imgui", "glfw", "PyOpenGL"]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["packages/viviian_core/src"]

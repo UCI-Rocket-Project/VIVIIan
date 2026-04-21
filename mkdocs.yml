@@ -1,20 +1,29 @@
 site_name: VIVIIan Docs
-site_description: Python-first architecture and toolkit for hardware-agnostic telemetry, control, and operator-facing tool collections
+site_description: Public-facing documentation for the VIVIIan telemetry and control monorepo.
 
 theme:
   name: mkdocs
 
 nav:
-  - Home: index.md
+  - Overview: index.md
+  - Build With VIVIIan:
+      - Overview: build-with-viviian.md
+      - Telemetry: build-telemetry.md
+      - Backend: build-backend.md
+      - Frontend: build-frontend.md
+      - Device Interfaces: build-device-interfaces.md
   - Architecture: architecture.md
-  - Getting Started: getting-started.md
-  - Device Interface: deviceinterface.md
-  - Data Storage: datastorage.md
-  - Connectors: connectors.md
-  - Orchestrator: orchestrator.md
-  - Frontend: frontend.md
-  - GUI Utils: gui-utils.md
-  - 3D Viewer: 3d-viewer.md
-  - Simulation Utils: simulation-utils.md
-  - Examples: examples.md
+  - Reference:
+      - Repository Map: reference.md
+      - Orchestrator: orchestrator.md
+      - Connectors: connectors.md
+      - Device Interface: deviceinterface.md
+      - Frontend: frontend.md
+      - GUI Utils: gui-utils.md
+      - 3D Viewer: 3d-viewer.md
+      - 3D Viewer Maintainer Notes: 3d-viewer-maintainer.md
+      - Simulation Utils: simulation-utils.md
+      - Data Storage: datastorage.md
+      - Examples: examples.md
+  - Contributing: contributing.md
   - Roadmap: roadmap.md

@@ -1,0 +1,8743 @@
+format_version = 1
+kind = "rocket_mesh_manifest"
+
+mesh_cache_version = 1
+source_step_path = "/Users/daciwolf/Documents/VIVIIan/gui_assets/cad/rocket.step"
+source_sha256 = "5ad0fc308cf4bac2f9ae53c212f59fc4d8ce82a46ef559c953d405e68557497a"
+cache_file = "rocket_5ad0fc308cf4.npz"
+
+[[mesh_parts]]
+part_id = "part_001"
+mesh_part_name = "part_001"
+vertex_start = 0
+vertex_count = 11759
+index_start = 0
+index_count = 35661
+
+[[mesh_parts]]
+part_id = "part_002"
+mesh_part_name = "part_002"
+vertex_start = 11759
+vertex_count = 10553
+index_start = 35661
+index_count = 34401
+
+[[mesh_parts]]
+part_id = "part_003"
+mesh_part_name = "part_003"
+vertex_start = 22312
+vertex_count = 10553
+index_start = 70062
+index_count = 34401
+
+[[mesh_parts]]
+part_id = "part_004"
+mesh_part_name = "part_004"
+vertex_start = 32865
+vertex_count = 7800
+index_start = 104463
+index_count = 22824
+
+[[mesh_parts]]
+part_id = "part_005"
+mesh_part_name = "part_005"
+vertex_start = 40665
+vertex_count = 7776
+index_start = 127287
+index_count = 22752
+
+[[mesh_parts]]
+part_id = "part_006"
+mesh_part_name = "part_006"
+vertex_start = 48441
+vertex_count = 7788
+index_start = 150039
+index_count = 22806
+
+[[mesh_parts]]
+part_id = "part_007"
+mesh_part_name = "part_007"
+vertex_start = 56229
+vertex_count = 8568
+index_start = 172845
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_008"
+mesh_part_name = "part_008"
+vertex_start = 64797
+vertex_count = 7919
+index_start = 199461
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_009"
+mesh_part_name = "part_009"
+vertex_start = 72716
+vertex_count = 11759
+index_start = 225939
+index_count = 35661
+
+[[mesh_parts]]
+part_id = "part_010"
+mesh_part_name = "part_010"
+vertex_start = 84475
+vertex_count = 11759
+index_start = 261600
+index_count = 35661
+
+[[mesh_parts]]
+part_id = "part_011"
+mesh_part_name = "part_011"
+vertex_start = 96234
+vertex_count = 8568
+index_start = 297261
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_012"
+mesh_part_name = "part_012"
+vertex_start = 104802
+vertex_count = 8568
+index_start = 323877
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_013"
+mesh_part_name = "part_013"
+vertex_start = 113370
+vertex_count = 8568
+index_start = 350493
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_014"
+mesh_part_name = "part_014"
+vertex_start = 121938
+vertex_count = 8568
+index_start = 377109
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_015"
+mesh_part_name = "part_015"
+vertex_start = 130506
+vertex_count = 8568
+index_start = 403725
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_016"
+mesh_part_name = "part_016"
+vertex_start = 139074
+vertex_count = 8568
+index_start = 430341
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_017"
+mesh_part_name = "part_017"
+vertex_start = 147642
+vertex_count = 8568
+index_start = 456957
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_018"
+mesh_part_name = "part_018"
+vertex_start = 156210
+vertex_count = 8568
+index_start = 483573
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_019"
+mesh_part_name = "part_019"
+vertex_start = 164778
+vertex_count = 8568
+index_start = 510189
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_020"
+mesh_part_name = "part_020"
+vertex_start = 173346
+vertex_count = 8568
+index_start = 536805
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_021"
+mesh_part_name = "part_021"
+vertex_start = 181914
+vertex_count = 8568
+index_start = 563421
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_022"
+mesh_part_name = "part_022"
+vertex_start = 190482
+vertex_count = 8568
+index_start = 590037
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_023"
+mesh_part_name = "part_023"
+vertex_start = 199050
+vertex_count = 8568
+index_start = 616653
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_024"
+mesh_part_name = "part_024"
+vertex_start = 207618
+vertex_count = 8568
+index_start = 643269
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_025"
+mesh_part_name = "part_025"
+vertex_start = 216186
+vertex_count = 8568
+index_start = 669885
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_026"
+mesh_part_name = "part_026"
+vertex_start = 224754
+vertex_count = 8568
+index_start = 696501
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_027"
+mesh_part_name = "part_027"
+vertex_start = 233322
+vertex_count = 8568
+index_start = 723117
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_028"
+mesh_part_name = "part_028"
+vertex_start = 241890
+vertex_count = 8568
+index_start = 749733
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_029"
+mesh_part_name = "part_029"
+vertex_start = 250458
+vertex_count = 8568
+index_start = 776349
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_030"
+mesh_part_name = "part_030"
+vertex_start = 259026
+vertex_count = 8568
+index_start = 802965
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_031"
+mesh_part_name = "part_031"
+vertex_start = 267594
+vertex_count = 8568
+index_start = 829581
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_032"
+mesh_part_name = "part_032"
+vertex_start = 276162
+vertex_count = 8568
+index_start = 856197
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_033"
+mesh_part_name = "part_033"
+vertex_start = 284730
+vertex_count = 8568
+index_start = 882813
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_034"
+mesh_part_name = "part_034"
+vertex_start = 293298
+vertex_count = 8568
+index_start = 909429
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_035"
+mesh_part_name = "part_035"
+vertex_start = 301866
+vertex_count = 8568
+index_start = 936045
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_036"
+mesh_part_name = "part_036"
+vertex_start = 310434
+vertex_count = 8568
+index_start = 962661
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_037"
+mesh_part_name = "part_037"
+vertex_start = 319002
+vertex_count = 8568
+index_start = 989277
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_038"
+mesh_part_name = "part_038"
+vertex_start = 327570
+vertex_count = 8568
+index_start = 1015893
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_039"
+mesh_part_name = "part_039"
+vertex_start = 336138
+vertex_count = 8568
+index_start = 1042509
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_040"
+mesh_part_name = "part_040"
+vertex_start = 344706
+vertex_count = 8568
+index_start = 1069125
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_041"
+mesh_part_name = "part_041"
+vertex_start = 353274
+vertex_count = 8568
+index_start = 1095741
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_042"
+mesh_part_name = "part_042"
+vertex_start = 361842
+vertex_count = 8568
+index_start = 1122357
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_043"
+mesh_part_name = "part_043"
+vertex_start = 370410
+vertex_count = 8568
+index_start = 1148973
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_044"
+mesh_part_name = "part_044"
+vertex_start = 378978
+vertex_count = 8568
+index_start = 1175589
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_045"
+mesh_part_name = "part_045"
+vertex_start = 387546
+vertex_count = 8568
+index_start = 1202205
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_046"
+mesh_part_name = "part_046"
+vertex_start = 396114
+vertex_count = 8568
+index_start = 1228821
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_047"
+mesh_part_name = "part_047"
+vertex_start = 404682
+vertex_count = 8568
+index_start = 1255437
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_048"
+mesh_part_name = "part_048"
+vertex_start = 413250
+vertex_count = 8568
+index_start = 1282053
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_049"
+mesh_part_name = "part_049"
+vertex_start = 421818
+vertex_count = 8568
+index_start = 1308669
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_050"
+mesh_part_name = "part_050"
+vertex_start = 430386
+vertex_count = 8568
+index_start = 1335285
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_051"
+mesh_part_name = "part_051"
+vertex_start = 438954
+vertex_count = 8568
+index_start = 1361901
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_052"
+mesh_part_name = "part_052"
+vertex_start = 447522
+vertex_count = 8568
+index_start = 1388517
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_053"
+mesh_part_name = "part_053"
+vertex_start = 456090
+vertex_count = 8568
+index_start = 1415133
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_054"
+mesh_part_name = "part_054"
+vertex_start = 464658
+vertex_count = 8568
+index_start = 1441749
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_055"
+mesh_part_name = "part_055"
+vertex_start = 473226
+vertex_count = 8568
+index_start = 1468365
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_056"
+mesh_part_name = "part_056"
+vertex_start = 481794
+vertex_count = 8568
+index_start = 1494981
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_057"
+mesh_part_name = "part_057"
+vertex_start = 490362
+vertex_count = 8568
+index_start = 1521597
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_058"
+mesh_part_name = "part_058"
+vertex_start = 498930
+vertex_count = 8568
+index_start = 1548213
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_059"
+mesh_part_name = "part_059"
+vertex_start = 507498
+vertex_count = 8568
+index_start = 1574829
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_060"
+mesh_part_name = "part_060"
+vertex_start = 516066
+vertex_count = 8568
+index_start = 1601445
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_061"
+mesh_part_name = "part_061"
+vertex_start = 524634
+vertex_count = 8568
+index_start = 1628061
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_062"
+mesh_part_name = "part_062"
+vertex_start = 533202
+vertex_count = 8568
+index_start = 1654677
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_063"
+mesh_part_name = "part_063"
+vertex_start = 541770
+vertex_count = 8568
+index_start = 1681293
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_064"
+mesh_part_name = "part_064"
+vertex_start = 550338
+vertex_count = 8568
+index_start = 1707909
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_065"
+mesh_part_name = "part_065"
+vertex_start = 558906
+vertex_count = 8568
+index_start = 1734525
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_066"
+mesh_part_name = "part_066"
+vertex_start = 567474
+vertex_count = 8568
+index_start = 1761141
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_067"
+mesh_part_name = "part_067"
+vertex_start = 576042
+vertex_count = 8568
+index_start = 1787757
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_068"
+mesh_part_name = "part_068"
+vertex_start = 584610
+vertex_count = 8568
+index_start = 1814373
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_069"
+mesh_part_name = "part_069"
+vertex_start = 593178
+vertex_count = 8568
+index_start = 1840989
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_070"
+mesh_part_name = "part_070"
+vertex_start = 601746
+vertex_count = 8568
+index_start = 1867605
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_071"
+mesh_part_name = "part_071"
+vertex_start = 610314
+vertex_count = 8568
+index_start = 1894221
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_072"
+mesh_part_name = "part_072"
+vertex_start = 618882
+vertex_count = 8568
+index_start = 1920837
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_073"
+mesh_part_name = "part_073"
+vertex_start = 627450
+vertex_count = 8568
+index_start = 1947453
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_074"
+mesh_part_name = "part_074"
+vertex_start = 636018
+vertex_count = 8568
+index_start = 1974069
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_075"
+mesh_part_name = "part_075"
+vertex_start = 644586
+vertex_count = 8568
+index_start = 2000685
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_076"
+mesh_part_name = "part_076"
+vertex_start = 653154
+vertex_count = 7919
+index_start = 2027301
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_077"
+mesh_part_name = "part_077"
+vertex_start = 661073
+vertex_count = 7919
+index_start = 2053779
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_078"
+mesh_part_name = "part_078"
+vertex_start = 668992
+vertex_count = 7919
+index_start = 2080257
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_079"
+mesh_part_name = "part_079"
+vertex_start = 676911
+vertex_count = 7919
+index_start = 2106735
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_080"
+mesh_part_name = "part_080"
+vertex_start = 684830
+vertex_count = 7919
+index_start = 2133213
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_081"
+mesh_part_name = "part_081"
+vertex_start = 692749
+vertex_count = 7919
+index_start = 2159691
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_082"
+mesh_part_name = "part_082"
+vertex_start = 700668
+vertex_count = 7919
+index_start = 2186169
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_083"
+mesh_part_name = "part_083"
+vertex_start = 708587
+vertex_count = 7919
+index_start = 2212647
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_084"
+mesh_part_name = "part_084"
+vertex_start = 716506
+vertex_count = 7919
+index_start = 2239125
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_085"
+mesh_part_name = "part_085"
+vertex_start = 724425
+vertex_count = 7919
+index_start = 2265603
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_086"
+mesh_part_name = "part_086"
+vertex_start = 732344
+vertex_count = 7919
+index_start = 2292081
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_087"
+mesh_part_name = "part_087"
+vertex_start = 740263
+vertex_count = 7919
+index_start = 2318559
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_088"
+mesh_part_name = "part_088"
+vertex_start = 748182
+vertex_count = 7919
+index_start = 2345037
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_089"
+mesh_part_name = "part_089"
+vertex_start = 756101
+vertex_count = 7919
+index_start = 2371515
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_090"
+mesh_part_name = "part_090"
+vertex_start = 764020
+vertex_count = 7919
+index_start = 2397993
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_091"
+mesh_part_name = "part_091"
+vertex_start = 771939
+vertex_count = 7919
+index_start = 2424471
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_092"
+mesh_part_name = "part_092"
+vertex_start = 779858
+vertex_count = 7919
+index_start = 2450949
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_093"
+mesh_part_name = "part_093"
+vertex_start = 787777
+vertex_count = 7919
+index_start = 2477427
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_094"
+mesh_part_name = "part_094"
+vertex_start = 795696
+vertex_count = 7919
+index_start = 2503905
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_095"
+mesh_part_name = "part_095"
+vertex_start = 803615
+vertex_count = 7919
+index_start = 2530383
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_096"
+mesh_part_name = "part_096"
+vertex_start = 811534
+vertex_count = 7919
+index_start = 2556861
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_097"
+mesh_part_name = "part_097"
+vertex_start = 819453
+vertex_count = 7919
+index_start = 2583339
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_098"
+mesh_part_name = "part_098"
+vertex_start = 827372
+vertex_count = 7919
+index_start = 2609817
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_099"
+mesh_part_name = "part_099"
+vertex_start = 835291
+vertex_count = 7919
+index_start = 2636295
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_100"
+mesh_part_name = "part_100"
+vertex_start = 843210
+vertex_count = 7919
+index_start = 2662773
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_101"
+mesh_part_name = "part_101"
+vertex_start = 851129
+vertex_count = 7919
+index_start = 2689251
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_102"
+mesh_part_name = "part_102"
+vertex_start = 859048
+vertex_count = 7919
+index_start = 2715729
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_103"
+mesh_part_name = "part_103"
+vertex_start = 866967
+vertex_count = 7919
+index_start = 2742207
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_104"
+mesh_part_name = "part_104"
+vertex_start = 874886
+vertex_count = 7919
+index_start = 2768685
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_105"
+mesh_part_name = "part_105"
+vertex_start = 882805
+vertex_count = 8568
+index_start = 2795163
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_106"
+mesh_part_name = "part_106"
+vertex_start = 891373
+vertex_count = 8568
+index_start = 2821779
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_107"
+mesh_part_name = "part_107"
+vertex_start = 899941
+vertex_count = 8568
+index_start = 2848395
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_108"
+mesh_part_name = "part_108"
+vertex_start = 908509
+vertex_count = 8568
+index_start = 2875011
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_109"
+mesh_part_name = "part_109"
+vertex_start = 917077
+vertex_count = 8568
+index_start = 2901627
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_110"
+mesh_part_name = "part_110"
+vertex_start = 925645
+vertex_count = 8568
+index_start = 2928243
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_111"
+mesh_part_name = "part_111"
+vertex_start = 934213
+vertex_count = 8568
+index_start = 2954859
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_112"
+mesh_part_name = "part_112"
+vertex_start = 942781
+vertex_count = 8568
+index_start = 2981475
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_113"
+mesh_part_name = "part_113"
+vertex_start = 951349
+vertex_count = 8568
+index_start = 3008091
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_114"
+mesh_part_name = "part_114"
+vertex_start = 959917
+vertex_count = 8568
+index_start = 3034707
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_115"
+mesh_part_name = "part_115"
+vertex_start = 968485
+vertex_count = 8568
+index_start = 3061323
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_116"
+mesh_part_name = "part_116"
+vertex_start = 977053
+vertex_count = 8568
+index_start = 3087939
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_117"
+mesh_part_name = "part_117"
+vertex_start = 985621
+vertex_count = 8568
+index_start = 3114555
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_118"
+mesh_part_name = "part_118"
+vertex_start = 994189
+vertex_count = 8568
+index_start = 3141171
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_119"
+mesh_part_name = "part_119"
+vertex_start = 1002757
+vertex_count = 8568
+index_start = 3167787
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_120"
+mesh_part_name = "part_120"
+vertex_start = 1011325
+vertex_count = 8568
+index_start = 3194403
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_121"
+mesh_part_name = "part_121"
+vertex_start = 1019893
+vertex_count = 8568
+index_start = 3221019
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_122"
+mesh_part_name = "part_122"
+vertex_start = 1028461
+vertex_count = 8568
+index_start = 3247635
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_123"
+mesh_part_name = "part_123"
+vertex_start = 1037029
+vertex_count = 8568
+index_start = 3274251
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_124"
+mesh_part_name = "part_124"
+vertex_start = 1045597
+vertex_count = 8568
+index_start = 3300867
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_125"
+mesh_part_name = "part_125"
+vertex_start = 1054165
+vertex_count = 8568
+index_start = 3327483
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_126"
+mesh_part_name = "part_126"
+vertex_start = 1062733
+vertex_count = 8568
+index_start = 3354099
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_127"
+mesh_part_name = "part_127"
+vertex_start = 1071301
+vertex_count = 8568
+index_start = 3380715
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_128"
+mesh_part_name = "part_128"
+vertex_start = 1079869
+vertex_count = 8568
+index_start = 3407331
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_129"
+mesh_part_name = "part_129"
+vertex_start = 1088437
+vertex_count = 8568
+index_start = 3433947
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_130"
+mesh_part_name = "part_130"
+vertex_start = 1097005
+vertex_count = 8568
+index_start = 3460563
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_131"
+mesh_part_name = "part_131"
+vertex_start = 1105573
+vertex_count = 8568
+index_start = 3487179
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_132"
+mesh_part_name = "part_132"
+vertex_start = 1114141
+vertex_count = 8568
+index_start = 3513795
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_133"
+mesh_part_name = "part_133"
+vertex_start = 1122709
+vertex_count = 8568
+index_start = 3540411
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_134"
+mesh_part_name = "part_134"
+vertex_start = 1131277
+vertex_count = 8568
+index_start = 3567027
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_135"
+mesh_part_name = "part_135"
+vertex_start = 1139845
+vertex_count = 12798
+index_start = 3593643
+index_count = 43482
+
+[[mesh_parts]]
+part_id = "part_136"
+mesh_part_name = "part_136"
+vertex_start = 1152643
+vertex_count = 15904
+index_start = 3637125
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_137"
+mesh_part_name = "part_137"
+vertex_start = 1168547
+vertex_count = 15904
+index_start = 3685101
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_138"
+mesh_part_name = "part_138"
+vertex_start = 1184451
+vertex_count = 10345
+index_start = 3733077
+index_count = 31092
+
+[[mesh_parts]]
+part_id = "part_139"
+mesh_part_name = "part_139"
+vertex_start = 1194796
+vertex_count = 2259
+index_start = 3764169
+index_count = 10992
+
+[[mesh_parts]]
+part_id = "part_140"
+mesh_part_name = "part_140"
+vertex_start = 1197055
+vertex_count = 9597
+index_start = 3775161
+index_count = 31056
+
+[[mesh_parts]]
+part_id = "part_141"
+mesh_part_name = "part_141"
+vertex_start = 1206652
+vertex_count = 11993
+index_start = 3806217
+index_count = 35604
+
+[[mesh_parts]]
+part_id = "part_142"
+mesh_part_name = "part_142"
+vertex_start = 1218645
+vertex_count = 664
+index_start = 3841821
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_143"
+mesh_part_name = "part_143"
+vertex_start = 1219309
+vertex_count = 6950
+index_start = 3843753
+index_count = 20496
+
+[[mesh_parts]]
+part_id = "part_144"
+mesh_part_name = "part_144"
+vertex_start = 1226259
+vertex_count = 676
+index_start = 3864249
+index_count = 1980
+
+[[mesh_parts]]
+part_id = "part_145"
+mesh_part_name = "part_145"
+vertex_start = 1226935
+vertex_count = 676
+index_start = 3866229
+index_count = 1980
+
+[[mesh_parts]]
+part_id = "part_146"
+mesh_part_name = "part_146"
+vertex_start = 1227611
+vertex_count = 676
+index_start = 3868209
+index_count = 1980
+
+[[mesh_parts]]
+part_id = "part_147"
+mesh_part_name = "part_147"
+vertex_start = 1228287
+vertex_count = 676
+index_start = 3870189
+index_count = 1980
+
+[[mesh_parts]]
+part_id = "part_148"
+mesh_part_name = "part_148"
+vertex_start = 1228963
+vertex_count = 19738
+index_start = 3872169
+index_count = 57810
+
+[[mesh_parts]]
+part_id = "part_149"
+mesh_part_name = "part_149"
+vertex_start = 1248701
+vertex_count = 19584
+index_start = 3929979
+index_count = 57324
+
+[[mesh_parts]]
+part_id = "part_150"
+mesh_part_name = "part_150"
+vertex_start = 1268285
+vertex_count = 5001
+index_start = 3987303
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_151"
+mesh_part_name = "part_151"
+vertex_start = 1273286
+vertex_count = 4606
+index_start = 4002213
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_152"
+mesh_part_name = "part_152"
+vertex_start = 1277892
+vertex_count = 15904
+index_start = 4016445
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_153"
+mesh_part_name = "part_153"
+vertex_start = 1293796
+vertex_count = 15904
+index_start = 4064421
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_154"
+mesh_part_name = "part_154"
+vertex_start = 1309700
+vertex_count = 15904
+index_start = 4112397
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_155"
+mesh_part_name = "part_155"
+vertex_start = 1325604
+vertex_count = 15904
+index_start = 4160373
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_156"
+mesh_part_name = "part_156"
+vertex_start = 1341508
+vertex_count = 15904
+index_start = 4208349
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_157"
+mesh_part_name = "part_157"
+vertex_start = 1357412
+vertex_count = 15904
+index_start = 4256325
+index_count = 47976
+
+[[mesh_parts]]
+part_id = "part_158"
+mesh_part_name = "part_158"
+vertex_start = 1373316
+vertex_count = 664
+index_start = 4304301
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_159"
+mesh_part_name = "part_159"
+vertex_start = 1373980
+vertex_count = 664
+index_start = 4306233
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_160"
+mesh_part_name = "part_160"
+vertex_start = 1374644
+vertex_count = 664
+index_start = 4308165
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_161"
+mesh_part_name = "part_161"
+vertex_start = 1375308
+vertex_count = 664
+index_start = 4310097
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_162"
+mesh_part_name = "part_162"
+vertex_start = 1375972
+vertex_count = 664
+index_start = 4312029
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_163"
+mesh_part_name = "part_163"
+vertex_start = 1376636
+vertex_count = 664
+index_start = 4313961
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_164"
+mesh_part_name = "part_164"
+vertex_start = 1377300
+vertex_count = 664
+index_start = 4315893
+index_count = 1932
+
+[[mesh_parts]]
+part_id = "part_165"
+mesh_part_name = "part_165"
+vertex_start = 1377964
+vertex_count = 5001
+index_start = 4317825
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_166"
+mesh_part_name = "part_166"
+vertex_start = 1382965
+vertex_count = 5001
+index_start = 4332735
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_167"
+mesh_part_name = "part_167"
+vertex_start = 1387966
+vertex_count = 5001
+index_start = 4347645
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_168"
+mesh_part_name = "part_168"
+vertex_start = 1392967
+vertex_count = 5001
+index_start = 4362555
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_169"
+mesh_part_name = "part_169"
+vertex_start = 1397968
+vertex_count = 5001
+index_start = 4377465
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_170"
+mesh_part_name = "part_170"
+vertex_start = 1402969
+vertex_count = 5001
+index_start = 4392375
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_171"
+mesh_part_name = "part_171"
+vertex_start = 1407970
+vertex_count = 5001
+index_start = 4407285
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_172"
+mesh_part_name = "part_172"
+vertex_start = 1412971
+vertex_count = 5001
+index_start = 4422195
+index_count = 14910
+
+[[mesh_parts]]
+part_id = "part_173"
+mesh_part_name = "part_173"
+vertex_start = 1417972
+vertex_count = 4606
+index_start = 4437105
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_174"
+mesh_part_name = "part_174"
+vertex_start = 1422578
+vertex_count = 4606
+index_start = 4451337
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_175"
+mesh_part_name = "part_175"
+vertex_start = 1427184
+vertex_count = 4606
+index_start = 4465569
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_176"
+mesh_part_name = "part_176"
+vertex_start = 1431790
+vertex_count = 4606
+index_start = 4479801
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_177"
+mesh_part_name = "part_177"
+vertex_start = 1436396
+vertex_count = 4606
+index_start = 4494033
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_178"
+mesh_part_name = "part_178"
+vertex_start = 1441002
+vertex_count = 4606
+index_start = 4508265
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_179"
+mesh_part_name = "part_179"
+vertex_start = 1445608
+vertex_count = 4606
+index_start = 4522497
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_180"
+mesh_part_name = "part_180"
+vertex_start = 1450214
+vertex_count = 4606
+index_start = 4536729
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_181"
+mesh_part_name = "part_181"
+vertex_start = 1454820
+vertex_count = 4606
+index_start = 4550961
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_182"
+mesh_part_name = "part_182"
+vertex_start = 1459426
+vertex_count = 4606
+index_start = 4565193
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_183"
+mesh_part_name = "part_183"
+vertex_start = 1464032
+vertex_count = 4606
+index_start = 4579425
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_184"
+mesh_part_name = "part_184"
+vertex_start = 1468638
+vertex_count = 4606
+index_start = 4593657
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_185"
+mesh_part_name = "part_185"
+vertex_start = 1473244
+vertex_count = 4606
+index_start = 4607889
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_186"
+mesh_part_name = "part_186"
+vertex_start = 1477850
+vertex_count = 4606
+index_start = 4622121
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_187"
+mesh_part_name = "part_187"
+vertex_start = 1482456
+vertex_count = 4606
+index_start = 4636353
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_188"
+mesh_part_name = "part_188"
+vertex_start = 1487062
+vertex_count = 8568
+index_start = 4650585
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_189"
+mesh_part_name = "part_189"
+vertex_start = 1495630
+vertex_count = 8568
+index_start = 4677201
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_190"
+mesh_part_name = "part_190"
+vertex_start = 1504198
+vertex_count = 8568
+index_start = 4703817
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_191"
+mesh_part_name = "part_191"
+vertex_start = 1512766
+vertex_count = 8568
+index_start = 4730433
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_192"
+mesh_part_name = "part_192"
+vertex_start = 1521334
+vertex_count = 8568
+index_start = 4757049
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_193"
+mesh_part_name = "part_193"
+vertex_start = 1529902
+vertex_count = 8568
+index_start = 4783665
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_194"
+mesh_part_name = "part_194"
+vertex_start = 1538470
+vertex_count = 8568
+index_start = 4810281
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_195"
+mesh_part_name = "part_195"
+vertex_start = 1547038
+vertex_count = 8568
+index_start = 4836897
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_196"
+mesh_part_name = "part_196"
+vertex_start = 1555606
+vertex_count = 8568
+index_start = 4863513
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_197"
+mesh_part_name = "part_197"
+vertex_start = 1564174
+vertex_count = 8568
+index_start = 4890129
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_198"
+mesh_part_name = "part_198"
+vertex_start = 1572742
+vertex_count = 8568
+index_start = 4916745
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_199"
+mesh_part_name = "part_199"
+vertex_start = 1581310
+vertex_count = 8568
+index_start = 4943361
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_200"
+mesh_part_name = "part_200"
+vertex_start = 1589878
+vertex_count = 8568
+index_start = 4969977
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_201"
+mesh_part_name = "part_201"
+vertex_start = 1598446
+vertex_count = 8568
+index_start = 4996593
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_202"
+mesh_part_name = "part_202"
+vertex_start = 1607014
+vertex_count = 8568
+index_start = 5023209
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_203"
+mesh_part_name = "part_203"
+vertex_start = 1615582
+vertex_count = 8568
+index_start = 5049825
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_204"
+mesh_part_name = "part_204"
+vertex_start = 1624150
+vertex_count = 8568
+index_start = 5076441
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_205"
+mesh_part_name = "part_205"
+vertex_start = 1632718
+vertex_count = 8568
+index_start = 5103057
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_206"
+mesh_part_name = "part_206"
+vertex_start = 1641286
+vertex_count = 8568
+index_start = 5129673
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_207"
+mesh_part_name = "part_207"
+vertex_start = 1649854
+vertex_count = 8568
+index_start = 5156289
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_208"
+mesh_part_name = "part_208"
+vertex_start = 1658422
+vertex_count = 8568
+index_start = 5182905
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_209"
+mesh_part_name = "part_209"
+vertex_start = 1666990
+vertex_count = 8568
+index_start = 5209521
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_210"
+mesh_part_name = "part_210"
+vertex_start = 1675558
+vertex_count = 8568
+index_start = 5236137
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_211"
+mesh_part_name = "part_211"
+vertex_start = 1684126
+vertex_count = 8568
+index_start = 5262753
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_212"
+mesh_part_name = "part_212"
+vertex_start = 1692694
+vertex_count = 8568
+index_start = 5289369
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_213"
+mesh_part_name = "part_213"
+vertex_start = 1701262
+vertex_count = 8568
+index_start = 5315985
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_214"
+mesh_part_name = "part_214"
+vertex_start = 1709830
+vertex_count = 8568
+index_start = 5342601
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_215"
+mesh_part_name = "part_215"
+vertex_start = 1718398
+vertex_count = 8568
+index_start = 5369217
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_216"
+mesh_part_name = "part_216"
+vertex_start = 1726966
+vertex_count = 8568
+index_start = 5395833
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_217"
+mesh_part_name = "part_217"
+vertex_start = 1735534
+vertex_count = 8568
+index_start = 5422449
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_218"
+mesh_part_name = "part_218"
+vertex_start = 1744102
+vertex_count = 8568
+index_start = 5449065
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_219"
+mesh_part_name = "part_219"
+vertex_start = 1752670
+vertex_count = 8568
+index_start = 5475681
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_220"
+mesh_part_name = "part_220"
+vertex_start = 1761238
+vertex_count = 8568
+index_start = 5502297
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_221"
+mesh_part_name = "part_221"
+vertex_start = 1769806
+vertex_count = 8568
+index_start = 5528913
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_222"
+mesh_part_name = "part_222"
+vertex_start = 1778374
+vertex_count = 7919
+index_start = 5555529
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_223"
+mesh_part_name = "part_223"
+vertex_start = 1786293
+vertex_count = 7919
+index_start = 5582007
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_224"
+mesh_part_name = "part_224"
+vertex_start = 1794212
+vertex_count = 7919
+index_start = 5608485
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_225"
+mesh_part_name = "part_225"
+vertex_start = 1802131
+vertex_count = 7919
+index_start = 5634963
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_226"
+mesh_part_name = "part_226"
+vertex_start = 1810050
+vertex_count = 7919
+index_start = 5661441
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_227"
+mesh_part_name = "part_227"
+vertex_start = 1817969
+vertex_count = 7919
+index_start = 5687919
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_228"
+mesh_part_name = "part_228"
+vertex_start = 1825888
+vertex_count = 7919
+index_start = 5714397
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_229"
+mesh_part_name = "part_229"
+vertex_start = 1833807
+vertex_count = 7919
+index_start = 5740875
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_230"
+mesh_part_name = "part_230"
+vertex_start = 1841726
+vertex_count = 7919
+index_start = 5767353
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_231"
+mesh_part_name = "part_231"
+vertex_start = 1849645
+vertex_count = 7919
+index_start = 5793831
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_232"
+mesh_part_name = "part_232"
+vertex_start = 1857564
+vertex_count = 7919
+index_start = 5820309
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_233"
+mesh_part_name = "part_233"
+vertex_start = 1865483
+vertex_count = 7919
+index_start = 5846787
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_234"
+mesh_part_name = "part_234"
+vertex_start = 1873402
+vertex_count = 7919
+index_start = 5873265
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_235"
+mesh_part_name = "part_235"
+vertex_start = 1881321
+vertex_count = 7919
+index_start = 5899743
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_236"
+mesh_part_name = "part_236"
+vertex_start = 1889240
+vertex_count = 7919
+index_start = 5926221
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_237"
+mesh_part_name = "part_237"
+vertex_start = 1897159
+vertex_count = 7919
+index_start = 5952699
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_238"
+mesh_part_name = "part_238"
+vertex_start = 1905078
+vertex_count = 7919
+index_start = 5979177
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_239"
+mesh_part_name = "part_239"
+vertex_start = 1912997
+vertex_count = 7919
+index_start = 6005655
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_240"
+mesh_part_name = "part_240"
+vertex_start = 1920916
+vertex_count = 7919
+index_start = 6032133
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_241"
+mesh_part_name = "part_241"
+vertex_start = 1928835
+vertex_count = 7919
+index_start = 6058611
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_242"
+mesh_part_name = "part_242"
+vertex_start = 1936754
+vertex_count = 7919
+index_start = 6085089
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_243"
+mesh_part_name = "part_243"
+vertex_start = 1944673
+vertex_count = 7919
+index_start = 6111567
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_244"
+mesh_part_name = "part_244"
+vertex_start = 1952592
+vertex_count = 7919
+index_start = 6138045
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_245"
+mesh_part_name = "part_245"
+vertex_start = 1960511
+vertex_count = 7919
+index_start = 6164523
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_246"
+mesh_part_name = "part_246"
+vertex_start = 1968430
+vertex_count = 7919
+index_start = 6191001
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_247"
+mesh_part_name = "part_247"
+vertex_start = 1976349
+vertex_count = 7919
+index_start = 6217479
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_248"
+mesh_part_name = "part_248"
+vertex_start = 1984268
+vertex_count = 7919
+index_start = 6243957
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_249"
+mesh_part_name = "part_249"
+vertex_start = 1992187
+vertex_count = 7919
+index_start = 6270435
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_250"
+mesh_part_name = "part_250"
+vertex_start = 2000106
+vertex_count = 7919
+index_start = 6296913
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_251"
+mesh_part_name = "part_251"
+vertex_start = 2008025
+vertex_count = 7919
+index_start = 6323391
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_252"
+mesh_part_name = "part_252"
+vertex_start = 2015944
+vertex_count = 7919
+index_start = 6349869
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_253"
+mesh_part_name = "part_253"
+vertex_start = 2023863
+vertex_count = 7919
+index_start = 6376347
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_254"
+mesh_part_name = "part_254"
+vertex_start = 2031782
+vertex_count = 7919
+index_start = 6402825
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_255"
+mesh_part_name = "part_255"
+vertex_start = 2039701
+vertex_count = 7919
+index_start = 6429303
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_256"
+mesh_part_name = "part_256"
+vertex_start = 2047620
+vertex_count = 7919
+index_start = 6455781
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_257"
+mesh_part_name = "part_257"
+vertex_start = 2055539
+vertex_count = 7919
+index_start = 6482259
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_258"
+mesh_part_name = "part_258"
+vertex_start = 2063458
+vertex_count = 7919
+index_start = 6508737
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_259"
+mesh_part_name = "part_259"
+vertex_start = 2071377
+vertex_count = 7919
+index_start = 6535215
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_260"
+mesh_part_name = "part_260"
+vertex_start = 2079296
+vertex_count = 7919
+index_start = 6561693
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_261"
+mesh_part_name = "part_261"
+vertex_start = 2087215
+vertex_count = 7919
+index_start = 6588171
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_262"
+mesh_part_name = "part_262"
+vertex_start = 2095134
+vertex_count = 7919
+index_start = 6614649
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_263"
+mesh_part_name = "part_263"
+vertex_start = 2103053
+vertex_count = 7919
+index_start = 6641127
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_264"
+mesh_part_name = "part_264"
+vertex_start = 2110972
+vertex_count = 7919
+index_start = 6667605
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_265"
+mesh_part_name = "part_265"
+vertex_start = 2118891
+vertex_count = 7919
+index_start = 6694083
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_266"
+mesh_part_name = "part_266"
+vertex_start = 2126810
+vertex_count = 7919
+index_start = 6720561
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_267"
+mesh_part_name = "part_267"
+vertex_start = 2134729
+vertex_count = 7919
+index_start = 6747039
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_268"
+mesh_part_name = "part_268"
+vertex_start = 2142648
+vertex_count = 7919
+index_start = 6773517
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_269"
+mesh_part_name = "part_269"
+vertex_start = 2150567
+vertex_count = 7919
+index_start = 6799995
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_270"
+mesh_part_name = "part_270"
+vertex_start = 2158486
+vertex_count = 7919
+index_start = 6826473
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_271"
+mesh_part_name = "part_271"
+vertex_start = 2166405
+vertex_count = 7919
+index_start = 6852951
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_272"
+mesh_part_name = "part_272"
+vertex_start = 2174324
+vertex_count = 7919
+index_start = 6879429
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_273"
+mesh_part_name = "part_273"
+vertex_start = 2182243
+vertex_count = 7919
+index_start = 6905907
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_274"
+mesh_part_name = "part_274"
+vertex_start = 2190162
+vertex_count = 7919
+index_start = 6932385
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_275"
+mesh_part_name = "part_275"
+vertex_start = 2198081
+vertex_count = 7919
+index_start = 6958863
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_276"
+mesh_part_name = "part_276"
+vertex_start = 2206000
+vertex_count = 7919
+index_start = 6985341
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_277"
+mesh_part_name = "part_277"
+vertex_start = 2213919
+vertex_count = 7919
+index_start = 7011819
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_278"
+mesh_part_name = "part_278"
+vertex_start = 2221838
+vertex_count = 7919
+index_start = 7038297
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_279"
+mesh_part_name = "part_279"
+vertex_start = 2229757
+vertex_count = 7919
+index_start = 7064775
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_280"
+mesh_part_name = "part_280"
+vertex_start = 2237676
+vertex_count = 7919
+index_start = 7091253
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_281"
+mesh_part_name = "part_281"
+vertex_start = 2245595
+vertex_count = 7919
+index_start = 7117731
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_282"
+mesh_part_name = "part_282"
+vertex_start = 2253514
+vertex_count = 7919
+index_start = 7144209
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_283"
+mesh_part_name = "part_283"
+vertex_start = 2261433
+vertex_count = 7919
+index_start = 7170687
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_284"
+mesh_part_name = "part_284"
+vertex_start = 2269352
+vertex_count = 7919
+index_start = 7197165
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_285"
+mesh_part_name = "part_285"
+vertex_start = 2277271
+vertex_count = 7919
+index_start = 7223643
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_286"
+mesh_part_name = "part_286"
+vertex_start = 2285190
+vertex_count = 7919
+index_start = 7250121
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_287"
+mesh_part_name = "part_287"
+vertex_start = 2293109
+vertex_count = 7919
+index_start = 7276599
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_288"
+mesh_part_name = "part_288"
+vertex_start = 2301028
+vertex_count = 7919
+index_start = 7303077
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_289"
+mesh_part_name = "part_289"
+vertex_start = 2308947
+vertex_count = 7919
+index_start = 7329555
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_290"
+mesh_part_name = "part_290"
+vertex_start = 2316866
+vertex_count = 7919
+index_start = 7356033
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_291"
+mesh_part_name = "part_291"
+vertex_start = 2324785
+vertex_count = 7919
+index_start = 7382511
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_292"
+mesh_part_name = "part_292"
+vertex_start = 2332704
+vertex_count = 7919
+index_start = 7408989
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_293"
+mesh_part_name = "part_293"
+vertex_start = 2340623
+vertex_count = 7919
+index_start = 7435467
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_294"
+mesh_part_name = "part_294"
+vertex_start = 2348542
+vertex_count = 7919
+index_start = 7461945
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_295"
+mesh_part_name = "part_295"
+vertex_start = 2356461
+vertex_count = 7919
+index_start = 7488423
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_296"
+mesh_part_name = "part_296"
+vertex_start = 2364380
+vertex_count = 7919
+index_start = 7514901
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_297"
+mesh_part_name = "part_297"
+vertex_start = 2372299
+vertex_count = 7919
+index_start = 7541379
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_298"
+mesh_part_name = "part_298"
+vertex_start = 2380218
+vertex_count = 7919
+index_start = 7567857
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_299"
+mesh_part_name = "part_299"
+vertex_start = 2388137
+vertex_count = 7919
+index_start = 7594335
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_300"
+mesh_part_name = "part_300"
+vertex_start = 2396056
+vertex_count = 7919
+index_start = 7620813
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_301"
+mesh_part_name = "part_301"
+vertex_start = 2403975
+vertex_count = 7919
+index_start = 7647291
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_302"
+mesh_part_name = "part_302"
+vertex_start = 2411894
+vertex_count = 7919
+index_start = 7673769
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_303"
+mesh_part_name = "part_303"
+vertex_start = 2419813
+vertex_count = 7919
+index_start = 7700247
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_304"
+mesh_part_name = "part_304"
+vertex_start = 2427732
+vertex_count = 7919
+index_start = 7726725
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_305"
+mesh_part_name = "part_305"
+vertex_start = 2435651
+vertex_count = 7919
+index_start = 7753203
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_306"
+mesh_part_name = "part_306"
+vertex_start = 2443570
+vertex_count = 7919
+index_start = 7779681
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_307"
+mesh_part_name = "part_307"
+vertex_start = 2451489
+vertex_count = 7919
+index_start = 7806159
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_308"
+mesh_part_name = "part_308"
+vertex_start = 2459408
+vertex_count = 7919
+index_start = 7832637
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_309"
+mesh_part_name = "part_309"
+vertex_start = 2467327
+vertex_count = 7919
+index_start = 7859115
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_310"
+mesh_part_name = "part_310"
+vertex_start = 2475246
+vertex_count = 7919
+index_start = 7885593
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_311"
+mesh_part_name = "part_311"
+vertex_start = 2483165
+vertex_count = 7919
+index_start = 7912071
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_312"
+mesh_part_name = "part_312"
+vertex_start = 2491084
+vertex_count = 7919
+index_start = 7938549
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_313"
+mesh_part_name = "part_313"
+vertex_start = 2499003
+vertex_count = 7919
+index_start = 7965027
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_314"
+mesh_part_name = "part_314"
+vertex_start = 2506922
+vertex_count = 7919
+index_start = 7991505
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_315"
+mesh_part_name = "part_315"
+vertex_start = 2514841
+vertex_count = 7919
+index_start = 8017983
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_316"
+mesh_part_name = "part_316"
+vertex_start = 2522760
+vertex_count = 7919
+index_start = 8044461
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_317"
+mesh_part_name = "part_317"
+vertex_start = 2530679
+vertex_count = 7919
+index_start = 8070939
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_318"
+mesh_part_name = "part_318"
+vertex_start = 2538598
+vertex_count = 7919
+index_start = 8097417
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_319"
+mesh_part_name = "part_319"
+vertex_start = 2546517
+vertex_count = 7919
+index_start = 8123895
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_320"
+mesh_part_name = "part_320"
+vertex_start = 2554436
+vertex_count = 7919
+index_start = 8150373
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_321"
+mesh_part_name = "part_321"
+vertex_start = 2562355
+vertex_count = 7919
+index_start = 8176851
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_322"
+mesh_part_name = "part_322"
+vertex_start = 2570274
+vertex_count = 7919
+index_start = 8203329
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_323"
+mesh_part_name = "part_323"
+vertex_start = 2578193
+vertex_count = 7919
+index_start = 8229807
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_324"
+mesh_part_name = "part_324"
+vertex_start = 2586112
+vertex_count = 7919
+index_start = 8256285
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_325"
+mesh_part_name = "part_325"
+vertex_start = 2594031
+vertex_count = 7919
+index_start = 8282763
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_326"
+mesh_part_name = "part_326"
+vertex_start = 2601950
+vertex_count = 7919
+index_start = 8309241
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_327"
+mesh_part_name = "part_327"
+vertex_start = 2609869
+vertex_count = 7919
+index_start = 8335719
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_328"
+mesh_part_name = "part_328"
+vertex_start = 2617788
+vertex_count = 7919
+index_start = 8362197
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_329"
+mesh_part_name = "part_329"
+vertex_start = 2625707
+vertex_count = 7919
+index_start = 8388675
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_330"
+mesh_part_name = "part_330"
+vertex_start = 2633626
+vertex_count = 7919
+index_start = 8415153
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_331"
+mesh_part_name = "part_331"
+vertex_start = 2641545
+vertex_count = 7919
+index_start = 8441631
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_332"
+mesh_part_name = "part_332"
+vertex_start = 2649464
+vertex_count = 7919
+index_start = 8468109
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_333"
+mesh_part_name = "part_333"
+vertex_start = 2657383
+vertex_count = 7919
+index_start = 8494587
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_334"
+mesh_part_name = "part_334"
+vertex_start = 2665302
+vertex_count = 7919
+index_start = 8521065
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_335"
+mesh_part_name = "part_335"
+vertex_start = 2673221
+vertex_count = 7919
+index_start = 8547543
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_336"
+mesh_part_name = "part_336"
+vertex_start = 2681140
+vertex_count = 7919
+index_start = 8574021
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_337"
+mesh_part_name = "part_337"
+vertex_start = 2689059
+vertex_count = 7919
+index_start = 8600499
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_338"
+mesh_part_name = "part_338"
+vertex_start = 2696978
+vertex_count = 7919
+index_start = 8626977
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_339"
+mesh_part_name = "part_339"
+vertex_start = 2704897
+vertex_count = 7919
+index_start = 8653455
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_340"
+mesh_part_name = "part_340"
+vertex_start = 2712816
+vertex_count = 7919
+index_start = 8679933
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_341"
+mesh_part_name = "part_341"
+vertex_start = 2720735
+vertex_count = 7919
+index_start = 8706411
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_342"
+mesh_part_name = "part_342"
+vertex_start = 2728654
+vertex_count = 7919
+index_start = 8732889
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_343"
+mesh_part_name = "part_343"
+vertex_start = 2736573
+vertex_count = 7919
+index_start = 8759367
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_344"
+mesh_part_name = "part_344"
+vertex_start = 2744492
+vertex_count = 7919
+index_start = 8785845
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_345"
+mesh_part_name = "part_345"
+vertex_start = 2752411
+vertex_count = 7919
+index_start = 8812323
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_346"
+mesh_part_name = "part_346"
+vertex_start = 2760330
+vertex_count = 7919
+index_start = 8838801
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_347"
+mesh_part_name = "part_347"
+vertex_start = 2768249
+vertex_count = 7919
+index_start = 8865279
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_348"
+mesh_part_name = "part_348"
+vertex_start = 2776168
+vertex_count = 7919
+index_start = 8891757
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_349"
+mesh_part_name = "part_349"
+vertex_start = 2784087
+vertex_count = 7919
+index_start = 8918235
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_350"
+mesh_part_name = "part_350"
+vertex_start = 2792006
+vertex_count = 7919
+index_start = 8944713
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_351"
+mesh_part_name = "part_351"
+vertex_start = 2799925
+vertex_count = 7919
+index_start = 8971191
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_352"
+mesh_part_name = "part_352"
+vertex_start = 2807844
+vertex_count = 7919
+index_start = 8997669
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_353"
+mesh_part_name = "part_353"
+vertex_start = 2815763
+vertex_count = 7919
+index_start = 9024147
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_354"
+mesh_part_name = "part_354"
+vertex_start = 2823682
+vertex_count = 7919
+index_start = 9050625
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_355"
+mesh_part_name = "part_355"
+vertex_start = 2831601
+vertex_count = 7919
+index_start = 9077103
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_356"
+mesh_part_name = "part_356"
+vertex_start = 2839520
+vertex_count = 7919
+index_start = 9103581
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_357"
+mesh_part_name = "part_357"
+vertex_start = 2847439
+vertex_count = 7919
+index_start = 9130059
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_358"
+mesh_part_name = "part_358"
+vertex_start = 2855358
+vertex_count = 7919
+index_start = 9156537
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_359"
+mesh_part_name = "part_359"
+vertex_start = 2863277
+vertex_count = 7919
+index_start = 9183015
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_360"
+mesh_part_name = "part_360"
+vertex_start = 2871196
+vertex_count = 7919
+index_start = 9209493
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_361"
+mesh_part_name = "part_361"
+vertex_start = 2879115
+vertex_count = 7919
+index_start = 9235971
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_362"
+mesh_part_name = "part_362"
+vertex_start = 2887034
+vertex_count = 7919
+index_start = 9262449
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_363"
+mesh_part_name = "part_363"
+vertex_start = 2894953
+vertex_count = 7919
+index_start = 9288927
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_364"
+mesh_part_name = "part_364"
+vertex_start = 2902872
+vertex_count = 7919
+index_start = 9315405
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_365"
+mesh_part_name = "part_365"
+vertex_start = 2910791
+vertex_count = 7919
+index_start = 9341883
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_366"
+mesh_part_name = "part_366"
+vertex_start = 2918710
+vertex_count = 7919
+index_start = 9368361
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_367"
+mesh_part_name = "part_367"
+vertex_start = 2926629
+vertex_count = 7919
+index_start = 9394839
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_368"
+mesh_part_name = "part_368"
+vertex_start = 2934548
+vertex_count = 7919
+index_start = 9421317
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_369"
+mesh_part_name = "part_369"
+vertex_start = 2942467
+vertex_count = 7919
+index_start = 9447795
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_370"
+mesh_part_name = "part_370"
+vertex_start = 2950386
+vertex_count = 7919
+index_start = 9474273
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_371"
+mesh_part_name = "part_371"
+vertex_start = 2958305
+vertex_count = 7919
+index_start = 9500751
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_372"
+mesh_part_name = "part_372"
+vertex_start = 2966224
+vertex_count = 8568
+index_start = 9527229
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_373"
+mesh_part_name = "part_373"
+vertex_start = 2974792
+vertex_count = 8568
+index_start = 9553845
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_374"
+mesh_part_name = "part_374"
+vertex_start = 2983360
+vertex_count = 8568
+index_start = 9580461
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_375"
+mesh_part_name = "part_375"
+vertex_start = 2991928
+vertex_count = 8568
+index_start = 9607077
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_376"
+mesh_part_name = "part_376"
+vertex_start = 3000496
+vertex_count = 8568
+index_start = 9633693
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_377"
+mesh_part_name = "part_377"
+vertex_start = 3009064
+vertex_count = 8568
+index_start = 9660309
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_378"
+mesh_part_name = "part_378"
+vertex_start = 3017632
+vertex_count = 8568
+index_start = 9686925
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_379"
+mesh_part_name = "part_379"
+vertex_start = 3026200
+vertex_count = 8568
+index_start = 9713541
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_380"
+mesh_part_name = "part_380"
+vertex_start = 3034768
+vertex_count = 8568
+index_start = 9740157
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_381"
+mesh_part_name = "part_381"
+vertex_start = 3043336
+vertex_count = 8568
+index_start = 9766773
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_382"
+mesh_part_name = "part_382"
+vertex_start = 3051904
+vertex_count = 8568
+index_start = 9793389
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_383"
+mesh_part_name = "part_383"
+vertex_start = 3060472
+vertex_count = 8568
+index_start = 9820005
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_384"
+mesh_part_name = "part_384"
+vertex_start = 3069040
+vertex_count = 8568
+index_start = 9846621
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_385"
+mesh_part_name = "part_385"
+vertex_start = 3077608
+vertex_count = 8568
+index_start = 9873237
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_386"
+mesh_part_name = "part_386"
+vertex_start = 3086176
+vertex_count = 8568
+index_start = 9899853
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_387"
+mesh_part_name = "part_387"
+vertex_start = 3094744
+vertex_count = 8568
+index_start = 9926469
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_388"
+mesh_part_name = "part_388"
+vertex_start = 3103312
+vertex_count = 8568
+index_start = 9953085
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_389"
+mesh_part_name = "part_389"
+vertex_start = 3111880
+vertex_count = 8568
+index_start = 9979701
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_390"
+mesh_part_name = "part_390"
+vertex_start = 3120448
+vertex_count = 8568
+index_start = 10006317
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_391"
+mesh_part_name = "part_391"
+vertex_start = 3129016
+vertex_count = 8568
+index_start = 10032933
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_392"
+mesh_part_name = "part_392"
+vertex_start = 3137584
+vertex_count = 8568
+index_start = 10059549
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_393"
+mesh_part_name = "part_393"
+vertex_start = 3146152
+vertex_count = 8568
+index_start = 10086165
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_394"
+mesh_part_name = "part_394"
+vertex_start = 3154720
+vertex_count = 8568
+index_start = 10112781
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_395"
+mesh_part_name = "part_395"
+vertex_start = 3163288
+vertex_count = 8568
+index_start = 10139397
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_396"
+mesh_part_name = "part_396"
+vertex_start = 3171856
+vertex_count = 8568
+index_start = 10166013
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_397"
+mesh_part_name = "part_397"
+vertex_start = 3180424
+vertex_count = 8568
+index_start = 10192629
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_398"
+mesh_part_name = "part_398"
+vertex_start = 3188992
+vertex_count = 8568
+index_start = 10219245
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_399"
+mesh_part_name = "part_399"
+vertex_start = 3197560
+vertex_count = 8568
+index_start = 10245861
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_400"
+mesh_part_name = "part_400"
+vertex_start = 3206128
+vertex_count = 8568
+index_start = 10272477
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_401"
+mesh_part_name = "part_401"
+vertex_start = 3214696
+vertex_count = 8568
+index_start = 10299093
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_402"
+mesh_part_name = "part_402"
+vertex_start = 3223264
+vertex_count = 8568
+index_start = 10325709
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_403"
+mesh_part_name = "part_403"
+vertex_start = 3231832
+vertex_count = 8568
+index_start = 10352325
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_404"
+mesh_part_name = "part_404"
+vertex_start = 3240400
+vertex_count = 8568
+index_start = 10378941
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_405"
+mesh_part_name = "part_405"
+vertex_start = 3248968
+vertex_count = 8568
+index_start = 10405557
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_406"
+mesh_part_name = "part_406"
+vertex_start = 3257536
+vertex_count = 8568
+index_start = 10432173
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_407"
+mesh_part_name = "part_407"
+vertex_start = 3266104
+vertex_count = 8568
+index_start = 10458789
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_408"
+mesh_part_name = "part_408"
+vertex_start = 3274672
+vertex_count = 8568
+index_start = 10485405
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_409"
+mesh_part_name = "part_409"
+vertex_start = 3283240
+vertex_count = 8568
+index_start = 10512021
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_410"
+mesh_part_name = "part_410"
+vertex_start = 3291808
+vertex_count = 8568
+index_start = 10538637
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_411"
+mesh_part_name = "part_411"
+vertex_start = 3300376
+vertex_count = 8568
+index_start = 10565253
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_412"
+mesh_part_name = "part_412"
+vertex_start = 3308944
+vertex_count = 8568
+index_start = 10591869
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_413"
+mesh_part_name = "part_413"
+vertex_start = 3317512
+vertex_count = 8568
+index_start = 10618485
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_414"
+mesh_part_name = "part_414"
+vertex_start = 3326080
+vertex_count = 8568
+index_start = 10645101
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_415"
+mesh_part_name = "part_415"
+vertex_start = 3334648
+vertex_count = 8568
+index_start = 10671717
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_416"
+mesh_part_name = "part_416"
+vertex_start = 3343216
+vertex_count = 8568
+index_start = 10698333
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_417"
+mesh_part_name = "part_417"
+vertex_start = 3351784
+vertex_count = 8568
+index_start = 10724949
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_418"
+mesh_part_name = "part_418"
+vertex_start = 3360352
+vertex_count = 8568
+index_start = 10751565
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_419"
+mesh_part_name = "part_419"
+vertex_start = 3368920
+vertex_count = 8568
+index_start = 10778181
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_420"
+mesh_part_name = "part_420"
+vertex_start = 3377488
+vertex_count = 8568
+index_start = 10804797
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_421"
+mesh_part_name = "part_421"
+vertex_start = 3386056
+vertex_count = 8568
+index_start = 10831413
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_422"
+mesh_part_name = "part_422"
+vertex_start = 3394624
+vertex_count = 8568
+index_start = 10858029
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_423"
+mesh_part_name = "part_423"
+vertex_start = 3403192
+vertex_count = 8568
+index_start = 10884645
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_424"
+mesh_part_name = "part_424"
+vertex_start = 3411760
+vertex_count = 8568
+index_start = 10911261
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_425"
+mesh_part_name = "part_425"
+vertex_start = 3420328
+vertex_count = 8568
+index_start = 10937877
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_426"
+mesh_part_name = "part_426"
+vertex_start = 3428896
+vertex_count = 8568
+index_start = 10964493
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_427"
+mesh_part_name = "part_427"
+vertex_start = 3437464
+vertex_count = 8568
+index_start = 10991109
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_428"
+mesh_part_name = "part_428"
+vertex_start = 3446032
+vertex_count = 8568
+index_start = 11017725
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_429"
+mesh_part_name = "part_429"
+vertex_start = 3454600
+vertex_count = 8568
+index_start = 11044341
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_430"
+mesh_part_name = "part_430"
+vertex_start = 3463168
+vertex_count = 8568
+index_start = 11070957
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_431"
+mesh_part_name = "part_431"
+vertex_start = 3471736
+vertex_count = 8568
+index_start = 11097573
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_432"
+mesh_part_name = "part_432"
+vertex_start = 3480304
+vertex_count = 8568
+index_start = 11124189
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_433"
+mesh_part_name = "part_433"
+vertex_start = 3488872
+vertex_count = 8568
+index_start = 11150805
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_434"
+mesh_part_name = "part_434"
+vertex_start = 3497440
+vertex_count = 8568
+index_start = 11177421
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_435"
+mesh_part_name = "part_435"
+vertex_start = 3506008
+vertex_count = 8568
+index_start = 11204037
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_436"
+mesh_part_name = "part_436"
+vertex_start = 3514576
+vertex_count = 8568
+index_start = 11230653
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_437"
+mesh_part_name = "part_437"
+vertex_start = 3523144
+vertex_count = 8568
+index_start = 11257269
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_438"
+mesh_part_name = "part_438"
+vertex_start = 3531712
+vertex_count = 8568
+index_start = 11283885
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_439"
+mesh_part_name = "part_439"
+vertex_start = 3540280
+vertex_count = 8568
+index_start = 11310501
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_440"
+mesh_part_name = "part_440"
+vertex_start = 3548848
+vertex_count = 8568
+index_start = 11337117
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_441"
+mesh_part_name = "part_441"
+vertex_start = 3557416
+vertex_count = 8568
+index_start = 11363733
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_442"
+mesh_part_name = "part_442"
+vertex_start = 3565984
+vertex_count = 8568
+index_start = 11390349
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_443"
+mesh_part_name = "part_443"
+vertex_start = 3574552
+vertex_count = 8568
+index_start = 11416965
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_444"
+mesh_part_name = "part_444"
+vertex_start = 3583120
+vertex_count = 8568
+index_start = 11443581
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_445"
+mesh_part_name = "part_445"
+vertex_start = 3591688
+vertex_count = 8568
+index_start = 11470197
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_446"
+mesh_part_name = "part_446"
+vertex_start = 3600256
+vertex_count = 8568
+index_start = 11496813
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_447"
+mesh_part_name = "part_447"
+vertex_start = 3608824
+vertex_count = 8568
+index_start = 11523429
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_448"
+mesh_part_name = "part_448"
+vertex_start = 3617392
+vertex_count = 8568
+index_start = 11550045
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_449"
+mesh_part_name = "part_449"
+vertex_start = 3625960
+vertex_count = 8568
+index_start = 11576661
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_450"
+mesh_part_name = "part_450"
+vertex_start = 3634528
+vertex_count = 8568
+index_start = 11603277
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_451"
+mesh_part_name = "part_451"
+vertex_start = 3643096
+vertex_count = 8568
+index_start = 11629893
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_452"
+mesh_part_name = "part_452"
+vertex_start = 3651664
+vertex_count = 8568
+index_start = 11656509
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_453"
+mesh_part_name = "part_453"
+vertex_start = 3660232
+vertex_count = 8568
+index_start = 11683125
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_454"
+mesh_part_name = "part_454"
+vertex_start = 3668800
+vertex_count = 8568
+index_start = 11709741
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_455"
+mesh_part_name = "part_455"
+vertex_start = 3677368
+vertex_count = 8568
+index_start = 11736357
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_456"
+mesh_part_name = "part_456"
+vertex_start = 3685936
+vertex_count = 8568
+index_start = 11762973
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_457"
+mesh_part_name = "part_457"
+vertex_start = 3694504
+vertex_count = 8568
+index_start = 11789589
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_458"
+mesh_part_name = "part_458"
+vertex_start = 3703072
+vertex_count = 8568
+index_start = 11816205
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_459"
+mesh_part_name = "part_459"
+vertex_start = 3711640
+vertex_count = 8568
+index_start = 11842821
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_460"
+mesh_part_name = "part_460"
+vertex_start = 3720208
+vertex_count = 8568
+index_start = 11869437
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_461"
+mesh_part_name = "part_461"
+vertex_start = 3728776
+vertex_count = 8568
+index_start = 11896053
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_462"
+mesh_part_name = "part_462"
+vertex_start = 3737344
+vertex_count = 8568
+index_start = 11922669
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_463"
+mesh_part_name = "part_463"
+vertex_start = 3745912
+vertex_count = 8568
+index_start = 11949285
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_464"
+mesh_part_name = "part_464"
+vertex_start = 3754480
+vertex_count = 8568
+index_start = 11975901
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_465"
+mesh_part_name = "part_465"
+vertex_start = 3763048
+vertex_count = 8568
+index_start = 12002517
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_466"
+mesh_part_name = "part_466"
+vertex_start = 3771616
+vertex_count = 8568
+index_start = 12029133
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_467"
+mesh_part_name = "part_467"
+vertex_start = 3780184
+vertex_count = 8568
+index_start = 12055749
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_468"
+mesh_part_name = "part_468"
+vertex_start = 3788752
+vertex_count = 8568
+index_start = 12082365
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_469"
+mesh_part_name = "part_469"
+vertex_start = 3797320
+vertex_count = 8568
+index_start = 12108981
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_470"
+mesh_part_name = "part_470"
+vertex_start = 3805888
+vertex_count = 8568
+index_start = 12135597
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_471"
+mesh_part_name = "part_471"
+vertex_start = 3814456
+vertex_count = 8568
+index_start = 12162213
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_472"
+mesh_part_name = "part_472"
+vertex_start = 3823024
+vertex_count = 8568
+index_start = 12188829
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_473"
+mesh_part_name = "part_473"
+vertex_start = 3831592
+vertex_count = 8568
+index_start = 12215445
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_474"
+mesh_part_name = "part_474"
+vertex_start = 3840160
+vertex_count = 8568
+index_start = 12242061
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_475"
+mesh_part_name = "part_475"
+vertex_start = 3848728
+vertex_count = 8568
+index_start = 12268677
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_476"
+mesh_part_name = "part_476"
+vertex_start = 3857296
+vertex_count = 8568
+index_start = 12295293
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_477"
+mesh_part_name = "part_477"
+vertex_start = 3865864
+vertex_count = 8568
+index_start = 12321909
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_478"
+mesh_part_name = "part_478"
+vertex_start = 3874432
+vertex_count = 8568
+index_start = 12348525
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_479"
+mesh_part_name = "part_479"
+vertex_start = 3883000
+vertex_count = 8568
+index_start = 12375141
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_480"
+mesh_part_name = "part_480"
+vertex_start = 3891568
+vertex_count = 8568
+index_start = 12401757
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_481"
+mesh_part_name = "part_481"
+vertex_start = 3900136
+vertex_count = 8568
+index_start = 12428373
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_482"
+mesh_part_name = "part_482"
+vertex_start = 3908704
+vertex_count = 8568
+index_start = 12454989
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_483"
+mesh_part_name = "part_483"
+vertex_start = 3917272
+vertex_count = 8568
+index_start = 12481605
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_484"
+mesh_part_name = "part_484"
+vertex_start = 3925840
+vertex_count = 8568
+index_start = 12508221
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_485"
+mesh_part_name = "part_485"
+vertex_start = 3934408
+vertex_count = 8568
+index_start = 12534837
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_486"
+mesh_part_name = "part_486"
+vertex_start = 3942976
+vertex_count = 8568
+index_start = 12561453
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_487"
+mesh_part_name = "part_487"
+vertex_start = 3951544
+vertex_count = 8568
+index_start = 12588069
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_488"
+mesh_part_name = "part_488"
+vertex_start = 3960112
+vertex_count = 8568
+index_start = 12614685
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_489"
+mesh_part_name = "part_489"
+vertex_start = 3968680
+vertex_count = 8568
+index_start = 12641301
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_490"
+mesh_part_name = "part_490"
+vertex_start = 3977248
+vertex_count = 8568
+index_start = 12667917
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_491"
+mesh_part_name = "part_491"
+vertex_start = 3985816
+vertex_count = 8568
+index_start = 12694533
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_492"
+mesh_part_name = "part_492"
+vertex_start = 3994384
+vertex_count = 8568
+index_start = 12721149
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_493"
+mesh_part_name = "part_493"
+vertex_start = 4002952
+vertex_count = 8568
+index_start = 12747765
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_494"
+mesh_part_name = "part_494"
+vertex_start = 4011520
+vertex_count = 8568
+index_start = 12774381
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_495"
+mesh_part_name = "part_495"
+vertex_start = 4020088
+vertex_count = 8568
+index_start = 12800997
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_496"
+mesh_part_name = "part_496"
+vertex_start = 4028656
+vertex_count = 8568
+index_start = 12827613
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_497"
+mesh_part_name = "part_497"
+vertex_start = 4037224
+vertex_count = 8568
+index_start = 12854229
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_498"
+mesh_part_name = "part_498"
+vertex_start = 4045792
+vertex_count = 8568
+index_start = 12880845
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_499"
+mesh_part_name = "part_499"
+vertex_start = 4054360
+vertex_count = 8568
+index_start = 12907461
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_500"
+mesh_part_name = "part_500"
+vertex_start = 4062928
+vertex_count = 8568
+index_start = 12934077
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_501"
+mesh_part_name = "part_501"
+vertex_start = 4071496
+vertex_count = 8568
+index_start = 12960693
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_502"
+mesh_part_name = "part_502"
+vertex_start = 4080064
+vertex_count = 8568
+index_start = 12987309
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_503"
+mesh_part_name = "part_503"
+vertex_start = 4088632
+vertex_count = 8568
+index_start = 13013925
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_504"
+mesh_part_name = "part_504"
+vertex_start = 4097200
+vertex_count = 8568
+index_start = 13040541
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_505"
+mesh_part_name = "part_505"
+vertex_start = 4105768
+vertex_count = 8568
+index_start = 13067157
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_506"
+mesh_part_name = "part_506"
+vertex_start = 4114336
+vertex_count = 8568
+index_start = 13093773
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_507"
+mesh_part_name = "part_507"
+vertex_start = 4122904
+vertex_count = 8568
+index_start = 13120389
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_508"
+mesh_part_name = "part_508"
+vertex_start = 4131472
+vertex_count = 8568
+index_start = 13147005
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_509"
+mesh_part_name = "part_509"
+vertex_start = 4140040
+vertex_count = 8568
+index_start = 13173621
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_510"
+mesh_part_name = "part_510"
+vertex_start = 4148608
+vertex_count = 8568
+index_start = 13200237
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_511"
+mesh_part_name = "part_511"
+vertex_start = 4157176
+vertex_count = 8568
+index_start = 13226853
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_512"
+mesh_part_name = "part_512"
+vertex_start = 4165744
+vertex_count = 8568
+index_start = 13253469
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_513"
+mesh_part_name = "part_513"
+vertex_start = 4174312
+vertex_count = 8568
+index_start = 13280085
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_514"
+mesh_part_name = "part_514"
+vertex_start = 4182880
+vertex_count = 8568
+index_start = 13306701
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_515"
+mesh_part_name = "part_515"
+vertex_start = 4191448
+vertex_count = 8568
+index_start = 13333317
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_516"
+mesh_part_name = "part_516"
+vertex_start = 4200016
+vertex_count = 8568
+index_start = 13359933
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_517"
+mesh_part_name = "part_517"
+vertex_start = 4208584
+vertex_count = 8568
+index_start = 13386549
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_518"
+mesh_part_name = "part_518"
+vertex_start = 4217152
+vertex_count = 8568
+index_start = 13413165
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_519"
+mesh_part_name = "part_519"
+vertex_start = 4225720
+vertex_count = 8568
+index_start = 13439781
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_520"
+mesh_part_name = "part_520"
+vertex_start = 4234288
+vertex_count = 8568
+index_start = 13466397
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_521"
+mesh_part_name = "part_521"
+vertex_start = 4242856
+vertex_count = 8568
+index_start = 13493013
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_522"
+mesh_part_name = "part_522"
+vertex_start = 4251424
+vertex_count = 8568
+index_start = 13519629
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_523"
+mesh_part_name = "part_523"
+vertex_start = 4259992
+vertex_count = 8568
+index_start = 13546245
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_524"
+mesh_part_name = "part_524"
+vertex_start = 4268560
+vertex_count = 8568
+index_start = 13572861
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_525"
+mesh_part_name = "part_525"
+vertex_start = 4277128
+vertex_count = 8568
+index_start = 13599477
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_526"
+mesh_part_name = "part_526"
+vertex_start = 4285696
+vertex_count = 8568
+index_start = 13626093
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_527"
+mesh_part_name = "part_527"
+vertex_start = 4294264
+vertex_count = 8568
+index_start = 13652709
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_528"
+mesh_part_name = "part_528"
+vertex_start = 4302832
+vertex_count = 8568
+index_start = 13679325
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_529"
+mesh_part_name = "part_529"
+vertex_start = 4311400
+vertex_count = 8568
+index_start = 13705941
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_530"
+mesh_part_name = "part_530"
+vertex_start = 4319968
+vertex_count = 8568
+index_start = 13732557
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_531"
+mesh_part_name = "part_531"
+vertex_start = 4328536
+vertex_count = 8568
+index_start = 13759173
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_532"
+mesh_part_name = "part_532"
+vertex_start = 4337104
+vertex_count = 14688
+index_start = 13785789
+index_count = 44328
+
+[[mesh_parts]]
+part_id = "part_533"
+mesh_part_name = "part_533"
+vertex_start = 4351792
+vertex_count = 9558
+index_start = 13830117
+index_count = 32034
+
+[[mesh_parts]]
+part_id = "part_534"
+mesh_part_name = "part_534"
+vertex_start = 4361350
+vertex_count = 1148
+index_start = 13862151
+index_count = 3348
+
+[[mesh_parts]]
+part_id = "part_535"
+mesh_part_name = "part_535"
+vertex_start = 4362498
+vertex_count = 14294
+index_start = 13865499
+index_count = 42720
+
+[[mesh_parts]]
+part_id = "part_536"
+mesh_part_name = "part_536"
+vertex_start = 4376792
+vertex_count = 9012
+index_start = 13908219
+index_count = 26964
+
+[[mesh_parts]]
+part_id = "part_537"
+mesh_part_name = "part_537"
+vertex_start = 4385804
+vertex_count = 1744
+index_start = 13935183
+index_count = 6726
+
+[[mesh_parts]]
+part_id = "part_538"
+mesh_part_name = "part_538"
+vertex_start = 4387548
+vertex_count = 396
+index_start = 13941909
+index_count = 1128
+
+[[mesh_parts]]
+part_id = "part_539"
+mesh_part_name = "part_539"
+vertex_start = 4387944
+vertex_count = 48374
+index_start = 13943037
+index_count = 144396
+
+[[mesh_parts]]
+part_id = "part_540"
+mesh_part_name = "part_540"
+vertex_start = 4436318
+vertex_count = 4608
+index_start = 14087433
+index_count = 13524
+
+[[mesh_parts]]
+part_id = "part_541"
+mesh_part_name = "part_541"
+vertex_start = 4440926
+vertex_count = 7919
+index_start = 14100957
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_542"
+mesh_part_name = "part_542"
+vertex_start = 4448845
+vertex_count = 14688
+index_start = 14127489
+index_count = 44328
+
+[[mesh_parts]]
+part_id = "part_543"
+mesh_part_name = "part_543"
+vertex_start = 4463533
+vertex_count = 14688
+index_start = 14171817
+index_count = 44328
+
+[[mesh_parts]]
+part_id = "part_544"
+mesh_part_name = "part_544"
+vertex_start = 4478221
+vertex_count = 1148
+index_start = 14216145
+index_count = 3348
+
+[[mesh_parts]]
+part_id = "part_545"
+mesh_part_name = "part_545"
+vertex_start = 4479369
+vertex_count = 1148
+index_start = 14219493
+index_count = 3348
+
+[[mesh_parts]]
+part_id = "part_546"
+mesh_part_name = "part_546"
+vertex_start = 4480517
+vertex_count = 1744
+index_start = 14222841
+index_count = 6726
+
+[[mesh_parts]]
+part_id = "part_547"
+mesh_part_name = "part_547"
+vertex_start = 4482261
+vertex_count = 1744
+index_start = 14229567
+index_count = 6726
+
+[[mesh_parts]]
+part_id = "part_548"
+mesh_part_name = "part_548"
+vertex_start = 4484005
+vertex_count = 1744
+index_start = 14236293
+index_count = 6726
+
+[[mesh_parts]]
+part_id = "part_549"
+mesh_part_name = "part_549"
+vertex_start = 4485749
+vertex_count = 1744
+index_start = 14243019
+index_count = 6726
+
+[[mesh_parts]]
+part_id = "part_550"
+mesh_part_name = "part_550"
+vertex_start = 4487493
+vertex_count = 1744
+index_start = 14249745
+index_count = 6726
+
+[[mesh_parts]]
+part_id = "part_551"
+mesh_part_name = "part_551"
+vertex_start = 4489237
+vertex_count = 396
+index_start = 14256471
+index_count = 1128
+
+[[mesh_parts]]
+part_id = "part_552"
+mesh_part_name = "part_552"
+vertex_start = 4489633
+vertex_count = 396
+index_start = 14257599
+index_count = 1128
+
+[[mesh_parts]]
+part_id = "part_553"
+mesh_part_name = "part_553"
+vertex_start = 4490029
+vertex_count = 396
+index_start = 14258727
+index_count = 1128
+
+[[mesh_parts]]
+part_id = "part_554"
+mesh_part_name = "part_554"
+vertex_start = 4490425
+vertex_count = 396
+index_start = 14259855
+index_count = 1128
+
+[[mesh_parts]]
+part_id = "part_555"
+mesh_part_name = "part_555"
+vertex_start = 4490821
+vertex_count = 396
+index_start = 14260983
+index_count = 1128
+
+[[mesh_parts]]
+part_id = "part_556"
+mesh_part_name = "part_556"
+vertex_start = 4491217
+vertex_count = 4608
+index_start = 14262111
+index_count = 13524
+
+[[mesh_parts]]
+part_id = "part_557"
+mesh_part_name = "part_557"
+vertex_start = 4495825
+vertex_count = 4608
+index_start = 14275635
+index_count = 13524
+
+[[mesh_parts]]
+part_id = "part_558"
+mesh_part_name = "part_558"
+vertex_start = 4500433
+vertex_count = 7919
+index_start = 14289159
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_559"
+mesh_part_name = "part_559"
+vertex_start = 4508352
+vertex_count = 7919
+index_start = 14315637
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_560"
+mesh_part_name = "part_560"
+vertex_start = 4516271
+vertex_count = 7919
+index_start = 14342115
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_561"
+mesh_part_name = "part_561"
+vertex_start = 4524190
+vertex_count = 7919
+index_start = 14368593
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_562"
+mesh_part_name = "part_562"
+vertex_start = 4532109
+vertex_count = 7919
+index_start = 14395071
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_563"
+mesh_part_name = "part_563"
+vertex_start = 4540028
+vertex_count = 7919
+index_start = 14421549
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_564"
+mesh_part_name = "part_564"
+vertex_start = 4547947
+vertex_count = 7919
+index_start = 14448027
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_565"
+mesh_part_name = "part_565"
+vertex_start = 4555866
+vertex_count = 7919
+index_start = 14474505
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_566"
+mesh_part_name = "part_566"
+vertex_start = 4563785
+vertex_count = 7919
+index_start = 14500983
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_567"
+mesh_part_name = "part_567"
+vertex_start = 4571704
+vertex_count = 7919
+index_start = 14527461
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_568"
+mesh_part_name = "part_568"
+vertex_start = 4579623
+vertex_count = 7919
+index_start = 14553939
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_569"
+mesh_part_name = "part_569"
+vertex_start = 4587542
+vertex_count = 7919
+index_start = 14580417
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_570"
+mesh_part_name = "part_570"
+vertex_start = 4595461
+vertex_count = 7919
+index_start = 14606895
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_571"
+mesh_part_name = "part_571"
+vertex_start = 4603380
+vertex_count = 7919
+index_start = 14633373
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_572"
+mesh_part_name = "part_572"
+vertex_start = 4611299
+vertex_count = 7919
+index_start = 14659851
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_573"
+mesh_part_name = "part_573"
+vertex_start = 4619218
+vertex_count = 7919
+index_start = 14686329
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_574"
+mesh_part_name = "part_574"
+vertex_start = 4627137
+vertex_count = 7919
+index_start = 14712807
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_575"
+mesh_part_name = "part_575"
+vertex_start = 4635056
+vertex_count = 7919
+index_start = 14739285
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_576"
+mesh_part_name = "part_576"
+vertex_start = 4642975
+vertex_count = 7919
+index_start = 14765763
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_577"
+mesh_part_name = "part_577"
+vertex_start = 4650894
+vertex_count = 7919
+index_start = 14792241
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_578"
+mesh_part_name = "part_578"
+vertex_start = 4658813
+vertex_count = 7919
+index_start = 14818719
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_579"
+mesh_part_name = "part_579"
+vertex_start = 4666732
+vertex_count = 7919
+index_start = 14845197
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_580"
+mesh_part_name = "part_580"
+vertex_start = 4674651
+vertex_count = 7919
+index_start = 14871675
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_581"
+mesh_part_name = "part_581"
+vertex_start = 4682570
+vertex_count = 7919
+index_start = 14898153
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_582"
+mesh_part_name = "part_582"
+vertex_start = 4690489
+vertex_count = 7919
+index_start = 14924631
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_583"
+mesh_part_name = "part_583"
+vertex_start = 4698408
+vertex_count = 7919
+index_start = 14951109
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_584"
+mesh_part_name = "part_584"
+vertex_start = 4706327
+vertex_count = 7919
+index_start = 14977587
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_585"
+mesh_part_name = "part_585"
+vertex_start = 4714246
+vertex_count = 7919
+index_start = 15004065
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_586"
+mesh_part_name = "part_586"
+vertex_start = 4722165
+vertex_count = 7919
+index_start = 15030543
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_587"
+mesh_part_name = "part_587"
+vertex_start = 4730084
+vertex_count = 7919
+index_start = 15057021
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_588"
+mesh_part_name = "part_588"
+vertex_start = 4738003
+vertex_count = 7919
+index_start = 15083499
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_589"
+mesh_part_name = "part_589"
+vertex_start = 4745922
+vertex_count = 7919
+index_start = 15109977
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_590"
+mesh_part_name = "part_590"
+vertex_start = 4753841
+vertex_count = 7919
+index_start = 15136455
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_591"
+mesh_part_name = "part_591"
+vertex_start = 4761760
+vertex_count = 7919
+index_start = 15162933
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_592"
+mesh_part_name = "part_592"
+vertex_start = 4769679
+vertex_count = 7919
+index_start = 15189411
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_593"
+mesh_part_name = "part_593"
+vertex_start = 4777598
+vertex_count = 7919
+index_start = 15215889
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_594"
+mesh_part_name = "part_594"
+vertex_start = 4785517
+vertex_count = 7919
+index_start = 15242367
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_595"
+mesh_part_name = "part_595"
+vertex_start = 4793436
+vertex_count = 7919
+index_start = 15268845
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_596"
+mesh_part_name = "part_596"
+vertex_start = 4801355
+vertex_count = 7919
+index_start = 15295323
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_597"
+mesh_part_name = "part_597"
+vertex_start = 4809274
+vertex_count = 7919
+index_start = 15321801
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_598"
+mesh_part_name = "part_598"
+vertex_start = 4817193
+vertex_count = 7919
+index_start = 15348279
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_599"
+mesh_part_name = "part_599"
+vertex_start = 4825112
+vertex_count = 7919
+index_start = 15374757
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_600"
+mesh_part_name = "part_600"
+vertex_start = 4833031
+vertex_count = 7919
+index_start = 15401235
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_601"
+mesh_part_name = "part_601"
+vertex_start = 4840950
+vertex_count = 7919
+index_start = 15427713
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_602"
+mesh_part_name = "part_602"
+vertex_start = 4848869
+vertex_count = 7919
+index_start = 15454191
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_603"
+mesh_part_name = "part_603"
+vertex_start = 4856788
+vertex_count = 7919
+index_start = 15480669
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_604"
+mesh_part_name = "part_604"
+vertex_start = 4864707
+vertex_count = 7919
+index_start = 15507147
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_605"
+mesh_part_name = "part_605"
+vertex_start = 4872626
+vertex_count = 7919
+index_start = 15533625
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_606"
+mesh_part_name = "part_606"
+vertex_start = 4880545
+vertex_count = 7919
+index_start = 15560103
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_607"
+mesh_part_name = "part_607"
+vertex_start = 4888464
+vertex_count = 7919
+index_start = 15586581
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_608"
+mesh_part_name = "part_608"
+vertex_start = 4896383
+vertex_count = 7919
+index_start = 15613059
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_609"
+mesh_part_name = "part_609"
+vertex_start = 4904302
+vertex_count = 7919
+index_start = 15639537
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_610"
+mesh_part_name = "part_610"
+vertex_start = 4912221
+vertex_count = 7919
+index_start = 15666015
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_611"
+mesh_part_name = "part_611"
+vertex_start = 4920140
+vertex_count = 7919
+index_start = 15692493
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_612"
+mesh_part_name = "part_612"
+vertex_start = 4928059
+vertex_count = 7919
+index_start = 15718971
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_613"
+mesh_part_name = "part_613"
+vertex_start = 4935978
+vertex_count = 7919
+index_start = 15745449
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_614"
+mesh_part_name = "part_614"
+vertex_start = 4943897
+vertex_count = 7919
+index_start = 15771927
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_615"
+mesh_part_name = "part_615"
+vertex_start = 4951816
+vertex_count = 7919
+index_start = 15798405
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_616"
+mesh_part_name = "part_616"
+vertex_start = 4959735
+vertex_count = 7919
+index_start = 15824883
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_617"
+mesh_part_name = "part_617"
+vertex_start = 4967654
+vertex_count = 7919
+index_start = 15851361
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_618"
+mesh_part_name = "part_618"
+vertex_start = 4975573
+vertex_count = 7919
+index_start = 15877839
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_619"
+mesh_part_name = "part_619"
+vertex_start = 4983492
+vertex_count = 7919
+index_start = 15904317
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_620"
+mesh_part_name = "part_620"
+vertex_start = 4991411
+vertex_count = 7919
+index_start = 15930795
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_621"
+mesh_part_name = "part_621"
+vertex_start = 4999330
+vertex_count = 7919
+index_start = 15957273
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_622"
+mesh_part_name = "part_622"
+vertex_start = 5007249
+vertex_count = 7919
+index_start = 15983751
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_623"
+mesh_part_name = "part_623"
+vertex_start = 5015168
+vertex_count = 7919
+index_start = 16010229
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_624"
+mesh_part_name = "part_624"
+vertex_start = 5023087
+vertex_count = 7919
+index_start = 16036707
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_625"
+mesh_part_name = "part_625"
+vertex_start = 5031006
+vertex_count = 7919
+index_start = 16063185
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_626"
+mesh_part_name = "part_626"
+vertex_start = 5038925
+vertex_count = 7919
+index_start = 16089663
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_627"
+mesh_part_name = "part_627"
+vertex_start = 5046844
+vertex_count = 7919
+index_start = 16116141
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_628"
+mesh_part_name = "part_628"
+vertex_start = 5054763
+vertex_count = 7919
+index_start = 16142619
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_629"
+mesh_part_name = "part_629"
+vertex_start = 5062682
+vertex_count = 7919
+index_start = 16169097
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_630"
+mesh_part_name = "part_630"
+vertex_start = 5070601
+vertex_count = 7919
+index_start = 16195575
+index_count = 26478
+
+[[mesh_parts]]
+part_id = "part_631"
+mesh_part_name = "part_631"
+vertex_start = 5078520
+vertex_count = 4606
+index_start = 16222053
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_632"
+mesh_part_name = "part_632"
+vertex_start = 5083126
+vertex_count = 4606
+index_start = 16236285
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_633"
+mesh_part_name = "part_633"
+vertex_start = 5087732
+vertex_count = 4606
+index_start = 16250517
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_634"
+mesh_part_name = "part_634"
+vertex_start = 5092338
+vertex_count = 4606
+index_start = 16264749
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_635"
+mesh_part_name = "part_635"
+vertex_start = 5096944
+vertex_count = 4606
+index_start = 16278981
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_636"
+mesh_part_name = "part_636"
+vertex_start = 5101550
+vertex_count = 4606
+index_start = 16293213
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_637"
+mesh_part_name = "part_637"
+vertex_start = 5106156
+vertex_count = 4606
+index_start = 16307445
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_638"
+mesh_part_name = "part_638"
+vertex_start = 5110762
+vertex_count = 4606
+index_start = 16321677
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_639"
+mesh_part_name = "part_639"
+vertex_start = 5115368
+vertex_count = 4606
+index_start = 16335909
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_640"
+mesh_part_name = "part_640"
+vertex_start = 5119974
+vertex_count = 4606
+index_start = 16350141
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_641"
+mesh_part_name = "part_641"
+vertex_start = 5124580
+vertex_count = 4606
+index_start = 16364373
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_642"
+mesh_part_name = "part_642"
+vertex_start = 5129186
+vertex_count = 4606
+index_start = 16378605
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_643"
+mesh_part_name = "part_643"
+vertex_start = 5133792
+vertex_count = 4606
+index_start = 16392837
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_644"
+mesh_part_name = "part_644"
+vertex_start = 5138398
+vertex_count = 4606
+index_start = 16407069
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_645"
+mesh_part_name = "part_645"
+vertex_start = 5143004
+vertex_count = 4606
+index_start = 16421301
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_646"
+mesh_part_name = "part_646"
+vertex_start = 5147610
+vertex_count = 4606
+index_start = 16435533
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_647"
+mesh_part_name = "part_647"
+vertex_start = 5152216
+vertex_count = 4606
+index_start = 16449765
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_648"
+mesh_part_name = "part_648"
+vertex_start = 5156822
+vertex_count = 4606
+index_start = 16463997
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_649"
+mesh_part_name = "part_649"
+vertex_start = 5161428
+vertex_count = 4606
+index_start = 16478229
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_650"
+mesh_part_name = "part_650"
+vertex_start = 5166034
+vertex_count = 4606
+index_start = 16492461
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_651"
+mesh_part_name = "part_651"
+vertex_start = 5170640
+vertex_count = 4606
+index_start = 16506693
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_652"
+mesh_part_name = "part_652"
+vertex_start = 5175246
+vertex_count = 4606
+index_start = 16520925
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_653"
+mesh_part_name = "part_653"
+vertex_start = 5179852
+vertex_count = 4606
+index_start = 16535157
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_654"
+mesh_part_name = "part_654"
+vertex_start = 5184458
+vertex_count = 4606
+index_start = 16549389
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_655"
+mesh_part_name = "part_655"
+vertex_start = 5189064
+vertex_count = 4606
+index_start = 16563621
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_656"
+mesh_part_name = "part_656"
+vertex_start = 5193670
+vertex_count = 4606
+index_start = 16577853
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_657"
+mesh_part_name = "part_657"
+vertex_start = 5198276
+vertex_count = 4606
+index_start = 16592085
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_658"
+mesh_part_name = "part_658"
+vertex_start = 5202882
+vertex_count = 4606
+index_start = 16606317
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_659"
+mesh_part_name = "part_659"
+vertex_start = 5207488
+vertex_count = 4606
+index_start = 16620549
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_660"
+mesh_part_name = "part_660"
+vertex_start = 5212094
+vertex_count = 4606
+index_start = 16634781
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_661"
+mesh_part_name = "part_661"
+vertex_start = 5216700
+vertex_count = 4606
+index_start = 16649013
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_662"
+mesh_part_name = "part_662"
+vertex_start = 5221306
+vertex_count = 4606
+index_start = 16663245
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_663"
+mesh_part_name = "part_663"
+vertex_start = 5225912
+vertex_count = 4606
+index_start = 16677477
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_664"
+mesh_part_name = "part_664"
+vertex_start = 5230518
+vertex_count = 4606
+index_start = 16691709
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_665"
+mesh_part_name = "part_665"
+vertex_start = 5235124
+vertex_count = 4606
+index_start = 16705941
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_666"
+mesh_part_name = "part_666"
+vertex_start = 5239730
+vertex_count = 4606
+index_start = 16720173
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_667"
+mesh_part_name = "part_667"
+vertex_start = 5244336
+vertex_count = 4606
+index_start = 16734405
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_668"
+mesh_part_name = "part_668"
+vertex_start = 5248942
+vertex_count = 4606
+index_start = 16748637
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_669"
+mesh_part_name = "part_669"
+vertex_start = 5253548
+vertex_count = 4606
+index_start = 16762869
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_670"
+mesh_part_name = "part_670"
+vertex_start = 5258154
+vertex_count = 4606
+index_start = 16777101
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_671"
+mesh_part_name = "part_671"
+vertex_start = 5262760
+vertex_count = 4606
+index_start = 16791333
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_672"
+mesh_part_name = "part_672"
+vertex_start = 5267366
+vertex_count = 4606
+index_start = 16805565
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_673"
+mesh_part_name = "part_673"
+vertex_start = 5271972
+vertex_count = 4606
+index_start = 16819797
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_674"
+mesh_part_name = "part_674"
+vertex_start = 5276578
+vertex_count = 4606
+index_start = 16834029
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_675"
+mesh_part_name = "part_675"
+vertex_start = 5281184
+vertex_count = 4606
+index_start = 16848261
+index_count = 14232
+
+[[mesh_parts]]
+part_id = "part_676"
+mesh_part_name = "part_676"
+vertex_start = 5285790
+vertex_count = 8568
+index_start = 16862493
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_677"
+mesh_part_name = "part_677"
+vertex_start = 5294358
+vertex_count = 8568
+index_start = 16889109
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_678"
+mesh_part_name = "part_678"
+vertex_start = 5302926
+vertex_count = 8568
+index_start = 16915725
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_679"
+mesh_part_name = "part_679"
+vertex_start = 5311494
+vertex_count = 8568
+index_start = 16942341
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_680"
+mesh_part_name = "part_680"
+vertex_start = 5320062
+vertex_count = 8568
+index_start = 16968957
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_681"
+mesh_part_name = "part_681"
+vertex_start = 5328630
+vertex_count = 8568
+index_start = 16995573
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_682"
+mesh_part_name = "part_682"
+vertex_start = 5337198
+vertex_count = 8568
+index_start = 17022189
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_683"
+mesh_part_name = "part_683"
+vertex_start = 5345766
+vertex_count = 8568
+index_start = 17048805
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_684"
+mesh_part_name = "part_684"
+vertex_start = 5354334
+vertex_count = 8568
+index_start = 17075421
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_685"
+mesh_part_name = "part_685"
+vertex_start = 5362902
+vertex_count = 8568
+index_start = 17102037
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_686"
+mesh_part_name = "part_686"
+vertex_start = 5371470
+vertex_count = 8568
+index_start = 17128653
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_687"
+mesh_part_name = "part_687"
+vertex_start = 5380038
+vertex_count = 8568
+index_start = 17155269
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_688"
+mesh_part_name = "part_688"
+vertex_start = 5388606
+vertex_count = 8568
+index_start = 17181885
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_689"
+mesh_part_name = "part_689"
+vertex_start = 5397174
+vertex_count = 8568
+index_start = 17208501
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_690"
+mesh_part_name = "part_690"
+vertex_start = 5405742
+vertex_count = 8568
+index_start = 17235117
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_691"
+mesh_part_name = "part_691"
+vertex_start = 5414310
+vertex_count = 8568
+index_start = 17261733
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_692"
+mesh_part_name = "part_692"
+vertex_start = 5422878
+vertex_count = 8568
+index_start = 17288349
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_693"
+mesh_part_name = "part_693"
+vertex_start = 5431446
+vertex_count = 8568
+index_start = 17314965
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_694"
+mesh_part_name = "part_694"
+vertex_start = 5440014
+vertex_count = 8568
+index_start = 17341581
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_695"
+mesh_part_name = "part_695"
+vertex_start = 5448582
+vertex_count = 8568
+index_start = 17368197
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_696"
+mesh_part_name = "part_696"
+vertex_start = 5457150
+vertex_count = 8568
+index_start = 17394813
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_697"
+mesh_part_name = "part_697"
+vertex_start = 5465718
+vertex_count = 8568
+index_start = 17421429
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_698"
+mesh_part_name = "part_698"
+vertex_start = 5474286
+vertex_count = 8568
+index_start = 17448045
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_699"
+mesh_part_name = "part_699"
+vertex_start = 5482854
+vertex_count = 8568
+index_start = 17474661
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_700"
+mesh_part_name = "part_700"
+vertex_start = 5491422
+vertex_count = 8568
+index_start = 17501277
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_701"
+mesh_part_name = "part_701"
+vertex_start = 5499990
+vertex_count = 8568
+index_start = 17527893
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_702"
+mesh_part_name = "part_702"
+vertex_start = 5508558
+vertex_count = 8568
+index_start = 17554509
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_703"
+mesh_part_name = "part_703"
+vertex_start = 5517126
+vertex_count = 8568
+index_start = 17581125
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_704"
+mesh_part_name = "part_704"
+vertex_start = 5525694
+vertex_count = 8568
+index_start = 17607741
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_705"
+mesh_part_name = "part_705"
+vertex_start = 5534262
+vertex_count = 8568
+index_start = 17634357
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_706"
+mesh_part_name = "part_706"
+vertex_start = 5542830
+vertex_count = 8568
+index_start = 17660973
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_707"
+mesh_part_name = "part_707"
+vertex_start = 5551398
+vertex_count = 8568
+index_start = 17687589
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_708"
+mesh_part_name = "part_708"
+vertex_start = 5559966
+vertex_count = 8568
+index_start = 17714205
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_709"
+mesh_part_name = "part_709"
+vertex_start = 5568534
+vertex_count = 8568
+index_start = 17740821
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_710"
+mesh_part_name = "part_710"
+vertex_start = 5577102
+vertex_count = 8568
+index_start = 17767437
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_711"
+mesh_part_name = "part_711"
+vertex_start = 5585670
+vertex_count = 8568
+index_start = 17794053
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_712"
+mesh_part_name = "part_712"
+vertex_start = 5594238
+vertex_count = 8568
+index_start = 17820669
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_713"
+mesh_part_name = "part_713"
+vertex_start = 5602806
+vertex_count = 8568
+index_start = 17847285
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_714"
+mesh_part_name = "part_714"
+vertex_start = 5611374
+vertex_count = 8568
+index_start = 17873901
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_715"
+mesh_part_name = "part_715"
+vertex_start = 5619942
+vertex_count = 8568
+index_start = 17900517
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_716"
+mesh_part_name = "part_716"
+vertex_start = 5628510
+vertex_count = 8568
+index_start = 17927133
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_717"
+mesh_part_name = "part_717"
+vertex_start = 5637078
+vertex_count = 8568
+index_start = 17953749
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_718"
+mesh_part_name = "part_718"
+vertex_start = 5645646
+vertex_count = 8568
+index_start = 17980365
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_719"
+mesh_part_name = "part_719"
+vertex_start = 5654214
+vertex_count = 8568
+index_start = 18006981
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_720"
+mesh_part_name = "part_720"
+vertex_start = 5662782
+vertex_count = 8568
+index_start = 18033597
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_721"
+mesh_part_name = "part_721"
+vertex_start = 5671350
+vertex_count = 8568
+index_start = 18060213
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_722"
+mesh_part_name = "part_722"
+vertex_start = 5679918
+vertex_count = 8568
+index_start = 18086829
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_723"
+mesh_part_name = "part_723"
+vertex_start = 5688486
+vertex_count = 8568
+index_start = 18113445
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_724"
+mesh_part_name = "part_724"
+vertex_start = 5697054
+vertex_count = 8568
+index_start = 18140061
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_725"
+mesh_part_name = "part_725"
+vertex_start = 5705622
+vertex_count = 8568
+index_start = 18166677
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_726"
+mesh_part_name = "part_726"
+vertex_start = 5714190
+vertex_count = 8568
+index_start = 18193293
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_727"
+mesh_part_name = "part_727"
+vertex_start = 5722758
+vertex_count = 8568
+index_start = 18219909
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_728"
+mesh_part_name = "part_728"
+vertex_start = 5731326
+vertex_count = 8568
+index_start = 18246525
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_729"
+mesh_part_name = "part_729"
+vertex_start = 5739894
+vertex_count = 8568
+index_start = 18273141
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_730"
+mesh_part_name = "part_730"
+vertex_start = 5748462
+vertex_count = 8568
+index_start = 18299757
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_731"
+mesh_part_name = "part_731"
+vertex_start = 5757030
+vertex_count = 8568
+index_start = 18326373
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_732"
+mesh_part_name = "part_732"
+vertex_start = 5765598
+vertex_count = 8568
+index_start = 18352989
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_733"
+mesh_part_name = "part_733"
+vertex_start = 5774166
+vertex_count = 8568
+index_start = 18379605
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_734"
+mesh_part_name = "part_734"
+vertex_start = 5782734
+vertex_count = 8568
+index_start = 18406221
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_735"
+mesh_part_name = "part_735"
+vertex_start = 5791302
+vertex_count = 8568
+index_start = 18432837
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_736"
+mesh_part_name = "part_736"
+vertex_start = 5799870
+vertex_count = 8568
+index_start = 18459453
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_737"
+mesh_part_name = "part_737"
+vertex_start = 5808438
+vertex_count = 8568
+index_start = 18486069
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_738"
+mesh_part_name = "part_738"
+vertex_start = 5817006
+vertex_count = 8568
+index_start = 18512685
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_739"
+mesh_part_name = "part_739"
+vertex_start = 5825574
+vertex_count = 8568
+index_start = 18539301
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_740"
+mesh_part_name = "part_740"
+vertex_start = 5834142
+vertex_count = 8568
+index_start = 18565917
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_741"
+mesh_part_name = "part_741"
+vertex_start = 5842710
+vertex_count = 8568
+index_start = 18592533
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_742"
+mesh_part_name = "part_742"
+vertex_start = 5851278
+vertex_count = 8568
+index_start = 18619149
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_743"
+mesh_part_name = "part_743"
+vertex_start = 5859846
+vertex_count = 8568
+index_start = 18645765
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_744"
+mesh_part_name = "part_744"
+vertex_start = 5868414
+vertex_count = 8568
+index_start = 18672381
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_745"
+mesh_part_name = "part_745"
+vertex_start = 5876982
+vertex_count = 8568
+index_start = 18698997
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_746"
+mesh_part_name = "part_746"
+vertex_start = 5885550
+vertex_count = 8568
+index_start = 18725613
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_747"
+mesh_part_name = "part_747"
+vertex_start = 5894118
+vertex_count = 8568
+index_start = 18752229
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_748"
+mesh_part_name = "part_748"
+vertex_start = 5902686
+vertex_count = 8568
+index_start = 18778845
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_749"
+mesh_part_name = "part_749"
+vertex_start = 5911254
+vertex_count = 8568
+index_start = 18805461
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_750"
+mesh_part_name = "part_750"
+vertex_start = 5919822
+vertex_count = 8568
+index_start = 18832077
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_751"
+mesh_part_name = "part_751"
+vertex_start = 5928390
+vertex_count = 8568
+index_start = 18858693
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_752"
+mesh_part_name = "part_752"
+vertex_start = 5936958
+vertex_count = 8568
+index_start = 18885309
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_753"
+mesh_part_name = "part_753"
+vertex_start = 5945526
+vertex_count = 8568
+index_start = 18911925
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_754"
+mesh_part_name = "part_754"
+vertex_start = 5954094
+vertex_count = 8568
+index_start = 18938541
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_755"
+mesh_part_name = "part_755"
+vertex_start = 5962662
+vertex_count = 8568
+index_start = 18965157
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_756"
+mesh_part_name = "part_756"
+vertex_start = 5971230
+vertex_count = 8568
+index_start = 18991773
+index_count = 26616
+
+[[mesh_parts]]
+part_id = "part_757"
+mesh_part_name = "part_757"
+vertex_start = 5979798
+vertex_count = 7919
+index_start = 19018389
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_758"
+mesh_part_name = "part_758"
+vertex_start = 5987717
+vertex_count = 7919
+index_start = 19044921
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_759"
+mesh_part_name = "part_759"
+vertex_start = 5995636
+vertex_count = 7919
+index_start = 19071453
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_760"
+mesh_part_name = "part_760"
+vertex_start = 6003555
+vertex_count = 7919
+index_start = 19097985
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_761"
+mesh_part_name = "part_761"
+vertex_start = 6011474
+vertex_count = 7919
+index_start = 19124517
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_762"
+mesh_part_name = "part_762"
+vertex_start = 6019393
+vertex_count = 7919
+index_start = 19151049
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_763"
+mesh_part_name = "part_763"
+vertex_start = 6027312
+vertex_count = 7919
+index_start = 19177581
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_764"
+mesh_part_name = "part_764"
+vertex_start = 6035231
+vertex_count = 7919
+index_start = 19204113
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_765"
+mesh_part_name = "part_765"
+vertex_start = 6043150
+vertex_count = 7919
+index_start = 19230645
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_766"
+mesh_part_name = "part_766"
+vertex_start = 6051069
+vertex_count = 7919
+index_start = 19257177
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_767"
+mesh_part_name = "part_767"
+vertex_start = 6058988
+vertex_count = 7919
+index_start = 19283709
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_768"
+mesh_part_name = "part_768"
+vertex_start = 6066907
+vertex_count = 7919
+index_start = 19310241
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_769"
+mesh_part_name = "part_769"
+vertex_start = 6074826
+vertex_count = 7919
+index_start = 19336773
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_770"
+mesh_part_name = "part_770"
+vertex_start = 6082745
+vertex_count = 7919
+index_start = 19363305
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_771"
+mesh_part_name = "part_771"
+vertex_start = 6090664
+vertex_count = 7919
+index_start = 19389837
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_772"
+mesh_part_name = "part_772"
+vertex_start = 6098583
+vertex_count = 7919
+index_start = 19416369
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_773"
+mesh_part_name = "part_773"
+vertex_start = 6106502
+vertex_count = 7919
+index_start = 19442901
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_774"
+mesh_part_name = "part_774"
+vertex_start = 6114421
+vertex_count = 7919
+index_start = 19469433
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_775"
+mesh_part_name = "part_775"
+vertex_start = 6122340
+vertex_count = 7919
+index_start = 19495965
+index_count = 26532
+
+[[mesh_parts]]
+part_id = "part_776"
+mesh_part_name = "part_776"
+vertex_start = 6130259
+vertex_count = 292
+index_start = 19522497
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_777"
+mesh_part_name = "part_777"
+vertex_start = 6130551
+vertex_count = 584
+index_start = 19523361
+index_count = 1728
+
+[[mesh_parts]]
+part_id = "part_778"
+mesh_part_name = "part_778"
+vertex_start = 6131135
+vertex_count = 2920
+index_start = 19525089
+index_count = 8832
+
+[[mesh_parts]]
+part_id = "part_779"
+mesh_part_name = "part_779"
+vertex_start = 6134055
+vertex_count = 2628
+index_start = 19533921
+index_count = 7968
+
+[[mesh_parts]]
+part_id = "part_780"
+mesh_part_name = "part_780"
+vertex_start = 6136683
+vertex_count = 1095
+index_start = 19541889
+index_count = 4242
+
+[[mesh_parts]]
+part_id = "part_781"
+mesh_part_name = "part_781"
+vertex_start = 6137778
+vertex_count = 23998
+index_start = 19546131
+index_count = 73230
+
+[[mesh_parts]]
+part_id = "part_782"
+mesh_part_name = "part_782"
+vertex_start = 6161776
+vertex_count = 3424
+index_start = 19619361
+index_count = 10260
+
+[[mesh_parts]]
+part_id = "part_783"
+mesh_part_name = "part_783"
+vertex_start = 6165200
+vertex_count = 3260
+index_start = 19629621
+index_count = 9786
+
+[[mesh_parts]]
+part_id = "part_784"
+mesh_part_name = "part_784"
+vertex_start = 6168460
+vertex_count = 2628
+index_start = 19639407
+index_count = 7968
+
+[[mesh_parts]]
+part_id = "part_785"
+mesh_part_name = "part_785"
+vertex_start = 6171088
+vertex_count = 2628
+index_start = 19647375
+index_count = 7968
+
+[[mesh_parts]]
+part_id = "part_786"
+mesh_part_name = "part_786"
+vertex_start = 6173716
+vertex_count = 2628
+index_start = 19655343
+index_count = 7968
+
+[[mesh_parts]]
+part_id = "part_787"
+mesh_part_name = "part_787"
+vertex_start = 6176344
+vertex_count = 608
+index_start = 19663311
+index_count = 1704
+
+[[mesh_parts]]
+part_id = "part_788"
+mesh_part_name = "part_788"
+vertex_start = 6176952
+vertex_count = 88
+index_start = 19665015
+index_count = 228
+
+[[mesh_parts]]
+part_id = "part_789"
+mesh_part_name = "part_789"
+vertex_start = 6177040
+vertex_count = 608
+index_start = 19665243
+index_count = 1704
+
+[[mesh_parts]]
+part_id = "part_790"
+mesh_part_name = "part_790"
+vertex_start = 6177648
+vertex_count = 10000
+index_start = 19666947
+index_count = 30690
+
+[[mesh_parts]]
+part_id = "part_791"
+mesh_part_name = "part_791"
+vertex_start = 6187648
+vertex_count = 2224
+index_start = 19697637
+index_count = 7020
+
+[[mesh_parts]]
+part_id = "part_792"
+mesh_part_name = "part_792"
+vertex_start = 6189872
+vertex_count = 3254
+index_start = 19704657
+index_count = 10110
+
+[[mesh_parts]]
+part_id = "part_793"
+mesh_part_name = "part_793"
+vertex_start = 6193126
+vertex_count = 2820
+index_start = 19714767
+index_count = 13032
+
+[[mesh_parts]]
+part_id = "part_794"
+mesh_part_name = "part_794"
+vertex_start = 6195946
+vertex_count = 2820
+index_start = 19727799
+index_count = 13032
+
+[[mesh_parts]]
+part_id = "part_795"
+mesh_part_name = "part_795"
+vertex_start = 6198766
+vertex_count = 1428
+index_start = 19740831
+index_count = 4230
+
+[[mesh_parts]]
+part_id = "part_796"
+mesh_part_name = "part_796"
+vertex_start = 6200194
+vertex_count = 4592
+index_start = 19745061
+index_count = 13416
+
+[[mesh_parts]]
+part_id = "part_797"
+mesh_part_name = "part_797"
+vertex_start = 6204786
+vertex_count = 4592
+index_start = 19758477
+index_count = 13416
+
+[[mesh_parts]]
+part_id = "part_798"
+mesh_part_name = "part_798"
+vertex_start = 6209378
+vertex_count = 2259
+index_start = 19771893
+index_count = 10992
+
+[[mesh_parts]]
+part_id = "part_799"
+mesh_part_name = "part_799"
+vertex_start = 6211637
+vertex_count = 5574
+index_start = 19782885
+index_count = 18192
+
+[[mesh_parts]]
+part_id = "part_800"
+mesh_part_name = "part_800"
+vertex_start = 6217211
+vertex_count = 3793
+index_start = 19801077
+index_count = 11892
+
+[[mesh_parts]]
+part_id = "part_801"
+mesh_part_name = "part_801"
+vertex_start = 6221004
+vertex_count = 12407
+index_start = 19812969
+index_count = 40932
+
+[[mesh_parts]]
+part_id = "part_802"
+mesh_part_name = "part_802"
+vertex_start = 6233411
+vertex_count = 12407
+index_start = 19853901
+index_count = 40932
+
+[[mesh_parts]]
+part_id = "part_803"
+mesh_part_name = "part_803"
+vertex_start = 6245818
+vertex_count = 120
+index_start = 19894833
+index_count = 276
+
+[[mesh_parts]]
+part_id = "part_804"
+mesh_part_name = "part_804"
+vertex_start = 6245938
+vertex_count = 15873
+index_start = 19895109
+index_count = 53340
+
+[[mesh_parts]]
+part_id = "part_805"
+mesh_part_name = "part_805"
+vertex_start = 6261811
+vertex_count = 220
+index_start = 19948449
+index_count = 636
+
+[[mesh_parts]]
+part_id = "part_806"
+mesh_part_name = "part_806"
+vertex_start = 6262031
+vertex_count = 3418
+index_start = 19949085
+index_count = 10326
+
+[[mesh_parts]]
+part_id = "part_807"
+mesh_part_name = "part_807"
+vertex_start = 6265449
+vertex_count = 6603
+index_start = 19959411
+index_count = 21804
+
+[[mesh_parts]]
+part_id = "part_808"
+mesh_part_name = "part_808"
+vertex_start = 6272052
+vertex_count = 5284
+index_start = 19981215
+index_count = 17316
+
+[[mesh_parts]]
+part_id = "part_809"
+mesh_part_name = "part_809"
+vertex_start = 6277336
+vertex_count = 5742
+index_start = 19998531
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_810"
+mesh_part_name = "part_810"
+vertex_start = 6283078
+vertex_count = 5742
+index_start = 20018061
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_811"
+mesh_part_name = "part_811"
+vertex_start = 6288820
+vertex_count = 2068
+index_start = 20037591
+index_count = 9504
+
+[[mesh_parts]]
+part_id = "part_812"
+mesh_part_name = "part_812"
+vertex_start = 6290888
+vertex_count = 3416
+index_start = 20047095
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_813"
+mesh_part_name = "part_813"
+vertex_start = 6294304
+vertex_count = 4161
+index_start = 20057415
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_814"
+mesh_part_name = "part_814"
+vertex_start = 6298465
+vertex_count = 3954
+index_start = 20071203
+index_count = 12678
+
+[[mesh_parts]]
+part_id = "part_815"
+mesh_part_name = "part_815"
+vertex_start = 6302419
+vertex_count = 4117
+index_start = 20083881
+index_count = 13524
+
+[[mesh_parts]]
+part_id = "part_816"
+mesh_part_name = "part_816"
+vertex_start = 6306536
+vertex_count = 5850
+index_start = 20097405
+index_count = 18372
+
+[[mesh_parts]]
+part_id = "part_817"
+mesh_part_name = "part_817"
+vertex_start = 6312386
+vertex_count = 5457
+index_start = 20115777
+index_count = 18627
+
+[[mesh_parts]]
+part_id = "part_818"
+mesh_part_name = "part_818"
+vertex_start = 6317843
+vertex_count = 3416
+index_start = 20134404
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_819"
+mesh_part_name = "part_819"
+vertex_start = 6321259
+vertex_count = 10436
+index_start = 20144724
+index_count = 28512
+
+[[mesh_parts]]
+part_id = "part_820"
+mesh_part_name = "part_820"
+vertex_start = 6331695
+vertex_count = 6780
+index_start = 20173236
+index_count = 21975
+
+[[mesh_parts]]
+part_id = "part_821"
+mesh_part_name = "part_821"
+vertex_start = 6338475
+vertex_count = 3416
+index_start = 20195211
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_822"
+mesh_part_name = "part_822"
+vertex_start = 6341891
+vertex_count = 6544
+index_start = 20205531
+index_count = 21534
+
+[[mesh_parts]]
+part_id = "part_823"
+mesh_part_name = "part_823"
+vertex_start = 6348435
+vertex_count = 3563
+index_start = 20227065
+index_count = 10800
+
+[[mesh_parts]]
+part_id = "part_824"
+mesh_part_name = "part_824"
+vertex_start = 6351998
+vertex_count = 3842
+index_start = 20237865
+index_count = 12054
+
+[[mesh_parts]]
+part_id = "part_825"
+mesh_part_name = "part_825"
+vertex_start = 6355840
+vertex_count = 6514
+index_start = 20249919
+index_count = 21588
+
+[[mesh_parts]]
+part_id = "part_826"
+mesh_part_name = "part_826"
+vertex_start = 6362354
+vertex_count = 2035
+index_start = 20271507
+index_count = 7440
+
+[[mesh_parts]]
+part_id = "part_827"
+mesh_part_name = "part_827"
+vertex_start = 6364389
+vertex_count = 4122
+index_start = 20278947
+index_count = 12207
+
+[[mesh_parts]]
+part_id = "part_828"
+mesh_part_name = "part_828"
+vertex_start = 6368511
+vertex_count = 3417
+index_start = 20291154
+index_count = 10116
+
+[[mesh_parts]]
+part_id = "part_829"
+mesh_part_name = "part_829"
+vertex_start = 6371928
+vertex_count = 1616
+index_start = 20301270
+index_count = 4959
+
+[[mesh_parts]]
+part_id = "part_830"
+mesh_part_name = "part_830"
+vertex_start = 6373544
+vertex_count = 660
+index_start = 20306229
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_831"
+mesh_part_name = "part_831"
+vertex_start = 6374204
+vertex_count = 292
+index_start = 20308173
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_832"
+mesh_part_name = "part_832"
+vertex_start = 6374496
+vertex_count = 3847
+index_start = 20309037
+index_count = 12246
+
+[[mesh_parts]]
+part_id = "part_833"
+mesh_part_name = "part_833"
+vertex_start = 6378343
+vertex_count = 3738
+index_start = 20321283
+index_count = 11670
+
+[[mesh_parts]]
+part_id = "part_834"
+mesh_part_name = "part_834"
+vertex_start = 6382081
+vertex_count = 2068
+index_start = 20332953
+index_count = 9504
+
+[[mesh_parts]]
+part_id = "part_835"
+mesh_part_name = "part_835"
+vertex_start = 6384149
+vertex_count = 660
+index_start = 20342457
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_836"
+mesh_part_name = "part_836"
+vertex_start = 6384809
+vertex_count = 3414
+index_start = 20344401
+index_count = 10314
+
+[[mesh_parts]]
+part_id = "part_837"
+mesh_part_name = "part_837"
+vertex_start = 6388223
+vertex_count = 4850
+index_start = 20354715
+index_count = 14400
+
+[[mesh_parts]]
+part_id = "part_838"
+mesh_part_name = "part_838"
+vertex_start = 6393073
+vertex_count = 3414
+index_start = 20369115
+index_count = 10314
+
+[[mesh_parts]]
+part_id = "part_839"
+mesh_part_name = "part_839"
+vertex_start = 6396487
+vertex_count = 4236
+index_start = 20379429
+index_count = 12564
+
+[[mesh_parts]]
+part_id = "part_840"
+mesh_part_name = "part_840"
+vertex_start = 6400723
+vertex_count = 3378
+index_start = 20391993
+index_count = 10206
+
+[[mesh_parts]]
+part_id = "part_841"
+mesh_part_name = "part_841"
+vertex_start = 6404101
+vertex_count = 3452
+index_start = 20402199
+index_count = 10206
+
+[[mesh_parts]]
+part_id = "part_842"
+mesh_part_name = "part_842"
+vertex_start = 6407553
+vertex_count = 660
+index_start = 20412405
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_843"
+mesh_part_name = "part_843"
+vertex_start = 6408213
+vertex_count = 660
+index_start = 20414349
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_844"
+mesh_part_name = "part_844"
+vertex_start = 6408873
+vertex_count = 3954
+index_start = 20416293
+index_count = 12678
+
+[[mesh_parts]]
+part_id = "part_845"
+mesh_part_name = "part_845"
+vertex_start = 6412827
+vertex_count = 6636
+index_start = 20428971
+index_count = 21630
+
+[[mesh_parts]]
+part_id = "part_846"
+mesh_part_name = "part_846"
+vertex_start = 6419463
+vertex_count = 1180
+index_start = 20450601
+index_count = 5184
+
+[[mesh_parts]]
+part_id = "part_847"
+mesh_part_name = "part_847"
+vertex_start = 6420643
+vertex_count = 12281
+index_start = 20455785
+index_count = 39396
+
+[[mesh_parts]]
+part_id = "part_848"
+mesh_part_name = "part_848"
+vertex_start = 6432924
+vertex_count = 2068
+index_start = 20495181
+index_count = 9504
+
+[[mesh_parts]]
+part_id = "part_849"
+mesh_part_name = "part_849"
+vertex_start = 6434992
+vertex_count = 3414
+index_start = 20504685
+index_count = 10314
+
+[[mesh_parts]]
+part_id = "part_850"
+mesh_part_name = "part_850"
+vertex_start = 6438406
+vertex_count = 3833
+index_start = 20514999
+index_count = 12222
+
+[[mesh_parts]]
+part_id = "part_851"
+mesh_part_name = "part_851"
+vertex_start = 6442239
+vertex_count = 8396
+index_start = 20527221
+index_count = 27720
+
+[[mesh_parts]]
+part_id = "part_852"
+mesh_part_name = "part_852"
+vertex_start = 6450635
+vertex_count = 1180
+index_start = 20554941
+index_count = 5184
+
+[[mesh_parts]]
+part_id = "part_853"
+mesh_part_name = "part_853"
+vertex_start = 6451815
+vertex_count = 5930
+index_start = 20560125
+index_count = 19638
+
+[[mesh_parts]]
+part_id = "part_854"
+mesh_part_name = "part_854"
+vertex_start = 6457745
+vertex_count = 292
+index_start = 20579763
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_855"
+mesh_part_name = "part_855"
+vertex_start = 6458037
+vertex_count = 292
+index_start = 20580627
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_856"
+mesh_part_name = "part_856"
+vertex_start = 6458329
+vertex_count = 292
+index_start = 20581491
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_857"
+mesh_part_name = "part_857"
+vertex_start = 6458621
+vertex_count = 292
+index_start = 20582355
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_858"
+mesh_part_name = "part_858"
+vertex_start = 6458913
+vertex_count = 292
+index_start = 20583219
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_859"
+mesh_part_name = "part_859"
+vertex_start = 6459205
+vertex_count = 292
+index_start = 20584083
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_860"
+mesh_part_name = "part_860"
+vertex_start = 6459497
+vertex_count = 292
+index_start = 20584947
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_861"
+mesh_part_name = "part_861"
+vertex_start = 6459789
+vertex_count = 1180
+index_start = 20585811
+index_count = 5184
+
+[[mesh_parts]]
+part_id = "part_862"
+mesh_part_name = "part_862"
+vertex_start = 6460969
+vertex_count = 1707
+index_start = 20590995
+index_count = 5004
+
+[[mesh_parts]]
+part_id = "part_863"
+mesh_part_name = "part_863"
+vertex_start = 6462676
+vertex_count = 826
+index_start = 20595999
+index_count = 2448
+
+[[mesh_parts]]
+part_id = "part_864"
+mesh_part_name = "part_864"
+vertex_start = 6463502
+vertex_count = 1034
+index_start = 20598447
+index_count = 2952
+
+[[mesh_parts]]
+part_id = "part_865"
+mesh_part_name = "part_865"
+vertex_start = 6464536
+vertex_count = 7869
+index_start = 20601399
+index_count = 23451
+
+[[mesh_parts]]
+part_id = "part_866"
+mesh_part_name = "part_866"
+vertex_start = 6472405
+vertex_count = 404
+index_start = 20624850
+index_count = 1296
+
+[[mesh_parts]]
+part_id = "part_867"
+mesh_part_name = "part_867"
+vertex_start = 6472809
+vertex_count = 440
+index_start = 20626146
+index_count = 1296
+
+[[mesh_parts]]
+part_id = "part_868"
+mesh_part_name = "part_868"
+vertex_start = 6473249
+vertex_count = 5907
+index_start = 20627442
+index_count = 18348
+
+[[mesh_parts]]
+part_id = "part_869"
+mesh_part_name = "part_869"
+vertex_start = 6479156
+vertex_count = 5907
+index_start = 20645790
+index_count = 18348
+
+[[mesh_parts]]
+part_id = "part_870"
+mesh_part_name = "part_870"
+vertex_start = 6485063
+vertex_count = 884
+index_start = 20664138
+index_count = 3456
+
+[[mesh_parts]]
+part_id = "part_871"
+mesh_part_name = "part_871"
+vertex_start = 6485947
+vertex_count = 1180
+index_start = 20667594
+index_count = 5184
+
+[[mesh_parts]]
+part_id = "part_872"
+mesh_part_name = "part_872"
+vertex_start = 6487127
+vertex_count = 43481
+index_start = 20672778
+index_count = 99762
+
+[[mesh_parts]]
+part_id = "part_873"
+mesh_part_name = "part_873"
+vertex_start = 6530608
+vertex_count = 2820
+index_start = 20772540
+index_count = 13032
+
+[[mesh_parts]]
+part_id = "part_874"
+mesh_part_name = "part_874"
+vertex_start = 6533428
+vertex_count = 2820
+index_start = 20785572
+index_count = 13032
+
+[[mesh_parts]]
+part_id = "part_875"
+mesh_part_name = "part_875"
+vertex_start = 6536248
+vertex_count = 12407
+index_start = 20798604
+index_count = 40932
+
+[[mesh_parts]]
+part_id = "part_876"
+mesh_part_name = "part_876"
+vertex_start = 6548655
+vertex_count = 12407
+index_start = 20839536
+index_count = 40932
+
+[[mesh_parts]]
+part_id = "part_877"
+mesh_part_name = "part_877"
+vertex_start = 6561062
+vertex_count = 4592
+index_start = 20880468
+index_count = 13416
+
+[[mesh_parts]]
+part_id = "part_878"
+mesh_part_name = "part_878"
+vertex_start = 6565654
+vertex_count = 4592
+index_start = 20893884
+index_count = 13416
+
+[[mesh_parts]]
+part_id = "part_879"
+mesh_part_name = "part_879"
+vertex_start = 6570246
+vertex_count = 5284
+index_start = 20907300
+index_count = 17316
+
+[[mesh_parts]]
+part_id = "part_880"
+mesh_part_name = "part_880"
+vertex_start = 6575530
+vertex_count = 120
+index_start = 20924616
+index_count = 276
+
+[[mesh_parts]]
+part_id = "part_881"
+mesh_part_name = "part_881"
+vertex_start = 6575650
+vertex_count = 15873
+index_start = 20924892
+index_count = 53340
+
+[[mesh_parts]]
+part_id = "part_882"
+mesh_part_name = "part_882"
+vertex_start = 6591523
+vertex_count = 220
+index_start = 20978232
+index_count = 636
+
+[[mesh_parts]]
+part_id = "part_883"
+mesh_part_name = "part_883"
+vertex_start = 6591743
+vertex_count = 5742
+index_start = 20978868
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_884"
+mesh_part_name = "part_884"
+vertex_start = 6597485
+vertex_count = 5742
+index_start = 20998398
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_885"
+mesh_part_name = "part_885"
+vertex_start = 6603227
+vertex_count = 5742
+index_start = 21017928
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_886"
+mesh_part_name = "part_886"
+vertex_start = 6608969
+vertex_count = 5742
+index_start = 21037458
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_887"
+mesh_part_name = "part_887"
+vertex_start = 6614711
+vertex_count = 5742
+index_start = 21056988
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_888"
+mesh_part_name = "part_888"
+vertex_start = 6620453
+vertex_count = 5742
+index_start = 21076518
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_889"
+mesh_part_name = "part_889"
+vertex_start = 6626195
+vertex_count = 5742
+index_start = 21096048
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_890"
+mesh_part_name = "part_890"
+vertex_start = 6631937
+vertex_count = 5742
+index_start = 21115578
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_891"
+mesh_part_name = "part_891"
+vertex_start = 6637679
+vertex_count = 3416
+index_start = 21135108
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_892"
+mesh_part_name = "part_892"
+vertex_start = 6641095
+vertex_count = 4161
+index_start = 21145428
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_893"
+mesh_part_name = "part_893"
+vertex_start = 6645256
+vertex_count = 3416
+index_start = 21159216
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_894"
+mesh_part_name = "part_894"
+vertex_start = 6648672
+vertex_count = 4161
+index_start = 21169536
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_895"
+mesh_part_name = "part_895"
+vertex_start = 6652833
+vertex_count = 3416
+index_start = 21183324
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_896"
+mesh_part_name = "part_896"
+vertex_start = 6656249
+vertex_count = 4161
+index_start = 21193644
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_897"
+mesh_part_name = "part_897"
+vertex_start = 6660410
+vertex_count = 3416
+index_start = 21207432
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_898"
+mesh_part_name = "part_898"
+vertex_start = 6663826
+vertex_count = 4161
+index_start = 21217752
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_899"
+mesh_part_name = "part_899"
+vertex_start = 6667987
+vertex_count = 3954
+index_start = 21231540
+index_count = 12678
+
+[[mesh_parts]]
+part_id = "part_900"
+mesh_part_name = "part_900"
+vertex_start = 6671941
+vertex_count = 4117
+index_start = 21244218
+index_count = 13524
+
+[[mesh_parts]]
+part_id = "part_901"
+mesh_part_name = "part_901"
+vertex_start = 6676058
+vertex_count = 5742
+index_start = 21257742
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_902"
+mesh_part_name = "part_902"
+vertex_start = 6681800
+vertex_count = 5742
+index_start = 21277272
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_903"
+mesh_part_name = "part_903"
+vertex_start = 6687542
+vertex_count = 5742
+index_start = 21296802
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_904"
+mesh_part_name = "part_904"
+vertex_start = 6693284
+vertex_count = 5742
+index_start = 21316332
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_905"
+mesh_part_name = "part_905"
+vertex_start = 6699026
+vertex_count = 5850
+index_start = 21335862
+index_count = 18372
+
+[[mesh_parts]]
+part_id = "part_906"
+mesh_part_name = "part_906"
+vertex_start = 6704876
+vertex_count = 5850
+index_start = 21354234
+index_count = 18372
+
+[[mesh_parts]]
+part_id = "part_907"
+mesh_part_name = "part_907"
+vertex_start = 6710726
+vertex_count = 5850
+index_start = 21372606
+index_count = 18372
+
+[[mesh_parts]]
+part_id = "part_908"
+mesh_part_name = "part_908"
+vertex_start = 6716576
+vertex_count = 3954
+index_start = 21390978
+index_count = 12678
+
+[[mesh_parts]]
+part_id = "part_909"
+mesh_part_name = "part_909"
+vertex_start = 6720530
+vertex_count = 4117
+index_start = 21403656
+index_count = 13524
+
+[[mesh_parts]]
+part_id = "part_910"
+mesh_part_name = "part_910"
+vertex_start = 6724647
+vertex_count = 5742
+index_start = 21417180
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_911"
+mesh_part_name = "part_911"
+vertex_start = 6730389
+vertex_count = 5742
+index_start = 21436710
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_912"
+mesh_part_name = "part_912"
+vertex_start = 6736131
+vertex_count = 660
+index_start = 21456240
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_913"
+mesh_part_name = "part_913"
+vertex_start = 6736791
+vertex_count = 2035
+index_start = 21458184
+index_count = 7440
+
+[[mesh_parts]]
+part_id = "part_914"
+mesh_part_name = "part_914"
+vertex_start = 6738826
+vertex_count = 4122
+index_start = 21465624
+index_count = 12207
+
+[[mesh_parts]]
+part_id = "part_915"
+mesh_part_name = "part_915"
+vertex_start = 6742948
+vertex_count = 3417
+index_start = 21477831
+index_count = 10116
+
+[[mesh_parts]]
+part_id = "part_916"
+mesh_part_name = "part_916"
+vertex_start = 6746365
+vertex_count = 1616
+index_start = 21487947
+index_count = 4959
+
+[[mesh_parts]]
+part_id = "part_917"
+mesh_part_name = "part_917"
+vertex_start = 6747981
+vertex_count = 3847
+index_start = 21492906
+index_count = 12246
+
+[[mesh_parts]]
+part_id = "part_918"
+mesh_part_name = "part_918"
+vertex_start = 6751828
+vertex_count = 3738
+index_start = 21505152
+index_count = 11670
+
+[[mesh_parts]]
+part_id = "part_919"
+mesh_part_name = "part_919"
+vertex_start = 6755566
+vertex_count = 3416
+index_start = 21516822
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_920"
+mesh_part_name = "part_920"
+vertex_start = 6758982
+vertex_count = 6544
+index_start = 21527142
+index_count = 21534
+
+[[mesh_parts]]
+part_id = "part_921"
+mesh_part_name = "part_921"
+vertex_start = 6765526
+vertex_count = 3416
+index_start = 21548676
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_922"
+mesh_part_name = "part_922"
+vertex_start = 6768942
+vertex_count = 4161
+index_start = 21558996
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_923"
+mesh_part_name = "part_923"
+vertex_start = 6773103
+vertex_count = 10436
+index_start = 21572784
+index_count = 28512
+
+[[mesh_parts]]
+part_id = "part_924"
+mesh_part_name = "part_924"
+vertex_start = 6783539
+vertex_count = 3416
+index_start = 21601296
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_925"
+mesh_part_name = "part_925"
+vertex_start = 6786955
+vertex_count = 4161
+index_start = 21611616
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_926"
+mesh_part_name = "part_926"
+vertex_start = 6791116
+vertex_count = 5457
+index_start = 21625404
+index_count = 18627
+
+[[mesh_parts]]
+part_id = "part_927"
+mesh_part_name = "part_927"
+vertex_start = 6796573
+vertex_count = 3416
+index_start = 21644031
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_928"
+mesh_part_name = "part_928"
+vertex_start = 6799989
+vertex_count = 5850
+index_start = 21654351
+index_count = 18372
+
+[[mesh_parts]]
+part_id = "part_929"
+mesh_part_name = "part_929"
+vertex_start = 6805839
+vertex_count = 3416
+index_start = 21672723
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_930"
+mesh_part_name = "part_930"
+vertex_start = 6809255
+vertex_count = 4161
+index_start = 21683043
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_931"
+mesh_part_name = "part_931"
+vertex_start = 6813416
+vertex_count = 3416
+index_start = 21696831
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_932"
+mesh_part_name = "part_932"
+vertex_start = 6816832
+vertex_count = 4161
+index_start = 21707151
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_933"
+mesh_part_name = "part_933"
+vertex_start = 6820993
+vertex_count = 3418
+index_start = 21720939
+index_count = 10326
+
+[[mesh_parts]]
+part_id = "part_934"
+mesh_part_name = "part_934"
+vertex_start = 6824411
+vertex_count = 6603
+index_start = 21731265
+index_count = 21804
+
+[[mesh_parts]]
+part_id = "part_935"
+mesh_part_name = "part_935"
+vertex_start = 6831014
+vertex_count = 3418
+index_start = 21753069
+index_count = 10326
+
+[[mesh_parts]]
+part_id = "part_936"
+mesh_part_name = "part_936"
+vertex_start = 6834432
+vertex_count = 6603
+index_start = 21763395
+index_count = 21804
+
+[[mesh_parts]]
+part_id = "part_937"
+mesh_part_name = "part_937"
+vertex_start = 6841035
+vertex_count = 3416
+index_start = 21785199
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_938"
+mesh_part_name = "part_938"
+vertex_start = 6844451
+vertex_count = 4161
+index_start = 21795519
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_939"
+mesh_part_name = "part_939"
+vertex_start = 6848612
+vertex_count = 660
+index_start = 21809307
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_940"
+mesh_part_name = "part_940"
+vertex_start = 6849272
+vertex_count = 660
+index_start = 21811251
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_941"
+mesh_part_name = "part_941"
+vertex_start = 6849932
+vertex_count = 660
+index_start = 21813195
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_942"
+mesh_part_name = "part_942"
+vertex_start = 6850592
+vertex_count = 660
+index_start = 21815139
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_943"
+mesh_part_name = "part_943"
+vertex_start = 6851252
+vertex_count = 660
+index_start = 21817083
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_944"
+mesh_part_name = "part_944"
+vertex_start = 6851912
+vertex_count = 660
+index_start = 21819027
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_945"
+mesh_part_name = "part_945"
+vertex_start = 6852572
+vertex_count = 660
+index_start = 21820971
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_946"
+mesh_part_name = "part_946"
+vertex_start = 6853232
+vertex_count = 660
+index_start = 21822915
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_947"
+mesh_part_name = "part_947"
+vertex_start = 6853892
+vertex_count = 3954
+index_start = 21824859
+index_count = 12678
+
+[[mesh_parts]]
+part_id = "part_948"
+mesh_part_name = "part_948"
+vertex_start = 6857846
+vertex_count = 6636
+index_start = 21837537
+index_count = 21630
+
+[[mesh_parts]]
+part_id = "part_949"
+mesh_part_name = "part_949"
+vertex_start = 6864482
+vertex_count = 660
+index_start = 21859167
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_950"
+mesh_part_name = "part_950"
+vertex_start = 6865142
+vertex_count = 660
+index_start = 21861111
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_951"
+mesh_part_name = "part_951"
+vertex_start = 6865802
+vertex_count = 3414
+index_start = 21863055
+index_count = 10314
+
+[[mesh_parts]]
+part_id = "part_952"
+mesh_part_name = "part_952"
+vertex_start = 6869216
+vertex_count = 4236
+index_start = 21873369
+index_count = 12564
+
+[[mesh_parts]]
+part_id = "part_953"
+mesh_part_name = "part_953"
+vertex_start = 6873452
+vertex_count = 660
+index_start = 21885933
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_954"
+mesh_part_name = "part_954"
+vertex_start = 6874112
+vertex_count = 660
+index_start = 21887877
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_955"
+mesh_part_name = "part_955"
+vertex_start = 6874772
+vertex_count = 660
+index_start = 21889821
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_956"
+mesh_part_name = "part_956"
+vertex_start = 6875432
+vertex_count = 660
+index_start = 21891765
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_957"
+mesh_part_name = "part_957"
+vertex_start = 6876092
+vertex_count = 660
+index_start = 21893709
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_958"
+mesh_part_name = "part_958"
+vertex_start = 6876752
+vertex_count = 660
+index_start = 21895653
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_959"
+mesh_part_name = "part_959"
+vertex_start = 6877412
+vertex_count = 660
+index_start = 21897597
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_960"
+mesh_part_name = "part_960"
+vertex_start = 6878072
+vertex_count = 660
+index_start = 21899541
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_961"
+mesh_part_name = "part_961"
+vertex_start = 6878732
+vertex_count = 3418
+index_start = 21901485
+index_count = 10326
+
+[[mesh_parts]]
+part_id = "part_962"
+mesh_part_name = "part_962"
+vertex_start = 6882150
+vertex_count = 6603
+index_start = 21911811
+index_count = 21804
+
+[[mesh_parts]]
+part_id = "part_963"
+mesh_part_name = "part_963"
+vertex_start = 6888753
+vertex_count = 3416
+index_start = 21933615
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_964"
+mesh_part_name = "part_964"
+vertex_start = 6892169
+vertex_count = 6544
+index_start = 21943935
+index_count = 21534
+
+[[mesh_parts]]
+part_id = "part_965"
+mesh_part_name = "part_965"
+vertex_start = 6898713
+vertex_count = 3414
+index_start = 21965469
+index_count = 10314
+
+[[mesh_parts]]
+part_id = "part_966"
+mesh_part_name = "part_966"
+vertex_start = 6902127
+vertex_count = 4850
+index_start = 21975783
+index_count = 14400
+
+[[mesh_parts]]
+part_id = "part_967"
+mesh_part_name = "part_967"
+vertex_start = 6906977
+vertex_count = 3416
+index_start = 21990183
+index_count = 10320
+
+[[mesh_parts]]
+part_id = "part_968"
+mesh_part_name = "part_968"
+vertex_start = 6910393
+vertex_count = 4161
+index_start = 22000503
+index_count = 13788
+
+[[mesh_parts]]
+part_id = "part_969"
+mesh_part_name = "part_969"
+vertex_start = 6914554
+vertex_count = 660
+index_start = 22014291
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_970"
+mesh_part_name = "part_970"
+vertex_start = 6915214
+vertex_count = 660
+index_start = 22016235
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_971"
+mesh_part_name = "part_971"
+vertex_start = 6915874
+vertex_count = 660
+index_start = 22018179
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_972"
+mesh_part_name = "part_972"
+vertex_start = 6916534
+vertex_count = 660
+index_start = 22020123
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_973"
+mesh_part_name = "part_973"
+vertex_start = 6917194
+vertex_count = 660
+index_start = 22022067
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_974"
+mesh_part_name = "part_974"
+vertex_start = 6917854
+vertex_count = 660
+index_start = 22024011
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_975"
+mesh_part_name = "part_975"
+vertex_start = 6918514
+vertex_count = 660
+index_start = 22025955
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_976"
+mesh_part_name = "part_976"
+vertex_start = 6919174
+vertex_count = 660
+index_start = 22027899
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_977"
+mesh_part_name = "part_977"
+vertex_start = 6919834
+vertex_count = 660
+index_start = 22029843
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_978"
+mesh_part_name = "part_978"
+vertex_start = 6920494
+vertex_count = 660
+index_start = 22031787
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_979"
+mesh_part_name = "part_979"
+vertex_start = 6921154
+vertex_count = 660
+index_start = 22033731
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_980"
+mesh_part_name = "part_980"
+vertex_start = 6921814
+vertex_count = 660
+index_start = 22035675
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_981"
+mesh_part_name = "part_981"
+vertex_start = 6922474
+vertex_count = 660
+index_start = 22037619
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_982"
+mesh_part_name = "part_982"
+vertex_start = 6923134
+vertex_count = 5742
+index_start = 22039563
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_983"
+mesh_part_name = "part_983"
+vertex_start = 6928876
+vertex_count = 5742
+index_start = 22059093
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_984"
+mesh_part_name = "part_984"
+vertex_start = 6934618
+vertex_count = 5742
+index_start = 22078623
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_985"
+mesh_part_name = "part_985"
+vertex_start = 6940360
+vertex_count = 5742
+index_start = 22098153
+index_count = 19530
+
+[[mesh_parts]]
+part_id = "part_986"
+mesh_part_name = "part_986"
+vertex_start = 6946102
+vertex_count = 5907
+index_start = 22117683
+index_count = 18348
+
+[[mesh_parts]]
+part_id = "part_987"
+mesh_part_name = "part_987"
+vertex_start = 6952009
+vertex_count = 5907
+index_start = 22136031
+index_count = 18348
+
+[[mesh_parts]]
+part_id = "part_988"
+mesh_part_name = "part_988"
+vertex_start = 6957916
+vertex_count = 6780
+index_start = 22154379
+index_count = 21975
+
+[[mesh_parts]]
+part_id = "part_989"
+mesh_part_name = "part_989"
+vertex_start = 6964696
+vertex_count = 14529
+index_start = 22176354
+index_count = 52905
+
+[[mesh_parts]]
+part_id = "part_990"
+mesh_part_name = "part_990"
+vertex_start = 6979225
+vertex_count = 5692
+index_start = 22229259
+index_count = 18528
+
+[[mesh_parts]]
+part_id = "part_991"
+mesh_part_name = "part_991"
+vertex_start = 6984917
+vertex_count = 3424
+index_start = 22247787
+index_count = 10260
+
+[[mesh_parts]]
+part_id = "part_992"
+mesh_part_name = "part_992"
+vertex_start = 6988341
+vertex_count = 13626
+index_start = 22258047
+index_count = 41370
+
+[[mesh_parts]]
+part_id = "part_993"
+mesh_part_name = "part_993"
+vertex_start = 7001967
+vertex_count = 446
+index_start = 22299417
+index_count = 1224
+
+[[mesh_parts]]
+part_id = "part_994"
+mesh_part_name = "part_994"
+vertex_start = 7002413
+vertex_count = 5792
+index_start = 22300641
+index_count = 18366
+
+[[mesh_parts]]
+part_id = "part_995"
+mesh_part_name = "part_995"
+vertex_start = 7008205
+vertex_count = 5792
+index_start = 22319007
+index_count = 18366
+
+[[mesh_parts]]
+part_id = "part_996"
+mesh_part_name = "part_996"
+vertex_start = 7013997
+vertex_count = 6526
+index_start = 22337373
+index_count = 21078
+
+[[mesh_parts]]
+part_id = "part_997"
+mesh_part_name = "part_997"
+vertex_start = 7020523
+vertex_count = 3734
+index_start = 22358451
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_998"
+mesh_part_name = "part_998"
+vertex_start = 7024257
+vertex_count = 3877
+index_start = 22370067
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_999"
+mesh_part_name = "part_999"
+vertex_start = 7028134
+vertex_count = 3734
+index_start = 22382427
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1000"
+mesh_part_name = "part_1000"
+vertex_start = 7031868
+vertex_count = 5535
+index_start = 22394043
+index_count = 18024
+
+[[mesh_parts]]
+part_id = "part_1001"
+mesh_part_name = "part_1001"
+vertex_start = 7037403
+vertex_count = 3706
+index_start = 22412067
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1002"
+mesh_part_name = "part_1002"
+vertex_start = 7041109
+vertex_count = 1066
+index_start = 22423599
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1003"
+mesh_part_name = "part_1003"
+vertex_start = 7042175
+vertex_count = 3706
+index_start = 22426839
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1004"
+mesh_part_name = "part_1004"
+vertex_start = 7045881
+vertex_count = 3706
+index_start = 22438371
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1005"
+mesh_part_name = "part_1005"
+vertex_start = 7049587
+vertex_count = 1066
+index_start = 22449903
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1006"
+mesh_part_name = "part_1006"
+vertex_start = 7050653
+vertex_count = 3706
+index_start = 22453143
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1007"
+mesh_part_name = "part_1007"
+vertex_start = 7054359
+vertex_count = 10598
+index_start = 22464675
+index_count = 31008
+
+[[mesh_parts]]
+part_id = "part_1008"
+mesh_part_name = "part_1008"
+vertex_start = 7064957
+vertex_count = 446
+index_start = 22495683
+index_count = 1224
+
+[[mesh_parts]]
+part_id = "part_1009"
+mesh_part_name = "part_1009"
+vertex_start = 7065403
+vertex_count = 1467
+index_start = 22496907
+index_count = 4404
+
+[[mesh_parts]]
+part_id = "part_1010"
+mesh_part_name = "part_1010"
+vertex_start = 7066870
+vertex_count = 6270
+index_start = 22501311
+index_count = 20802
+
+[[mesh_parts]]
+part_id = "part_1011"
+mesh_part_name = "part_1011"
+vertex_start = 7073140
+vertex_count = 292
+index_start = 22522113
+index_count = 864
+
+[[mesh_parts]]
+part_id = "part_1012"
+mesh_part_name = "part_1012"
+vertex_start = 7073432
+vertex_count = 4504
+index_start = 22522977
+index_count = 14724
+
+[[mesh_parts]]
+part_id = "part_1013"
+mesh_part_name = "part_1013"
+vertex_start = 7077936
+vertex_count = 3764
+index_start = 22537701
+index_count = 11688
+
+[[mesh_parts]]
+part_id = "part_1014"
+mesh_part_name = "part_1014"
+vertex_start = 7081700
+vertex_count = 3841
+index_start = 22549389
+index_count = 12198
+
+[[mesh_parts]]
+part_id = "part_1015"
+mesh_part_name = "part_1015"
+vertex_start = 7085541
+vertex_count = 4498
+index_start = 22561587
+index_count = 15624
+
+[[mesh_parts]]
+part_id = "part_1016"
+mesh_part_name = "part_1016"
+vertex_start = 7090039
+vertex_count = 5145
+index_start = 22577211
+index_count = 16932
+
+[[mesh_parts]]
+part_id = "part_1017"
+mesh_part_name = "part_1017"
+vertex_start = 7095184
+vertex_count = 4489
+index_start = 22594143
+index_count = 14670
+
+[[mesh_parts]]
+part_id = "part_1018"
+mesh_part_name = "part_1018"
+vertex_start = 7099673
+vertex_count = 3744
+index_start = 22608813
+index_count = 11646
+
+[[mesh_parts]]
+part_id = "part_1019"
+mesh_part_name = "part_1019"
+vertex_start = 7103417
+vertex_count = 6039
+index_start = 22620459
+index_count = 17850
+
+[[mesh_parts]]
+part_id = "part_1020"
+mesh_part_name = "part_1020"
+vertex_start = 7109456
+vertex_count = 3877
+index_start = 22638309
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1021"
+mesh_part_name = "part_1021"
+vertex_start = 7113333
+vertex_count = 3734
+index_start = 22650669
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1022"
+mesh_part_name = "part_1022"
+vertex_start = 7117067
+vertex_count = 5535
+index_start = 22662285
+index_count = 18024
+
+[[mesh_parts]]
+part_id = "part_1023"
+mesh_part_name = "part_1023"
+vertex_start = 7122602
+vertex_count = 6526
+index_start = 22680309
+index_count = 21078
+
+[[mesh_parts]]
+part_id = "part_1024"
+mesh_part_name = "part_1024"
+vertex_start = 7129128
+vertex_count = 3734
+index_start = 22701387
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1025"
+mesh_part_name = "part_1025"
+vertex_start = 7132862
+vertex_count = 3877
+index_start = 22713003
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1026"
+mesh_part_name = "part_1026"
+vertex_start = 7136739
+vertex_count = 3734
+index_start = 22725363
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1027"
+mesh_part_name = "part_1027"
+vertex_start = 7140473
+vertex_count = 3877
+index_start = 22736979
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1028"
+mesh_part_name = "part_1028"
+vertex_start = 7144350
+vertex_count = 3734
+index_start = 22749339
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1029"
+mesh_part_name = "part_1029"
+vertex_start = 7148084
+vertex_count = 3877
+index_start = 22760955
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1030"
+mesh_part_name = "part_1030"
+vertex_start = 7151961
+vertex_count = 3734
+index_start = 22773315
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1031"
+mesh_part_name = "part_1031"
+vertex_start = 7155695
+vertex_count = 6526
+index_start = 22784931
+index_count = 21078
+
+[[mesh_parts]]
+part_id = "part_1032"
+mesh_part_name = "part_1032"
+vertex_start = 7162221
+vertex_count = 3734
+index_start = 22806009
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1033"
+mesh_part_name = "part_1033"
+vertex_start = 7165955
+vertex_count = 13626
+index_start = 22817625
+index_count = 41370
+
+[[mesh_parts]]
+part_id = "part_1034"
+mesh_part_name = "part_1034"
+vertex_start = 7179581
+vertex_count = 446
+index_start = 22858995
+index_count = 1224
+
+[[mesh_parts]]
+part_id = "part_1035"
+mesh_part_name = "part_1035"
+vertex_start = 7180027
+vertex_count = 660
+index_start = 22860219
+index_count = 1944
+
+[[mesh_parts]]
+part_id = "part_1036"
+mesh_part_name = "part_1036"
+vertex_start = 7180687
+vertex_count = 3706
+index_start = 22862163
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1037"
+mesh_part_name = "part_1037"
+vertex_start = 7184393
+vertex_count = 1066
+index_start = 22873695
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1038"
+mesh_part_name = "part_1038"
+vertex_start = 7185459
+vertex_count = 3706
+index_start = 22876935
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1039"
+mesh_part_name = "part_1039"
+vertex_start = 7189165
+vertex_count = 3706
+index_start = 22888467
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1040"
+mesh_part_name = "part_1040"
+vertex_start = 7192871
+vertex_count = 1066
+index_start = 22899999
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1041"
+mesh_part_name = "part_1041"
+vertex_start = 7193937
+vertex_count = 3706
+index_start = 22903239
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1042"
+mesh_part_name = "part_1042"
+vertex_start = 7197643
+vertex_count = 5792
+index_start = 22914771
+index_count = 18366
+
+[[mesh_parts]]
+part_id = "part_1043"
+mesh_part_name = "part_1043"
+vertex_start = 7203435
+vertex_count = 5792
+index_start = 22933137
+index_count = 18366
+
+[[mesh_parts]]
+part_id = "part_1044"
+mesh_part_name = "part_1044"
+vertex_start = 7209227
+vertex_count = 10598
+index_start = 22951503
+index_count = 31008
+
+[[mesh_parts]]
+part_id = "part_1045"
+mesh_part_name = "part_1045"
+vertex_start = 7219825
+vertex_count = 446
+index_start = 22982511
+index_count = 1224
+
+[[mesh_parts]]
+part_id = "part_1046"
+mesh_part_name = "part_1046"
+vertex_start = 7220271
+vertex_count = 1467
+index_start = 22983735
+index_count = 4404
+
+[[mesh_parts]]
+part_id = "part_1047"
+mesh_part_name = "part_1047"
+vertex_start = 7221738
+vertex_count = 3877
+index_start = 22988139
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1048"
+mesh_part_name = "part_1048"
+vertex_start = 7225615
+vertex_count = 3734
+index_start = 23000499
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1049"
+mesh_part_name = "part_1049"
+vertex_start = 7229349
+vertex_count = 6270
+index_start = 23012115
+index_count = 20802
+
+[[mesh_parts]]
+part_id = "part_1050"
+mesh_part_name = "part_1050"
+vertex_start = 7235619
+vertex_count = 3841
+index_start = 23032917
+index_count = 12198
+
+[[mesh_parts]]
+part_id = "part_1051"
+mesh_part_name = "part_1051"
+vertex_start = 7239460
+vertex_count = 4498
+index_start = 23045115
+index_count = 15624
+
+[[mesh_parts]]
+part_id = "part_1052"
+mesh_part_name = "part_1052"
+vertex_start = 7243958
+vertex_count = 3841
+index_start = 23060739
+index_count = 12198
+
+[[mesh_parts]]
+part_id = "part_1053"
+mesh_part_name = "part_1053"
+vertex_start = 7247799
+vertex_count = 4498
+index_start = 23072937
+index_count = 15624
+
+[[mesh_parts]]
+part_id = "part_1054"
+mesh_part_name = "part_1054"
+vertex_start = 7252297
+vertex_count = 3877
+index_start = 23088561
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1055"
+mesh_part_name = "part_1055"
+vertex_start = 7256174
+vertex_count = 3734
+index_start = 23100921
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1056"
+mesh_part_name = "part_1056"
+vertex_start = 7259908
+vertex_count = 3877
+index_start = 23112537
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1057"
+mesh_part_name = "part_1057"
+vertex_start = 7263785
+vertex_count = 3734
+index_start = 23124897
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1058"
+mesh_part_name = "part_1058"
+vertex_start = 7267519
+vertex_count = 3877
+index_start = 23136513
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1059"
+mesh_part_name = "part_1059"
+vertex_start = 7271396
+vertex_count = 3734
+index_start = 23148873
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1060"
+mesh_part_name = "part_1060"
+vertex_start = 7275130
+vertex_count = 3877
+index_start = 23160489
+index_count = 12360
+
+[[mesh_parts]]
+part_id = "part_1061"
+mesh_part_name = "part_1061"
+vertex_start = 7279007
+vertex_count = 3734
+index_start = 23172849
+index_count = 11616
+
+[[mesh_parts]]
+part_id = "part_1062"
+mesh_part_name = "part_1062"
+vertex_start = 7282741
+vertex_count = 3706
+index_start = 23184465
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1063"
+mesh_part_name = "part_1063"
+vertex_start = 7286447
+vertex_count = 1066
+index_start = 23195997
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1064"
+mesh_part_name = "part_1064"
+vertex_start = 7287513
+vertex_count = 3706
+index_start = 23199237
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1065"
+mesh_part_name = "part_1065"
+vertex_start = 7291219
+vertex_count = 3706
+index_start = 23210769
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1066"
+mesh_part_name = "part_1066"
+vertex_start = 7294925
+vertex_count = 1066
+index_start = 23222301
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1067"
+mesh_part_name = "part_1067"
+vertex_start = 7295991
+vertex_count = 3706
+index_start = 23225541
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1068"
+mesh_part_name = "part_1068"
+vertex_start = 7299697
+vertex_count = 3706
+index_start = 23237073
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1069"
+mesh_part_name = "part_1069"
+vertex_start = 7303403
+vertex_count = 1066
+index_start = 23248605
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1070"
+mesh_part_name = "part_1070"
+vertex_start = 7304469
+vertex_count = 3706
+index_start = 23251845
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1071"
+mesh_part_name = "part_1071"
+vertex_start = 7308175
+vertex_count = 3706
+index_start = 23263377
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1072"
+mesh_part_name = "part_1072"
+vertex_start = 7311881
+vertex_count = 1066
+index_start = 23274909
+index_count = 3240
+
+[[mesh_parts]]
+part_id = "part_1073"
+mesh_part_name = "part_1073"
+vertex_start = 7312947
+vertex_count = 3706
+index_start = 23278149
+index_count = 11532
+
+[[mesh_parts]]
+part_id = "part_1074"
+mesh_part_name = "part_1074"
+vertex_start = 7316653
+vertex_count = 659
+index_start = 23289681
+index_count = 3444
+
+[[mesh_parts]]
+part_id = "part_1075"
+mesh_part_name = "part_1075"
+vertex_start = 7317312
+vertex_count = 72
+index_start = 23293125
+index_count = 132
+
+[[mesh_parts]]
+part_id = "part_1076"
+mesh_part_name = "part_1076"
+vertex_start = 7317384
+vertex_count = 72
+index_start = 23293257
+index_count = 132
+
+[[mesh_parts]]
+part_id = "part_1077"
+mesh_part_name = "part_1077"
+vertex_start = 7317456
+vertex_count = 72
+index_start = 23293389
+index_count = 132
+
+[[mesh_parts]]
+part_id = "part_1078"
+mesh_part_name = "part_1078"
+vertex_start = 7317528
+vertex_count = 10006
+index_start = 23293521
+index_count = 30240
+
+[[mesh_parts]]
+part_id = "part_1079"
+mesh_part_name = "part_1079"
+vertex_start = 7327534
+vertex_count = 4942
+index_start = 23323761
+index_count = 15198
+
+[[mesh_parts]]
+part_id = "part_1080"
+mesh_part_name = "part_1080"
+vertex_start = 7332476
+vertex_count = 2629
+index_start = 23338959
+index_count = 7734
+
+[[mesh_parts]]
+part_id = "part_1081"
+mesh_part_name = "part_1081"
+vertex_start = 7335105
+vertex_count = 4667
+index_start = 23346693
+index_count = 15405
+
+[[mesh_parts]]
+part_id = "part_1082"
+mesh_part_name = "part_1082"
+vertex_start = 7339772
+vertex_count = 1044
+index_start = 23362098
+index_count = 3072
+
+[[mesh_parts]]
+part_id = "part_1083"
+mesh_part_name = "part_1083"
+vertex_start = 7340816
+vertex_count = 1460
+index_start = 23365170
+index_count = 4416
+
+[[mesh_parts]]
+part_id = "part_1084"
+mesh_part_name = "part_1084"
+vertex_start = 7342276
+vertex_count = 1752
+index_start = 23369586
+index_count = 5280
+
+[[mesh_parts]]
+part_id = "part_1085"
+mesh_part_name = "part_1085"
+vertex_start = 7344028
+vertex_count = 6928
+index_start = 23374866
+index_count = 20316
+
+[[mesh_parts]]
+part_id = "part_1086"
+mesh_part_name = "part_1086"
+vertex_start = 7350956
+vertex_count = 3799
+index_start = 23395182
+index_count = 21621
+
+[[mesh_parts]]
+part_id = "part_1087"
+mesh_part_name = "part_1087"
+vertex_start = 7354755
+vertex_count = 850
+index_start = 23416803
+index_count = 2382
+
+[[mesh_parts]]
+part_id = "part_1088"
+mesh_part_name = "part_1088"
+vertex_start = 7355605
+vertex_count = 1044
+index_start = 23419185
+index_count = 3072
+
+[[mesh_parts]]
+part_id = "part_1089"
+mesh_part_name = "part_1089"
+vertex_start = 7356649
+vertex_count = 1460
+index_start = 23422257
+index_count = 4416
+
+[[mesh_parts]]
+part_id = "part_1090"
+mesh_part_name = "part_1090"
+vertex_start = 7358109
+vertex_count = 1752
+index_start = 23426673
+index_count = 5280
+
+[[mesh_parts]]
+part_id = "part_1091"
+mesh_part_name = "part_1091"
+vertex_start = 7359861
+vertex_count = 1224
+index_start = 23431953
+index_count = 3672
+
+[[mesh_parts]]
+part_id = "part_1092"
+mesh_part_name = "part_1092"
+vertex_start = 7361085
+vertex_count = 1224
+index_start = 23435625
+index_count = 3672

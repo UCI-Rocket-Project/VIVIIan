@@ -1,217 +1,298 @@
 # Frontend
 
-The frontend module turns a collection of `gui_utils` widgets into a single
-callable task.
-The task reads live stream data, renders the operator desk via ImGui, and
-writes a float64 state vector whenever a writable control changes.
+If you are trying to build a dashboard or wire a new control, start with
+[Build With VIVIIan -> Frontend](build-frontend.md).
+This page is the runtime reference for `viviian.frontend`.
 
-## Install
+The current frontend module exports:
 
-```bash
-pip install -e ".[gui]"
-```
-
-```python
-from viviian.frontend import Frontend, GlfwBackend, HeadlessBackend
-```
+- `Frontend`
+- `FrontendTask`
+- `GlfwBackend`
+- `HeadlessBackend`
+- `HeadlessImgui`
+- `OutputSlotSpec`
+- `FrontendComponent`
+- `WritableFrontendComponent`
+- `RenderContext`
 
 ## Mental Model
 
-```text
-streams (readers)
-       │
-       │  bind + consume each frame
-       ▼
-  ┌─────────────┐
-  │  ImGui loop │  ◄── GlfwBackend (live) or HeadlessBackend (test)
-  │             │
-  │  SensorGraph│  read-only, displays live batches
-  │  SensorGauge│  read-only, displays single values
-  │  ToggleButton│  writable, latches 0.0 / 1.0
-  │  MomentaryButton│  writable, pulses 1.0 then resets to 0.0
-  └─────────────┘
-       │
-       │  float64 state vector
-       ▼
-  output writer (ring buffer or any object with .write(np.ndarray))
-```
+`Frontend` is a compile-once builder around GUI components.
+You register widgets, compile the frontend, then run the returned task with
+reader and writer bindings.
+
+The runtime is intentionally small:
+
+- widgets pull the latest data from bound readers
+- the backend implementation provides either a real window or a headless test session
+- writable controls emit one `float64` state vector
 
 ## Minimal Example
 
 ```python
-import pyarrow as pa
-from viviian.frontend import Frontend, GlfwBackend
-from viviian.gui_utils import SensorGraph, GraphSeries, ToggleButton
+from __future__ import annotations
 
-with Frontend("rocket-desk") as desk:
-    graph = desk.add(SensorGraph(
-        graph_id="pressure",
-        series=(GraphSeries(stream_name="pressure_kpa", label="Pressure"),),
-    ))
-    arm = desk.add(ToggleButton(
-        button_id="arm",
-        state_id="arm",
-        label_on="ARMED",
-        label_off="SAFE",
-    ))
+import numpy as np
 
-task = desk.build_task(backend=GlfwBackend())
+from viviian.frontend import Frontend, HeadlessBackend
+from viviian.gui_utils import AnalogNeedleGauge, ToggleButton
 
-# task is callable — wire it into your orchestrator or run directly
-task(pressure_kpa=pressure_reader, output=output_writer)
-```
 
-## Building a Frontend
+class StaticReader:
+    shape = (2, 4)
+    dtype = np.dtype(np.float64)
 
-`Frontend` is a builder.
-Add components, then call `build_task`.
+    def __init__(self, frame: np.ndarray) -> None:
+        self._frame = np.asarray(frame, dtype=self.dtype).copy()
 
-### `Frontend(name)`
+    def set_blocking(self, blocking: bool) -> None:
+        del blocking
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `name` | `str` | `"frontend"` | Window title and task name. |
+    def read(self) -> np.ndarray | None:
+        if self._frame is None:
+            return None
+        frame = self._frame.copy()
+        self._frame = None
+        return frame
 
-### `frontend.add(component)`
 
-Register a widget.
-Components must be added before `compile()` or `build_task()` is called.
-Component IDs must be unique across the frontend.
-Returns the component for fluent patterns.
+class RecordingWriter:
+    shape = (1,)
+    dtype = np.dtype(np.float64)
 
-### `frontend.build_task(*, backend, output_binding, window_title)`
+    def write(self, frame: np.ndarray) -> bool:
+        print(np.asarray(frame, dtype=self.dtype))
+        return True
 
-Compile the frontend and return a `FrontendTask`.
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `backend` | `BackendSpec \| None` | `GlfwBackend()` | Window and ImGui session provider. |
-| `output_binding` | `str` | `"output"` | Key name for the output writer in the `task(**bindings)` call. |
-| `window_title` | `str \| None` | `frontend.name` | Override the ImGui window title. |
+frontend = Frontend("desk")
+frontend.add(
+    AnalogNeedleGauge(
+        gauge_id="pressure",
+        label="Pressure",
+        stream_name="pressure_stream",
+        low_value=0.0,
+        high_value=100.0,
+    )
+)
+frontend.add(
+    ToggleButton(
+        button_id="arm_toggle",
+        label="Arm",
+        state_id="desk.arm",
+        state=False,
+    )
+)
 
-### `frontend.output_ring_size(headroom_frames=8)`
+task = frontend.build_task(
+    backend=HeadlessBackend(max_frames=1, button_presses=(True,)),
+)
 
-Returns the minimum ring buffer size in bytes to hold the float64 state
-vector with `headroom_frames` of headroom.
-
-### `frontend.required_reads`
-
-Tuple of stream names the task will request at call time.
-Available after `compile()`.
-
-### `frontend.output_slots`
-
-Tuple of `OutputSlotSpec` — one per writable control, in component
-registration order.
-Each slot carries: `index`, `component_id`, `state_id`, `initial_value`.
-
-## Running the Task
-
-`FrontendTask` is a frozen dataclass.
-Calling it starts the render loop.
-
-```python
 task(
-    pressure_kpa=pressure_reader,   # one keyword per required_reads entry
-    output=output_writer,           # matches output_binding
+    pressure_stream=StaticReader(
+        np.array(
+            [[0.0, 1.0, 2.0, 3.0], [20.0, 30.0, 40.0, 50.0]],
+            dtype=np.float64,
+        )
+    ),
+    output=RecordingWriter(),
 )
 ```
 
-The loop runs until the window is closed.
-Each iteration:
+## `Frontend`
 
-1. calls `consume()` on every adapter (pulls latest data from readers)
-2. renders each widget via ImGui
-3. if any writable control changed, writes one float64 snapshot vector to the output writer
+### `Frontend(name="frontend")`
 
-The output writer must expose a `.write(np.ndarray)` interface.
+`name` must be a non-empty string.
+It becomes the default task name and window title.
 
-## Component Dispatch
+### `frontend.add(component)`
 
-`Frontend.compile()` calls `adapt_component()` on each registered object.
-The dispatch rules are:
+Registers a component and returns it.
 
-| Component Type | Behaviour | Writable |
-|----------------|-----------|---------|
-| `StateButton` (any subclass) | `ButtonComponentAdapter` | yes |
-| `ToggleButton` | latches `0.0` or `1.0` | yes |
-| `MomentaryButton` | pulses `1.0`, resets to `0.0` after snapshot written | yes |
-| `SensorGraph` | `BaseComponentAdapter`, reads all declared series streams | no |
-| `SensorGauge` | `BaseComponentAdapter`, reads one stream | no |
-| `ModelViewer` | `BaseComponentAdapter`, reads body + pose streams | no |
-| Custom `FrontendComponent` | `GenericComponentAdapter` | if `WritableFrontendComponent` |
+Rules:
 
-Objects that match none of the above raise `TypeError` at compile time.
+- components must be added before compilation
+- component IDs must be unique after adaptation
+- once compiled, the frontend becomes immutable
 
-### MomentaryButton Pulse Semantics
+Trying to `add(...)` after compilation raises `RuntimeError`.
 
-`MomentaryButton` pulses exactly once per press.
-When the button is pressed:
+### `frontend.compile()`
 
-1. `snapshot_value()` returns `1.0`
-2. after the snapshot is written, `after_snapshot_written()` resets the pulse
-3. subsequent snapshots return `0.0` until the next press
+Compiles the registered components into adapters.
+Compilation is idempotent.
 
-This means one press → one `1.0` frame in the output stream, then `0.0`.
+During compilation, the runtime:
+
+- adapts each component into a frontend adapter
+- validates unique component IDs
+- collects `required_reads`
+- derives `output_slots`
+
+### `frontend.required_reads`
+
+Tuple of unique stream names required by the registered components, in
+first-seen order.
+
+### `frontend.output_shape`
+
+Tuple containing the length of the output state vector.
+
+Examples:
+
+- no writable controls -> `(0,)`
+- two writable controls -> `(2,)`
+
+### `frontend.output_slots`
+
+Tuple of `OutputSlotSpec`, one per writable component.
+
+Each slot includes:
+
+- `index`
+- `component_id`
+- `state_id`
+- `initial_value`
+
+This is the authoritative mapping between state-vector index and control meaning.
+
+### `frontend.read_bindings()`
+
+Returns:
+
+```python
+{stream_name: stream_name for stream_name in frontend.required_reads}
+```
+
+This is mainly useful when another composition layer needs a default binding map.
+
+### `frontend.write_bindings(stream_name, output_binding="output")`
+
+Returns:
+
+```python
+{output_binding: stream_name}
+```
+
+This is useful when wiring the frontend output vector into a named app stream.
+
+### `frontend.output_ring_size(headroom_frames=8)`
+
+Returns the minimum byte size for a ring buffer that should hold the output
+state vector with the requested headroom.
+
+Use this instead of hand-computing ring sizes for writable frontends.
+
+### `frontend.build_task(...)`
+
+```python
+frontend.build_task(
+    output_binding="output",
+    backend=None,
+    window_title=None,
+    fill_backend_window=False,
+)
+```
+
+| Parameter | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `output_binding` | `str` | `"output"` | Binding name used when the task resolves its writer. |
+| `backend` | `BackendSpec \| None` | `GlfwBackend()` | Backend that provides the render session. |
+| `window_title` | `str \| None` | `frontend.name` | Window title override. |
+| `fill_backend_window` | `bool` | `False` | When `True`, sizes and pins the top-level window to the backend display area. |
+
+Returns a `FrontendTask`.
+
+## `FrontendTask`
+
+`FrontendTask` is the compiled callable.
+You do not construct it directly.
+
+Calling the task:
+
+```python
+task(
+    pressure_stream=reader,
+    output=writer,
+)
+```
+
+Rules:
+
+- every stream in `required_reads` must be provided as a keyword argument
+- if writable controls exist, the output binding must also be provided
+- if there are no writable controls, the output binding is optional
+
+The runtime raises `KeyError` when required bindings are missing.
+
+### Runtime Loop Behavior
+
+Each frame:
+
+1. calls `consume()` on every adapter
+2. begins a backend frame
+3. renders each adapted component
+4. ends the backend frame
+5. writes the latest output snapshot if the state is dirty
+
+The runtime also writes an initial snapshot before the main loop starts when the
+frontend has writable controls.
+
+If `writer.write(snapshot)` returns `False`, the task retains the dirty state and
+retries the latest snapshot on the next frame.
+
+## Component Adaptation Rules
+
+The current adapter dispatch is:
+
+| Component type | Adapter behavior | Writable |
+| --- | --- | --- |
+| `StateButton` subclasses such as `ToggleButton` and `MomentaryButton` | `ButtonComponentAdapter` | yes |
+| `SensorGraph` | reads all declared series streams | no |
+| `SensorGauge` subclasses such as `AnalogNeedleGauge` and `LedBarGauge` | reads one stream | no |
+| `ModelViewer` | reads body and pose streams | no |
+| custom `FrontendComponent` | `GenericComponentAdapter` | only if it also implements `WritableFrontendComponent` |
+
+Unsupported component types raise `TypeError` at compile time.
+
+### Writable Control Semantics
+
+The built-in state rules are:
+
+- `ToggleButton` latches `0.0` or `1.0`
+- `MomentaryButton` emits one pulse value, then resets after a successful snapshot write
+
+Writable output values must be numeric and finite.
+Accepted types are:
+
+- `bool`
+- `int`
+- `float`
+
+String state values are not valid for writable frontend output.
 
 ### Gate and Interlock State
 
-`StateButton` supports `gate_id` and `interlock_ids`.
-The frontend collects the boolean state of every writable adapter with a
-`state_id` and passes it to each button's `render()` call as `gate_states`
-and `interlock_states`.
-Buttons whose gate is `False` or whose interlock conflicts are disabled
-automatically.
+For buttons with `gate_id` or `interlock_ids`, the runtime builds a
+`RenderContext` from all currently known writable boolean states and passes it
+into button rendering.
 
-## Backends
-
-### `GlfwBackend`
-
-Opens a real GLFW/OpenGL window.
-Requires `pip install -e ".[gui]"`.
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `width` | `1280` | Window width in pixels. |
-| `height` | `900` | Window height in pixels. |
-| `clear_color` | `(0.02, 0.03, 0.05, 1.0)` | OpenGL clear color (RGBA). |
-| `vsync` | `1` | GLFW swap interval. |
-
-### `HeadlessBackend`
-
-Runs the render loop without a window.
-Used in tests and CI.
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `max_frames` | `1` | Number of frames to render before `should_close()` returns `True`. |
-| `button_presses` | `()` | Sequence of booleans consumed by `imgui.button()` calls in order. |
-| `delta_time` | `1/60` | Simulated frame delta time. |
-| `frame_sleep_s` | `0.0` | Optional sleep per frame (useful for pacing tests). |
-
-```python
-from viviian.frontend import Frontend, HeadlessBackend
-from viviian.gui_utils import ToggleButton
-
-with Frontend("test-desk") as desk:
-    btn = desk.add(ToggleButton(
-        button_id="arm",
-        state_id="arm",
-        label_on="ARMED",
-        label_off="SAFE",
-    ))
-
-task = desk.build_task(backend=HeadlessBackend(max_frames=2, button_presses=[True]))
-task(output=mock_writer)
-```
+This allows buttons to disable themselves based on the state of other controls
+without every app inventing its own coordination layer.
 
 ## Custom Components
 
-Implement the `FrontendComponent` protocol to add custom widgets:
+Implement `FrontendComponent` when you need a custom widget:
 
 ```python
+from __future__ import annotations
+
 from typing import Any, Mapping
+
 from viviian.frontend import FrontendComponent
+
 
 class MyWidget:
     component_id = "my_widget"
@@ -223,53 +304,56 @@ class MyWidget:
         self._reader = readers["telemetry"]
 
     def consume(self) -> bool:
-        self._latest = self._reader.latest_batch()
-        return True
+        self._latest = self._reader.read()
+        return self._latest is not None
 
     def render(self) -> None:
-        imgui.text(f"value: {self._latest}")
+        ...
 ```
 
-For writable custom components, also implement `WritableFrontendComponent`:
+Implement `WritableFrontendComponent` as well if the component should contribute
+to the output state vector.
 
-```python
-from viviian.frontend import WritableFrontendComponent
+## Backends
 
-class MyControl(MyWidget):
-    _state: float = 0.0
+### `HeadlessBackend`
 
-    def snapshot_value(self) -> float:
-        return self._state
+`HeadlessBackend` runs the frontend without a real window.
+This is the test and CI backend.
 
-    def after_snapshot_written(self) -> bool:
-        return False
-```
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `max_frames` | `1` | Number of frames before the session closes |
+| `button_presses` | `()` | Sequence consumed by `imgui.button()` calls in order |
+| `delta_time` | `1.0 / 60.0` | Simulated frame delta time |
+| `frame_sleep_s` | `0.0` | Optional sleep between frames |
+| `theme_name` | `"legacy"` | Theme applied to the headless session |
 
-## Output State Vector
+### `GlfwBackend`
 
-The output is a 1D `np.ndarray` of `float64` with one element per writable
-control, in the order they were added to the frontend.
+`GlfwBackend` opens a real GLFW/OpenGL window.
 
-The vector is written to the output binding on every frame where at least one
-writable control changed.
-An initial snapshot is also written before the render loop starts.
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `width` | `1280` | Window width |
+| `height` | `900` | Window height |
+| `clear_color` | `(0.020, 0.030, 0.050, 1.0)` | OpenGL clear color |
+| `vsync` | `1` | GLFW swap interval |
+| `theme_name` | `"legacy"` | ImGui theme name |
 
-Use `frontend.output_slots` to map vector indices back to component and state IDs.
+The backend raises `RuntimeError` if required GUI dependencies are missing,
+including `glfw`, `imgui` with the GLFW integration, or `PyOpenGL`.
 
-## Interactive Lab
+## Useful Source Examples
 
-Run the lab from the repo root; the script resolves the repo root and `src/`
-automatically when launched directly.
+The best current examples in the repo are:
 
-```bash
-python tests/gui_runnables/frontend_lab.py
-```
-
-The frontend lab wires simulated pressure and a toggle + momentary button
-into a live `GlfwBackend` desk.
+- `tests/test_frontend.py` for compile-time and runtime semantics
+- `tests/gui_runnables/frontend_lab.py` for a minimal live frontend with ring-buffer output
+- `apps/ucirplgui/src/ucirplgui/frontend/frontend.py` for the full app integration path
 
 ## What To Read Next
 
-- [GUI Utils](gui-utils.md) — all available widgets
-- [Orchestrator](orchestrator.md) — how tasks compose into a pipeline
-- [Architecture](architecture.md) — full system context
+- [Frontend](build-frontend.md) — task-oriented guide for building dashboards
+- [GUI Utils](gui-utils.md) — widget catalog and behavior
+- [Backend](build-backend.md) — how frontend-facing streams are usually produced
