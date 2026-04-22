@@ -469,7 +469,18 @@ class FrontendPipelineIntegrationTests(unittest.TestCase):
 
         self.assertEqual(
             frontend.required_reads,
-            ("px_chamber", "t_engine", "lox_level", "v_axial", "i_bus28", "t_bearing"),
+            (
+                "px_chamber",
+                "t_engine",
+                "lox_level",
+                "v_axial",
+                "i_bus28",
+                "t_bearing",
+                "lox_flow",
+                "p_feedline",
+                "t_nozzle",
+                "n2_pressure",
+            ),
         )
         self.assertEqual(frontend.output_shape, (0,))
         self.assertEqual(len(frontend.output_slots), 0)
@@ -507,6 +518,26 @@ class FrontendPipelineIntegrationTests(unittest.TestCase):
                 dtype=np.float64,
                 frames=[np.array([[0.0, 1.0, 2.0, 3.0], [70.0, 72.0, 74.0, 76.0]])],
             ),
+            "lox_flow": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [45.0, 46.0, 47.0, 48.0]])],
+            ),
+            "p_feedline": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [320.0, 330.0, 340.0, 350.0]])],
+            ),
+            "t_nozzle": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [410.0, 420.0, 430.0, 440.0]])],
+            ),
+            "n2_pressure": FakeReader(
+                shape=(2, 4),
+                dtype=np.float64,
+                frames=[np.array([[0.0, 1.0, 2.0, 3.0], [230.0, 232.0, 234.0, 236.0]])],
+            ),
         }
         dashboard.bind(readers)
 
@@ -525,7 +556,18 @@ class FrontendPipelineIntegrationTests(unittest.TestCase):
         self.assertEqual(set(pipe._tasks), {"source", "frontend"})
         self.assertEqual(
             set(pipe._streams),
-            {"px_chamber", "t_engine", "lox_level", "v_axial", "i_bus28", "t_bearing"},
+            {
+                "px_chamber",
+                "t_engine",
+                "lox_level",
+                "v_axial",
+                "i_bus28",
+                "t_bearing",
+                "lox_flow",
+                "p_feedline",
+                "t_nozzle",
+                "n2_pressure",
+            },
         )
 
     def test_frontend_task_runs_inside_pipeline(self) -> None:

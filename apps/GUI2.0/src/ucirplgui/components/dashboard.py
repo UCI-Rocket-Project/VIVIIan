@@ -1,9 +1,21 @@
 from __future__ import annotations
 
 import threading
+import time
 from typing import Any, Mapping
 
-from viviian.gui_utils import AnalogNeedleGauge, ConsoleComponent, GraphSeries, LedBarGauge, MomentaryButton, SensorGraph, ToggleButton, theme
+from viviian.gui_utils import (
+    AnalogNeedleGauge,
+    ConsoleComponent,
+    EventLogPanel,
+    EventRecord,
+    GraphSeries,
+    LedBarGauge,
+    MomentaryButton,
+    SensorGraph,
+    ToggleButton,
+    theme,
+)
 from viviian.gui_utils._streaming import fan_out_reader_groups
 
 from ucirplgui.device_link_read import DeviceLinkBoardSnapshot
@@ -48,6 +60,51 @@ _GAUGES_COLUMN_WIDTH = 400.0
 _CONNECTION_GAUGE_HEADER_RIGHT = "RX Age"
 _BACKEND_THROUGHPUT_HEADER_RIGHT = "Mbps"
 _BACKEND_THROUGHPUT_GAUGE_HIGH = 1.0
+_EVENT_LOG_INLINE_HEIGHT = 240.0
+_EVENT_LOG_WINDOW_WIDTH = 560.0
+_EVENT_LOG_WINDOW_HEIGHT = 360.0
+_EVENT_LOG_MAX_RECORDS = 64
+_PING_CRIT_THRESHOLD_MS = 110.0
+_EVENT_LOG_ACTION_BUTTON_WIDTH = 28.0
+_EVENT_LOG_ACTION_BUTTON_HEIGHT = 24.0
+
+_SHOWCASE_COLOR_ACID = theme.ACID
+_SHOWCASE_COLOR_ALERT = theme.ALERT
+_SHOWCASE_COLOR_WARN = theme.WARN
+_SHOWCASE_COLOR_CYAN = (0.000, 0.898, 0.761, 1.0)
+_SHOWCASE_COLOR_LIME = (0.847, 1.000, 0.000, 1.0)
+_SHOWCASE_COLOR_BLUE = (0.200, 0.600, 1.000, 1.0)
+_SHOWCASE_COLOR_PURPLE = (0.700, 0.250, 1.000, 1.0)
+_SHOWCASE_COLOR_PINK = (1.000, 0.200, 0.700, 1.0)
+_SHOWCASE_COLOR_CRIT = theme.CRIT
+
+
+def _mix_rgba(
+    left: tuple[float, float, float, float],
+    right: tuple[float, float, float, float],
+    ratio: float,
+) -> tuple[float, float, float, float]:
+    return tuple(
+        ((1.0 - ratio) * lhs) + (ratio * rhs)
+        for lhs, rhs in zip(left, right, strict=True)
+    )
+
+
+def _format_event_timestamp(timestamp_s: float) -> str:
+    whole = max(0.0, float(timestamp_s))
+    minutes = int(whole // 60.0)
+    seconds = whole - (minutes * 60.0)
+    return f"{minutes:02d}:{seconds:06.3f}"
+
+
+def _event_severity_color(severity: str) -> tuple[float, float, float, float]:
+    if severity == "ok":
+        return theme.ACID
+    if severity == "warn":
+        return theme.ALERT
+    if severity == "crit":
+        return theme.CRIT
+    return theme.INK_2
 
 
 class UCIRPLDashboard(ConsoleComponent):
@@ -111,6 +168,25 @@ class UCIRPLDashboard(ConsoleComponent):
             self._momentary_mvas_open,
             self._momentary_mvas_close,
         )
+        self._command_buttons = (
+            self._toggle_igniter,
+            self._toggle_abort,
+            self._toggle_arm,
+            self._toggle_alarm,
+            self._toggle_gn2_fill,
+            self._toggle_gn2_vent,
+            self._toggle_gn2_disconnect,
+            self._toggle_mvas_fill,
+            self._toggle_mvas_vent,
+            self._momentary_mvas_open,
+            self._momentary_mvas_close,
+            self._toggle_lox_vent,
+            self._toggle_lng_vent,
+            self._toggle_copv_vent,
+            self._toggle_pv1,
+            self._toggle_pv2,
+            self._toggle_vent,
+        )
 
         self.ecu_connection_guage = self._make_connection_gauge("ecu_connection")
         self.gse_connection_guage = self._make_connection_gauge("gse_connection")
@@ -127,18 +203,41 @@ class UCIRPLDashboard(ConsoleComponent):
             self.load_cell_connection_guage,
             self.backend_throughput_guage,
         )
-
-
-
+        self._connection_event_gauges = (
+            ("GSE", self.gse_connection_guage),
+            ("ECU", self.ecu_connection_guage),
+            ("EXTR_ECU", self.extr_ecu_connection_guage),
+            ("LOADCELL", self.load_cell_connection_guage),
+        )
+        self.event_log = EventLogPanel(
+            component_id="events",
+            records=[
+                EventRecord("00:00.000", "info", "UI", "UCIRPL dashboard initialized", "E001"),
+            ],
+            title="EVENT LOG",
+        )
+        self._session_start_s = time.monotonic()
+        self._event_counter = 1
+        self._last_control_snapshot = self._control_state_snapshot()
+        self._ping_crit_active = {
+            source: False
+            for source, _gauge in self._connection_event_gauges
+        }
+        self._event_log_popout = False
+        self._event_log_window_size_initialized = False
 
         self.UPPER_FEED_SYSTEM_GRAPH = SensorGraph(
             graph_id="UPPER_FEED_SYSTEM_GRAPH",
             title="UPPER FEED SYSTEM",
             series=(
-                GraphSeries("copv", "COPV", "tank_copv", color_rgba=theme.ACID),
-                GraphSeries("lox", "LOX", "tank_lox", color_rgba=theme.WARN, overlay=True),
-                GraphSeries("lng", "LNG", "tank_lng", color_rgba=theme.INK, overlay=True),
-                GraphSeries("vent", "VENT", "line_vent", color_rgba=(0.95, 0.70, 0.20, 1.0)),
+                GraphSeries("copv", "COPV", "tank_copv", color_rgba=_SHOWCASE_COLOR_ACID),
+                GraphSeries("lox", "LOX", "tank_lox", color_rgba=_SHOWCASE_COLOR_ALERT, overlay=True),
+                GraphSeries("lng", "LNG", "tank_lng", color_rgba=_SHOWCASE_COLOR_WARN, overlay=True),
+                GraphSeries("vent", "VENT", "line_vent", color_rgba=_SHOWCASE_COLOR_CYAN),
+                GraphSeries("fft_tank_copv", "COPV FFT", "fft_tank_copv", color_rgba=_mix_rgba(_SHOWCASE_COLOR_ACID, theme.INK, 0.35), overlay=True),
+                GraphSeries("fft_tank_lox", "LOX FFT", "fft_tank_lox", color_rgba=_mix_rgba(_SHOWCASE_COLOR_ALERT, theme.INK, 0.35), overlay=True),
+                GraphSeries("fft_tank_lng", "LNG FFT", "fft_tank_lng", color_rgba=_mix_rgba(_SHOWCASE_COLOR_WARN, theme.INK, 0.35), overlay=True),
+                GraphSeries("fft_line_vent", "VENT FFT", "fft_line_vent", color_rgba=_mix_rgba(_SHOWCASE_COLOR_CYAN, theme.INK, 0.35), overlay=True),
             ),
             window_seconds=300.0,
             max_points_per_series=1024,
@@ -151,10 +250,14 @@ class UCIRPLDashboard(ConsoleComponent):
             graph_id="LOWER_FEED_SYSTEM_GRAPH",
             title="LOWER FEED SYSTEM",
             series=(
-                GraphSeries("lox_mvas", "LOX_MVAS", "line_lox_mvas", color_rgba=(0.45, 0.90, 0.75, 1.0), overlay=True),
-                GraphSeries("injtee", "LOX_INJ_TEE", "line_lox_inj_tee", color_rgba=(0.38, 0.72, 1.0, 1.0), overlay=True),
-                GraphSeries("injlox", "INJ_LOX", "line_inj_lox", color_rgba=(0.90, 0.35, 0.85, 1.0), overlay=True),
-                GraphSeries("injlng", "INJ_LNG", "line_inj_lng", color_rgba=(0.70, 0.95, 0.35, 1.0), overlay=True),
+                GraphSeries("lox_mvas", "LOX_MVAS", "line_lox_mvas", color_rgba=_SHOWCASE_COLOR_LIME, overlay=True),
+                GraphSeries("injtee", "LOX_INJ_TEE", "line_lox_inj_tee", color_rgba=_SHOWCASE_COLOR_BLUE, overlay=True),
+                GraphSeries("injlox", "INJ_LOX", "line_inj_lox", color_rgba=_SHOWCASE_COLOR_PURPLE, overlay=True),
+                GraphSeries("injlng", "INJ_LNG", "line_inj_lng", color_rgba=_SHOWCASE_COLOR_PINK, overlay=True),
+                GraphSeries("fft_line_lox_mvas", "LOX MVAS FFT", "fft_line_lox_mvas", color_rgba=_mix_rgba(_SHOWCASE_COLOR_LIME, theme.INK, 0.35), overlay=True),
+                GraphSeries("fft_line_lox_inj_tee", "LOX INJ FFT", "fft_line_lox_inj_tee", color_rgba=_mix_rgba(_SHOWCASE_COLOR_BLUE, theme.INK, 0.35), overlay=True),
+                GraphSeries("fft_line_inj_lox", "INJ LOX FFT", "fft_line_inj_lox", color_rgba=_mix_rgba(_SHOWCASE_COLOR_PURPLE, theme.INK, 0.35), overlay=True),
+                GraphSeries("fft_line_inj_lng", "INJ LNG FFT", "fft_line_inj_lng", color_rgba=_mix_rgba(_SHOWCASE_COLOR_PINK, theme.INK, 0.35), overlay=True),
             ),
             window_seconds=90.0,
             max_points_per_series=1024,
@@ -166,10 +269,13 @@ class UCIRPLDashboard(ConsoleComponent):
         self.LOAD_CELL_GRAPH = SensorGraph(
             graph_id="LOAD_CELL_GRAPH",
             title="LOAD CELL",
-            series=(GraphSeries("load", "Force", "load_force", color_rgba=theme.ALERT),),
+            series=(
+                GraphSeries("load", "Force", "load_force", color_rgba=_SHOWCASE_COLOR_CRIT),
+                GraphSeries("fft_load_force", "FORCE FFT", "fft_load_force", color_rgba=_mix_rgba(_SHOWCASE_COLOR_CRIT, theme.INK, 0.35), overlay=True),
+            ),
             window_seconds=90.0,
             max_points_per_series=1024,
-            show_series_controls=False,
+            show_series_controls=True,
             theme_name="tau_ceti",
             plot_height=_PRIMARY_GRAPH_HEIGHT,
         )
@@ -310,14 +416,80 @@ class UCIRPLDashboard(ConsoleComponent):
         for button in self._momentary_buttons:
             button._press_timestamp = None  # noqa: SLF001 - reset latched momentary state
 
+    def _append_event(self, severity: str, source: str, message: str) -> None:
+        self._event_counter += 1
+        timestamp = _format_event_timestamp(time.monotonic() - self._session_start_s)
+        self.event_log.records.insert(
+            0,
+            EventRecord(
+                timestamp=timestamp,
+                severity=severity,
+                source=source,
+                message=message,
+                event_id=f"E{self._event_counter:03d}",
+            ),
+        )
+        self.event_log.records = self.event_log.records[:_EVENT_LOG_MAX_RECORDS]
+
     def _toggle_value(self, button: ToggleButton) -> float:
         return 1.0 if bool(button.state) else 0.0
 
     def _momentary_value(self, button: MomentaryButton) -> float:
         return 1.0 if button._is_on() else 0.0  # noqa: SLF001 - same state contract as old dashboard
 
+    def _button_state_value(self, button: ToggleButton | MomentaryButton) -> float:
+        if isinstance(button, ToggleButton):
+            return self._toggle_value(button)
+        return self._momentary_value(button)
+
+    def _control_state_snapshot(self) -> tuple[float, ...]:
+        return tuple(self._button_state_value(button) for button in self._command_buttons)
+
+    def _describe_command_changes(
+        self,
+        previous: tuple[float, ...],
+        current: tuple[float, ...],
+    ) -> str:
+        changes: list[str] = []
+        for button, previous_value, current_value in zip(
+            self._command_buttons, previous, current, strict=True
+        ):
+            if previous_value == current_value:
+                continue
+            state_text = "ON" if current_value else "OFF"
+            changes.append(f"{button.label.upper()} -> {state_text}")
+        return ", ".join(changes)
+
+    def _update_ping_events(self) -> None:
+        for source, gauge in self._connection_event_gauges:
+            ping_crit = float(gauge.display_value) > _PING_CRIT_THRESHOLD_MS
+            previous = self._ping_crit_active[source]
+            self._ping_crit_active[source] = ping_crit
+            if ping_crit and not previous:
+                self._append_event(
+                    "crit",
+                    source,
+                    f"RX age {gauge.display_value:.1f} ms exceeds {_PING_CRIT_THRESHOLD_MS:.1f} ms",
+                )
+
+    def _record_abort_blocked_interaction(self, button: ToggleButton | MomentaryButton) -> None:
+        self._append_event(
+            "warn",
+            "ABORT",
+            f"Ignored {button.label.upper()} while abort is active",
+        )
+
     def _render_control_button(self, button: ToggleButton | MomentaryButton) -> None:
-        button.render()
+        previous_state = button.state
+        previous_press_timestamp = getattr(button, "_press_timestamp", None)
+        update = button.render()
+        if update is None:
+            return
+        if self._toggle_abort.state and button is not self._toggle_abort:
+            button.state = previous_state
+            if isinstance(button, MomentaryButton):
+                button._press_timestamp = previous_press_timestamp  # noqa: SLF001 - revert blocked momentary pulse
+            self._record_abort_blocked_interaction(button)
 
     def _render_button_pairs(
         self,
@@ -357,6 +529,7 @@ class UCIRPLDashboard(ConsoleComponent):
             dirty = widget.consume() or dirty
         if self._toggle_abort.state:
             self._clear_controls_for_abort()
+        self._update_ping_events()
         self.send_commands_if_needed()
         return dirty
 
@@ -387,11 +560,155 @@ class UCIRPLDashboard(ConsoleComponent):
         ]
 
     def send_commands_if_needed(self) -> None:
+        current_snapshot = self._control_state_snapshot()
+        if current_snapshot == self._last_control_snapshot:
+            return
         if self.command_writer is None:
+            self._last_control_snapshot = current_snapshot
             return
         writer = getattr(self.command_writer, "write", None)
         if callable(writer):
-            writer(self._control_vector())
+            if writer(self._control_vector()):
+                changes = self._describe_command_changes(
+                    self._last_control_snapshot,
+                    current_snapshot,
+                )
+                message = "Command sent" if not changes else f"Command sent: {changes}"
+                self._append_event("ok", "CMD", message)
+                self._last_control_snapshot = current_snapshot
+
+    def _render_event_log_filter_button(self, severity: str, count: int) -> None:
+        imgui = _require_imgui()
+        active = severity in self.event_log.active_filters
+        color = _event_severity_color(severity)
+        imgui.push_style_color(imgui.COLOR_BUTTON, *(theme.PANEL_BG_2 if active else theme.PANEL_BG))
+        imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *theme.PANEL_BG_2)
+        imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *theme.PANEL_BG_3)
+        imgui.push_style_color(imgui.COLOR_TEXT, *color)
+        if hasattr(imgui, "COLOR_BORDER"):
+            imgui.push_style_color(imgui.COLOR_BORDER, *color)
+            color_count = 5
+        else:
+            color_count = 4
+        if imgui.button(f"{severity.upper()} {count}", width=0.0, height=24.0):
+            if active:
+                self.event_log.active_filters.discard(severity)
+            else:
+                self.event_log.active_filters.add(severity)
+        imgui.pop_style_color(color_count)
+
+    def _render_event_log_action_button(
+        self,
+        *,
+        action_icon: str,
+        action_id: str,
+    ) -> None:
+        imgui = _require_imgui()
+        imgui.push_style_color(imgui.COLOR_BUTTON, *theme.PANEL_BG_2)
+        imgui.push_style_color(imgui.COLOR_BUTTON_HOVERED, *theme.PANEL_BG_3)
+        imgui.push_style_color(imgui.COLOR_BUTTON_ACTIVE, *theme.BUTTON_OFF_ACTIVE)
+        imgui.push_style_color(imgui.COLOR_TEXT, *theme.INK)
+        if hasattr(imgui, "COLOR_BORDER"):
+            imgui.push_style_color(imgui.COLOR_BORDER, *theme.PANEL_BORDER)
+            color_count = 5
+        else:
+            color_count = 4
+        if imgui.button(
+            f"{action_icon}##{action_id}",
+            width=_EVENT_LOG_ACTION_BUTTON_WIDTH,
+            height=_EVENT_LOG_ACTION_BUTTON_HEIGHT,
+        ):
+            self._event_log_popout = not self._event_log_popout
+            self._event_log_window_size_initialized = False
+        imgui.pop_style_color(color_count)
+
+    def _render_event_log_records(self) -> None:
+        imgui = _require_imgui()
+        for record in self.event_log.records:
+            if record.severity not in self.event_log.active_filters:
+                continue
+            imgui.text_colored(record.timestamp, *theme.INK_3)
+            imgui.same_line()
+            imgui.text_colored(record.source, *_event_severity_color(record.severity))
+            imgui.same_line()
+            suffix = f" [{record.event_id}]" if record.event_id else ""
+            imgui.text_unformatted(f"{record.message}{suffix}")
+
+    def _render_event_log_widget(
+        self,
+        *,
+        action_icon: str,
+        action_id: str,
+    ) -> None:
+        imgui = _require_imgui()
+        imgui.text_unformatted(self.event_log.title)
+        flags = imgui.TABLE_SIZING_STRETCH_SAME | imgui.TABLE_NO_SAVED_SETTINGS
+        with imgui.begin_table(f"{action_id}_controls", 2, flags) as table:
+            if table.opened:
+                imgui.table_setup_column("Filters", imgui.TABLE_COLUMN_WIDTH_STRETCH)
+                imgui.table_setup_column(
+                    "Action",
+                    imgui.TABLE_COLUMN_WIDTH_FIXED,
+                    _EVENT_LOG_ACTION_BUTTON_WIDTH,
+                )
+                imgui.table_next_row()
+                imgui.table_set_column_index(0)
+                for index, severity in enumerate(("info", "ok", "warn", "crit")):
+                    count = sum(
+                        1 for record in self.event_log.records if record.severity == severity
+                    )
+                    self._render_event_log_filter_button(severity, count)
+                    if index < 3:
+                        imgui.same_line()
+                imgui.table_set_column_index(1)
+                self._render_event_log_action_button(
+                    action_icon=action_icon,
+                    action_id=action_id,
+                )
+        imgui.separator()
+        self._render_event_log_records()
+
+    def _render_event_log_inline(self) -> None:
+        imgui = _require_imgui()
+        if hasattr(imgui, "begin_child"):
+            imgui.begin_child(
+                "ucirpl_event_log_inline",
+                0.0,
+                _EVENT_LOG_INLINE_HEIGHT,
+                border=True,
+            )
+            self._render_event_log_widget(action_icon="[]", action_id="event_log_popout")
+            imgui.end_child()
+        else:
+            self._render_event_log_widget(action_icon="[]", action_id="event_log_popout")
+
+    def _render_event_log_window(self) -> None:
+        imgui = _require_imgui()
+        if not self._event_log_popout:
+            return
+        display_size = getattr(imgui.get_io(), "display_size", (0.0, 0.0))
+        width = float(display_size[0]) if len(display_size) > 0 else _EVENT_LOG_WINDOW_WIDTH
+        height = float(display_size[1]) if len(display_size) > 1 else _EVENT_LOG_WINDOW_HEIGHT
+        if hasattr(imgui, "set_next_window_position"):
+            imgui.set_next_window_position(0.0, 0.0)
+        if hasattr(imgui, "set_next_window_size"):
+            imgui.set_next_window_size(width, height)
+        window_flags = 0
+        for flag_name in (
+            "WINDOW_NO_RESIZE",
+            "WINDOW_NO_MOVE",
+            "WINDOW_NO_COLLAPSE",
+            "WINDOW_NO_SAVED_SETTINGS",
+        ):
+            window_flags |= int(getattr(imgui, flag_name, 0))
+        imgui.begin("UCIRPL Event Log", flags=window_flags)
+        if hasattr(imgui, "begin_child"):
+            imgui.begin_child("ucirpl_event_log_popout", 0.0, 0.0, border=True)
+            self._render_event_log_widget(action_icon="_", action_id="event_log_minimize")
+            imgui.end_child()
+        else:
+            self._render_event_log_widget(action_icon="_", action_id="event_log_minimize")
+        imgui.end()
 
     def column0(self) -> None:
         imgui = _require_imgui()
@@ -416,6 +733,8 @@ class UCIRPLDashboard(ConsoleComponent):
             table_id="ecu_controls_table",
             button_pairs=self._ecu_control_pairs,
         )
+        imgui.spacing()
+        self._render_event_log_inline()
 
 
     def column1(self) -> None:
@@ -488,6 +807,7 @@ class UCIRPLDashboard(ConsoleComponent):
                 self.column1()
                 imgui.table_set_column_index(2)
                 self.column2()
+        self._render_event_log_window()
 
 def build_dashboard(*, command_writer: Any, link_store: DeviceLinkStore) -> UCIRPLDashboard:
     return UCIRPLDashboard(command_writer=command_writer, link_store=link_store)

@@ -44,6 +44,41 @@ class DashboardRuntimeTests(unittest.TestCase):
             ),
         )
 
+    def test_fft_streams_are_registered(self) -> None:
+        self.assertIn(config.FRONTEND_TANK_FFT_STREAM_ID, config.SCHEMAS)
+        self.assertIn(config.FRONTEND_LINE_FFT_STREAM_ID, config.SCHEMAS)
+        self.assertIn(config.FRONTEND_LOADCELL_FFT_STREAM_ID, config.SCHEMAS)
+        self.assertIn(config.FRONTEND_TANK_FFT_STREAM_ID, config.FRONTEND_STREAMS)
+        self.assertIn(config.FRONTEND_LINE_FFT_STREAM_ID, config.FRONTEND_STREAMS)
+        self.assertIn(config.FRONTEND_LOADCELL_FFT_STREAM_ID, config.FRONTEND_STREAMS)
+        self.assertEqual(
+            config.FRONTEND_TANK_FFT_COLUMNS,
+            (
+                "timestamp_s",
+                "pressure_copv_fft_reconstruction",
+                "pressure_lox_fft_reconstruction",
+                "pressure_lng_fft_reconstruction",
+            ),
+        )
+        self.assertEqual(
+            config.FRONTEND_LINE_FFT_COLUMNS,
+            (
+                "timestamp_s",
+                "pressure_vent_fft_reconstruction",
+                "pressure_lox_mvas_fft_reconstruction",
+                "pressure_lox_inj_tee_fft_reconstruction",
+                "pressure_inj_lox_fft_reconstruction",
+                "pressure_inj_lng_fft_reconstruction",
+            ),
+        )
+        self.assertEqual(
+            config.FRONTEND_LOADCELL_FFT_COLUMNS,
+            (
+                "timestamp_s",
+                "total_force_fft_reconstruction",
+            ),
+        )
+
     def test_device_link_encode_decode_roundtrip(self) -> None:
         row = encode_device_link_row(
             board="gse",
@@ -176,6 +211,115 @@ class DashboardRuntimeTests(unittest.TestCase):
         self.assertEqual(dashboard.backend_throughput_guage.stream_name, "backend_throughput_mbps")
         self.assertEqual(dashboard.backend_throughput_guage.unit_label, "Mbps")
         self.assertEqual(dashboard.backend_throughput_guage.header_right, "Mbps")
+
+    def test_dashboard_requires_all_fft_reader_streams(self) -> None:
+        dashboard = build_dashboard(command_writer=None, link_store=DeviceLinkStore())
+        required_streams = set(dashboard.required_streams())
+        self.assertTrue(
+            {
+                "fft_tank_copv",
+                "fft_tank_lox",
+                "fft_tank_lng",
+                "fft_line_vent",
+                "fft_line_lox_mvas",
+                "fft_line_lox_inj_tee",
+                "fft_line_inj_lox",
+                "fft_line_inj_lng",
+                "fft_load_force",
+            }.issubset(required_streams)
+        )
+
+    def test_dashboard_uses_tau_ceti_showcase_series_colors(self) -> None:
+        dashboard = build_dashboard(command_writer=None, link_store=DeviceLinkStore())
+        upper_raw_colors = tuple(
+            series.color_rgba for series in dashboard.UPPER_FEED_SYSTEM_GRAPH.series[:4]
+        )
+        lower_raw_colors = tuple(
+            series.color_rgba for series in dashboard.LOWER_FEED_SYSTEM_GRAPH.series[:4]
+        )
+        load_raw_color = dashboard.LOAD_CELL_GRAPH.series[0].color_rgba
+
+        self.assertEqual(
+            upper_raw_colors,
+            (
+                (0.624, 0.898, 0.000, 1.0),
+                (1.000, 0.357, 0.122, 1.0),
+                (1.000, 0.690, 0.125, 1.0),
+                (0.000, 0.898, 0.761, 1.0),
+            ),
+        )
+        self.assertEqual(
+            lower_raw_colors,
+            (
+                (0.847, 1.000, 0.000, 1.0),
+                (0.200, 0.600, 1.000, 1.0),
+                (0.700, 0.250, 1.000, 1.0),
+                (1.000, 0.200, 0.700, 1.0),
+            ),
+        )
+        self.assertEqual(load_raw_color, (1.000, 0.176, 0.239, 1.0))
+
+    def test_dashboard_initializes_event_log(self) -> None:
+        dashboard = build_dashboard(command_writer=None, link_store=DeviceLinkStore())
+        self.assertEqual(dashboard.event_log.title, "EVENT LOG")
+        self.assertEqual(dashboard.event_log.records[0].severity, "info")
+
+    def test_command_send_logs_ok_once_per_control_change(self) -> None:
+        class _Writer:
+            def __init__(self) -> None:
+                self.calls: list[tuple[float, ...]] = []
+
+            def write(self, snapshot: object) -> bool:
+                self.calls.append(tuple(float(value) for value in snapshot))
+                return True
+
+        writer = _Writer()
+        dashboard = build_dashboard(command_writer=writer, link_store=DeviceLinkStore())
+
+        dashboard._toggle_gn2_fill.state = True
+        dashboard.send_commands_if_needed()
+
+        self.assertEqual(len(writer.calls), 1)
+        self.assertEqual(dashboard.event_log.records[0].severity, "ok")
+        self.assertIn("GN2 FILL -> ON", dashboard.event_log.records[0].message)
+
+        dashboard.send_commands_if_needed()
+
+        self.assertEqual(len(writer.calls), 1)
+        self.assertEqual(dashboard.event_log.records[0].severity, "ok")
+
+    def test_abort_blocked_interaction_logs_warn(self) -> None:
+        dashboard = build_dashboard(command_writer=None, link_store=DeviceLinkStore())
+
+        dashboard._record_abort_blocked_interaction(dashboard._toggle_pv1)
+
+        self.assertEqual(dashboard.event_log.records[0].severity, "warn")
+        self.assertIn("PV1", dashboard.event_log.records[0].message)
+
+    def test_ping_crit_event_logs_on_threshold_crossing_only(self) -> None:
+        dashboard = build_dashboard(command_writer=None, link_store=DeviceLinkStore())
+
+        dashboard.gse_connection_guage._display_value = 150.0  # noqa: SLF001 - test helper setup
+        dashboard._update_ping_events()
+        first_count = len(dashboard.event_log.records)
+
+        self.assertEqual(dashboard.event_log.records[0].severity, "crit")
+        self.assertEqual(dashboard.event_log.records[0].source, "GSE")
+
+        dashboard._update_ping_events()
+        self.assertEqual(len(dashboard.event_log.records), first_count)
+
+        dashboard.gse_connection_guage._display_value = 50.0  # noqa: SLF001 - test helper setup
+        dashboard._update_ping_events()
+        dashboard.gse_connection_guage._display_value = 150.0  # noqa: SLF001 - test helper setup
+        dashboard._update_ping_events()
+
+        crit_records = [
+            record
+            for record in dashboard.event_log.records
+            if record.severity == "crit" and record.source == "GSE"
+        ]
+        self.assertEqual(len(crit_records), 2)
 
     def test_frontend_devlink_rx_latency_reports_age_ms(self) -> None:
         row = encode_device_link_row(

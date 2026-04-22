@@ -15,6 +15,9 @@ DEFAULT_ROWS_PER_BATCH = 64
 DEFAULT_BATCH_SLEEP_S = 0.01
 FRONTEND_FEED_SLEEP_S = 0.005
 DEVICE_LINK_PUBLISH_INTERVAL_S = 0.02
+FFT_RECONSTRUCTION_WINDOW = 128
+FFT_RECONSTRUCTION_MIN_SAMPLES = 8
+FFT_RECONSTRUCTION_LOW_FREQUENCY_BINS = 2
 BACKEND_DATA_DIR = "UCIRPLGUI/data"
 BACKEND_RAW_STORAGE_DIR = f"{BACKEND_DATA_DIR}/raw"
 BACKEND_RAW_STORAGE_ROWS_PER_FILE = 16384
@@ -44,6 +47,8 @@ CONNECTOR_PORTS = {
     "frontend_fft": 7304,
     "frontend_gse_ecu_scalars": 7305,
     "frontend_backend_throughput": 7306,
+    "frontend_line_fft": 7307,
+    "frontend_loadcell_fft": 7308,
     # Device interfaces -> frontend link status (one Flight port per board).
     "device_link_gse": 7401,
     "device_link_ecu": 7402,
@@ -88,7 +93,10 @@ CMD_LOADCELL_STREAM_ID = "ucirpl.cmd.loadcell"
 FRONTEND_TANK_PRESSURES_STREAM_ID = "ucirpl.frontend.tank_pressures"
 FRONTEND_LINE_PRESSURES_STREAM_ID = "ucirpl.frontend.line_pressures"
 FRONTEND_LOADCELL_STREAM_ID = "ucirpl.frontend.loadcell"
-FRONTEND_FFT_STREAM_ID = "ucirpl.frontend.fft"
+FRONTEND_TANK_FFT_STREAM_ID = "ucirpl.frontend.tank_fft"
+FRONTEND_FFT_STREAM_ID = FRONTEND_TANK_FFT_STREAM_ID
+FRONTEND_LINE_FFT_STREAM_ID = "ucirpl.frontend.line_fft"
+FRONTEND_LOADCELL_FFT_STREAM_ID = "ucirpl.frontend.loadcell_fft"
 FRONTEND_GSE_ECU_SCALARS_STREAM_ID = "ucirpl.frontend.gse_ecu_scalars"
 FRONTEND_BACKEND_THROUGHPUT_STREAM_ID = "ucirpl.frontend.backend_throughput"
 
@@ -193,9 +201,26 @@ FRONTEND_LOADCELL_COLUMNS = (
     "total_force_lbf",
 )
 
-FRONTEND_FFT_COLUMNS = (
+FRONTEND_TANK_FFT_COLUMNS = (
     "timestamp_s",
-    "pressure_fft_mag",
+    "pressure_copv_fft_reconstruction",
+    "pressure_lox_fft_reconstruction",
+    "pressure_lng_fft_reconstruction",
+)
+FRONTEND_FFT_COLUMNS = FRONTEND_TANK_FFT_COLUMNS
+
+FRONTEND_LINE_FFT_COLUMNS = (
+    "timestamp_s",
+    "pressure_vent_fft_reconstruction",
+    "pressure_lox_mvas_fft_reconstruction",
+    "pressure_lox_inj_tee_fft_reconstruction",
+    "pressure_inj_lox_fft_reconstruction",
+    "pressure_inj_lng_fft_reconstruction",
+)
+
+FRONTEND_LOADCELL_FFT_COLUMNS = (
+    "timestamp_s",
+    "total_force_fft_reconstruction",
 )
 
 # Extra scalars for Rocket-style GSE/ECU dials (engine TCs, GN2 proxy, COPV TC).
@@ -229,7 +254,9 @@ SCHEMAS = {
     FRONTEND_TANK_PRESSURES_STREAM_ID: make_schema(FRONTEND_TANK_PRESSURES_COLUMNS),
     FRONTEND_LINE_PRESSURES_STREAM_ID: make_schema(FRONTEND_LINE_PRESSURES_COLUMNS),
     FRONTEND_LOADCELL_STREAM_ID: make_schema(FRONTEND_LOADCELL_COLUMNS),
-    FRONTEND_FFT_STREAM_ID: make_schema(FRONTEND_FFT_COLUMNS),
+    FRONTEND_TANK_FFT_STREAM_ID: make_schema(FRONTEND_TANK_FFT_COLUMNS),
+    FRONTEND_LINE_FFT_STREAM_ID: make_schema(FRONTEND_LINE_FFT_COLUMNS),
+    FRONTEND_LOADCELL_FFT_STREAM_ID: make_schema(FRONTEND_LOADCELL_FFT_COLUMNS),
     FRONTEND_GSE_ECU_SCALARS_STREAM_ID: make_schema(FRONTEND_GSE_ECU_SCALARS_COLUMNS),
     FRONTEND_BACKEND_THROUGHPUT_STREAM_ID: make_schema(
         FRONTEND_BACKEND_THROUGHPUT_COLUMNS
@@ -251,7 +278,9 @@ FRONTEND_STREAMS = (
     FRONTEND_TANK_PRESSURES_STREAM_ID,
     FRONTEND_LINE_PRESSURES_STREAM_ID,
     FRONTEND_LOADCELL_STREAM_ID,
-    FRONTEND_FFT_STREAM_ID,
+    FRONTEND_TANK_FFT_STREAM_ID,
+    FRONTEND_LINE_FFT_STREAM_ID,
+    FRONTEND_LOADCELL_FFT_STREAM_ID,
     FRONTEND_GSE_ECU_SCALARS_STREAM_ID,
     FRONTEND_BACKEND_THROUGHPUT_STREAM_ID,
 )

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import deque
 import logging
-import math
 import time
 from typing import Final
 
@@ -10,12 +9,13 @@ import numpy as np
 from ucirplgui import config
 from viviian.connector_utils import ReceiveConnector, SendConnector, StreamSpec
 
-from .storage import RawTelemetryRecorder
+from .fft_process import FftReconstructionProcess
+# Raw telemetry database service is disabled for now.
+# from .storage import RawTelemetryRecorder
 
 
 LOGGER = logging.getLogger("ucirplgui.backend")
 _SLEEP_S: Final[float] = config.DEFAULT_BATCH_SLEEP_S
-_FFT_WINDOW: Final[int] = 128
 _BITS_PER_MEGABIT: Final[float] = 1_000_000.0
 
 
@@ -69,9 +69,19 @@ class BackendPipelineRuntime:
             port=config.CONNECTOR_PORTS["frontend_loadcell"],
             host=config.DEFAULT_CONNECTOR_HOST,
         )
-        self.tx_fft = SendConnector(
-            _stream_spec(config.FRONTEND_FFT_STREAM_ID),
+        self.tx_tank_fft = SendConnector(
+            _stream_spec(config.FRONTEND_TANK_FFT_STREAM_ID),
             port=config.CONNECTOR_PORTS["frontend_fft"],
+            host=config.DEFAULT_CONNECTOR_HOST,
+        )
+        self.tx_line_fft = SendConnector(
+            _stream_spec(config.FRONTEND_LINE_FFT_STREAM_ID),
+            port=config.CONNECTOR_PORTS["frontend_line_fft"],
+            host=config.DEFAULT_CONNECTOR_HOST,
+        )
+        self.tx_load_fft = SendConnector(
+            _stream_spec(config.FRONTEND_LOADCELL_FFT_STREAM_ID),
+            port=config.CONNECTOR_PORTS["frontend_loadcell_fft"],
             host=config.DEFAULT_CONNECTOR_HOST,
         )
         self.tx_scalars = SendConnector(
@@ -85,7 +95,11 @@ class BackendPipelineRuntime:
             host=config.DEFAULT_CONNECTOR_HOST,
         )
 
-        self._fft_history: list[float] = []
+        self._fft_process = FftReconstructionProcess(
+            window_size=config.FFT_RECONSTRUCTION_WINDOW,
+            retained_frequency_bins=config.FFT_RECONSTRUCTION_LOW_FREQUENCY_BINS,
+            min_samples=config.FFT_RECONSTRUCTION_MIN_SAMPLES,
+        )
         self._throughput_history_mbps: deque[tuple[float, float]] = deque()
         self._last_throughput_timestamp_s: float | None = None
         self._raw_receivers = {
@@ -97,14 +111,13 @@ class BackendPipelineRuntime:
         self._latest_raw_batches = {
             stream_id: None for stream_id in self._raw_receivers
         }
-        self._stored_raw_batches = {
-            stream_id: None for stream_id in self._raw_receivers
-        }
-        self._raw_storage = RawTelemetryRecorder(
-            config.BACKEND_RAW_STORAGE_DIR,
-            _raw_stream_specs(),
-            rows_per_file=config.BACKEND_RAW_STORAGE_ROWS_PER_FILE,
-        )
+        # Raw telemetry database service is disabled for now.
+        # self._raw_storage = RawTelemetryRecorder(
+        #     config.BACKEND_RAW_STORAGE_DIR,
+        #     _raw_stream_specs(),
+        #     rows_per_file=config.BACKEND_RAW_STORAGE_ROWS_PER_FILE,
+        # )
+        self._raw_storage = None
         self._opened = False
         self._closed = False
 
@@ -126,7 +139,9 @@ class BackendPipelineRuntime:
             self.tx_tank,
             self.tx_line,
             self.tx_load,
-            self.tx_fft,
+            self.tx_tank_fft,
+            self.tx_line_fft,
+            self.tx_load_fft,
             self.tx_scalars,
             self.tx_backend_throughput,
         ):
@@ -140,7 +155,9 @@ class BackendPipelineRuntime:
         close_error: Exception | None = None
         for connector in (
             self.tx_scalars,
-            self.tx_fft,
+            self.tx_load_fft,
+            self.tx_line_fft,
+            self.tx_tank_fft,
             self.tx_load,
             self.tx_line,
             self.tx_tank,
@@ -156,11 +173,12 @@ class BackendPipelineRuntime:
                 if close_error is None:
                     close_error = exc
 
-        try:
-            self._raw_storage.close()
-        except Exception as exc:
-            if close_error is None:
-                close_error = exc
+        # Raw telemetry database service is disabled for now.
+        # try:
+        #     self._raw_storage.close()
+        # except Exception as exc:
+        #     if close_error is None:
+        #         close_error = exc
 
         self._closed = True
         if close_error is not None:
@@ -173,10 +191,11 @@ class BackendPipelineRuntime:
 
             batch = np.asarray(connector.batch, dtype=np.float64).copy()
             self._latest_raw_batches[stream_id] = batch
-            stored_batch = self._stored_raw_batches[stream_id]
-            if stored_batch is None or not np.array_equal(stored_batch, batch):
-                self._raw_storage.store(stream_id, batch)
-                self._stored_raw_batches[stream_id] = batch
+            # Raw telemetry database service is disabled for now.
+            # stored_batch = self._stored_raw_batches[stream_id]
+            # if stored_batch is None or not np.array_equal(stored_batch, batch):
+            #     self._raw_storage.store(stream_id, batch)
+            #     self._stored_raw_batches[stream_id] = batch
 
     def _latest_row(self, stream_id: str) -> np.ndarray | None:
         batch = self._latest_raw_batches[stream_id]
@@ -251,20 +270,31 @@ class BackendPipelineRuntime:
         self.tx_line.send_numpy(line_out)
         self.tx_load.send_numpy(load_out)
 
-        self._fft_history.append(copv)
-        if len(self._fft_history) > _FFT_WINDOW:
-            self._fft_history = self._fft_history[-_FFT_WINDOW:]
-        if len(self._fft_history) >= 8:
-            centered = np.asarray(self._fft_history, dtype=np.float64)
-            centered = centered - np.mean(centered)
-            spectrum = np.fft.rfft(centered)
-            fft_mag = float(np.max(np.abs(spectrum[1:]))) if len(spectrum) > 1 else 0.0
-        else:
-            fft_mag = 0.0
-        if not math.isfinite(fft_mag):
-            fft_mag = 0.0
-        fft_out = np.array([[timestamp_s, fft_mag]], dtype=np.float64)
-        self.tx_fft.send_numpy(fft_out)
+        tank_fft_out = self._fft_process.frame(
+            timestamp_s,
+            (
+                ("fft_tank_copv", copv),
+                ("fft_tank_lox", lox),
+                ("fft_tank_lng", lng),
+            ),
+        )
+        line_fft_out = self._fft_process.frame(
+            timestamp_s,
+            (
+                ("fft_line_vent", vent),
+                ("fft_line_lox_mvas", lox_mvas),
+                ("fft_line_lox_inj_tee", lox_inj_tee),
+                ("fft_line_inj_lox", inj_lox),
+                ("fft_line_inj_lng", inj_lng),
+            ),
+        )
+        load_fft_out = self._fft_process.frame(
+            timestamp_s,
+            (("fft_load_force", force),),
+        )
+        self.tx_tank_fft.send_numpy(tank_fft_out)
+        self.tx_line_fft.send_numpy(line_fft_out)
+        self.tx_load_fft.send_numpy(load_fft_out)
 
         eng1 = float(gse_row[5]) if gse_row is not None else 0.0
         eng2 = float(gse_row[6]) if gse_row is not None else 0.0
@@ -286,7 +316,9 @@ class BackendPipelineRuntime:
                 tank_out,
                 line_out,
                 load_out,
-                fft_out,
+                tank_fft_out,
+                line_fft_out,
+                load_fft_out,
                 scalars_out,
             )
             if batch is not None

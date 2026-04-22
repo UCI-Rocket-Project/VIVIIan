@@ -129,7 +129,9 @@ def run_frontend() -> None:
     rx_tank = ReceiveConnector(_stream_spec(config.FRONTEND_TANK_PRESSURES_STREAM_ID), config.CONNECTOR_PORTS["frontend_tank_pressures"], host=config.DEFAULT_CONNECTOR_HOST)
     rx_line = ReceiveConnector(_stream_spec(config.FRONTEND_LINE_PRESSURES_STREAM_ID), config.CONNECTOR_PORTS["frontend_line_pressures"], host=config.DEFAULT_CONNECTOR_HOST)
     rx_load = ReceiveConnector(_stream_spec(config.FRONTEND_LOADCELL_STREAM_ID), config.CONNECTOR_PORTS["frontend_loadcell"], host=config.DEFAULT_CONNECTOR_HOST)
-    rx_fft = ReceiveConnector(_stream_spec(config.FRONTEND_FFT_STREAM_ID), config.CONNECTOR_PORTS["frontend_fft"], host=config.DEFAULT_CONNECTOR_HOST)
+    rx_tank_fft = ReceiveConnector(_stream_spec(config.FRONTEND_TANK_FFT_STREAM_ID), config.CONNECTOR_PORTS["frontend_fft"], host=config.DEFAULT_CONNECTOR_HOST)
+    rx_line_fft = ReceiveConnector(_stream_spec(config.FRONTEND_LINE_FFT_STREAM_ID), config.CONNECTOR_PORTS["frontend_line_fft"], host=config.DEFAULT_CONNECTOR_HOST)
+    rx_load_fft = ReceiveConnector(_stream_spec(config.FRONTEND_LOADCELL_FFT_STREAM_ID), config.CONNECTOR_PORTS["frontend_loadcell_fft"], host=config.DEFAULT_CONNECTOR_HOST)
     rx_scalars = ReceiveConnector(_stream_spec(config.FRONTEND_GSE_ECU_SCALARS_STREAM_ID), config.CONNECTOR_PORTS["frontend_gse_ecu_scalars"], host=config.DEFAULT_CONNECTOR_HOST)
     rx_backend_throughput = ReceiveConnector(_stream_spec(config.FRONTEND_BACKEND_THROUGHPUT_STREAM_ID), config.CONNECTOR_PORTS["frontend_backend_throughput"], host=config.DEFAULT_CONNECTOR_HOST)
 
@@ -142,7 +144,7 @@ def run_frontend() -> None:
         for board in config.DEVICE_LINK_BOARDS
     }
 
-    for connector in (*rx_device_link.values(), rx_tank, rx_line, rx_load, rx_fft, rx_scalars, rx_backend_throughput, tx_cmd_gse, tx_cmd_ecu):
+    for connector in (*rx_device_link.values(), rx_tank, rx_line, rx_load, rx_tank_fft, rx_line_fft, rx_load_fft, rx_scalars, rx_backend_throughput, tx_cmd_gse, tx_cmd_ecu):
         connector.open()
 
     readers = {name: ScalarSeriesReader() for name in frontend.required_reads}
@@ -169,9 +171,21 @@ def run_frontend() -> None:
             if rx_load.has_batch:
                 row = rx_load.batch[0]
                 _prime_reader(readers, "load_force", float(row[0]), float(row[1]))
-            if rx_fft.has_batch:
-                row = rx_fft.batch[0]
-                _prime_reader(readers, "fft_mag", float(row[0]), float(row[1]))
+            if rx_tank_fft.has_batch:
+                row = rx_tank_fft.batch[0]
+                _prime_reader(readers, "fft_tank_copv", float(row[0]), float(row[1]))
+                _prime_reader(readers, "fft_tank_lox", float(row[0]), float(row[2]))
+                _prime_reader(readers, "fft_tank_lng", float(row[0]), float(row[3]))
+            if rx_line_fft.has_batch:
+                row = rx_line_fft.batch[0]
+                _prime_reader(readers, "fft_line_vent", float(row[0]), float(row[1]))
+                _prime_reader(readers, "fft_line_lox_mvas", float(row[0]), float(row[2]))
+                _prime_reader(readers, "fft_line_lox_inj_tee", float(row[0]), float(row[3]))
+                _prime_reader(readers, "fft_line_inj_lox", float(row[0]), float(row[4]))
+                _prime_reader(readers, "fft_line_inj_lng", float(row[0]), float(row[5]))
+            if rx_load_fft.has_batch:
+                row = rx_load_fft.batch[0]
+                _prime_reader(readers, "fft_load_force", float(row[0]), float(row[1]))
             if rx_scalars.has_batch:
                 row = rx_scalars.batch[0]
                 _prime_reader(readers, "eng_tc_1", float(row[0]), float(row[1]))
