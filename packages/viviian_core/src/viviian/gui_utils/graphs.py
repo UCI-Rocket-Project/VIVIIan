@@ -82,19 +82,22 @@ class GraphSeries:
 
 
 class _SeriesRuntime:
-    def __init__(self, series: GraphSeries, capacity: int) -> None:
+    def __init__(self, series: GraphSeries) -> None:
         self.series = series
-        self.capacity = capacity
-        self.timestamps = np.empty(capacity, dtype=np.float64)
-        self.values = np.empty(capacity, dtype=np.float64)
-        self.count = 0
-        self.write_index = 0
+        self.timestamps = np.empty(0, dtype=np.float64)
+        self.values = np.empty(0, dtype=np.float64)
+        self.display_timestamps = np.empty(0, dtype=np.float64)
+        self.display_values = np.empty(0, dtype=np.float64)
+        self._display_dirty = True
         self.visible = series.visible_by_default
         self.last_timestamp: float | None = None
 
     def reset(self) -> None:
-        self.count = 0
-        self.write_index = 0
+        self.timestamps = np.empty(0, dtype=np.float64)
+        self.values = np.empty(0, dtype=np.float64)
+        self.display_timestamps = np.empty(0, dtype=np.float64)
+        self.display_values = np.empty(0, dtype=np.float64)
+        self.mark_display_dirty()
         self.last_timestamp = None
 
     def append_batch(self, frame: np.ndarray) -> float | None:
@@ -105,71 +108,57 @@ class _SeriesRuntime:
         if self.last_timestamp is not None and timestamps[0] < self.last_timestamp:
             self.reset()
 
-        if timestamps.size >= self.capacity:
-            timestamps = timestamps[-self.capacity :]
-            values = values[-self.capacity :]
-
-        self._write_vectors(timestamps, values)
+        if self.timestamps.size == 0:
+            self.timestamps = timestamps.copy()
+            self.values = values.copy()
+        else:
+            self.timestamps = np.concatenate((self.timestamps, timestamps))
+            self.values = np.concatenate((self.values, values))
+        self.mark_display_dirty()
         self.last_timestamp = float(timestamps[-1])
         return self.last_timestamp
 
     def snapshot(self) -> tuple[np.ndarray, np.ndarray]:
-        if self.count == 0:
+        if self.timestamps.size == 0:
             return (
                 np.empty(0, dtype=np.float64),
                 np.empty(0, dtype=np.float64),
             )
-
-        start = (self.write_index - self.count) % self.capacity
-        end = start + self.count
-        if end <= self.capacity:
-            return (
-                self.timestamps[start:end].copy(),
-                self.values[start:end].copy(),
-            )
-
-        split = self.capacity - start
-        return (
-            np.concatenate((self.timestamps[start:], self.timestamps[: self.count - split])),
-            np.concatenate((self.values[start:], self.values[: self.count - split])),
-        )
-
-    def _write_vectors(self, timestamps: np.ndarray, values: np.ndarray) -> None:
-        size = timestamps.size
-        end = self.write_index + size
-        if end <= self.capacity:
-            self.timestamps[self.write_index:end] = timestamps
-            self.values[self.write_index:end] = values
-        else:
-            split = self.capacity - self.write_index
-            self.timestamps[self.write_index:] = timestamps[:split]
-            self.values[self.write_index:] = values[:split]
-            self.timestamps[: size - split] = timestamps[split:]
-            self.values[: size - split] = values[split:]
-
-        self.write_index = end % self.capacity
-        self.count = min(self.capacity, self.count + size)
+        return (self.timestamps.copy(), self.values.copy())
 
     def trim_before(self, cutoff_timestamp: float) -> None:
-        timestamps, values = self.snapshot()
-        if timestamps.size == 0:
+        if self.timestamps.size == 0:
             return
 
-        if float(timestamps[0]) >= cutoff_timestamp:
+        if float(self.timestamps[0]) >= cutoff_timestamp:
             return
 
-        keep_mask = timestamps >= cutoff_timestamp
-        timestamps = timestamps[keep_mask]
-        values = values[keep_mask]
+        keep_start = int(np.searchsorted(self.timestamps, cutoff_timestamp, side="left"))
+        self.timestamps = self.timestamps[keep_start:].copy()
+        self.values = self.values[keep_start:].copy()
+        self.mark_display_dirty()
+        self.last_timestamp = (
+            float(self.timestamps[-1])
+            if self.timestamps.size
+            else None
+        )
 
-        if timestamps.size > self.capacity:
-            timestamps = timestamps[-self.capacity :]
-            values = values[-self.capacity :]
+    def mark_display_dirty(self) -> None:
+        self._display_dirty = True
 
-        self.reset()
-        if timestamps.size:
-            self._write_vectors(timestamps, values)
-            self.last_timestamp = float(timestamps[-1])
+    def display_snapshot(self, max_points: int) -> tuple[np.ndarray, np.ndarray]:
+        if self._display_dirty:
+            if self.timestamps.size <= max_points:
+                self.display_timestamps = self.timestamps.copy()
+                self.display_values = self.values.copy()
+            else:
+                self.display_timestamps, self.display_values = _downsample_time_series(
+                    self.timestamps,
+                    self.values,
+                    max_points=max_points,
+                )
+            self._display_dirty = False
+        return self.display_timestamps, self.display_values
 
 
 class SensorGraph:
@@ -236,7 +225,7 @@ class SensorGraph:
         _validate_graph_series(self.series)
 
         self._series_runtime = {
-            item.series_id: _SeriesRuntime(item, self.max_points_per_series)
+            item.series_id: _SeriesRuntime(item)
             for item in self.series
         }
         self._readers: dict[str, Any] = {}
@@ -558,6 +547,13 @@ class SensorGraph:
             return np.empty((2, 0), dtype=np.float64)
         return np.vstack((timestamps, values))
 
+    def display_snapshot(self, series_id: str) -> np.ndarray:
+        runtime = self._series_runtime[series_id]
+        timestamps, values = runtime.display_snapshot(self.max_points_per_series)
+        if timestamps.size == 0:
+            return np.empty((2, 0), dtype=np.float64)
+        return np.vstack((timestamps, values))
+
     def _render_visibility_controls(self, imgui: Any) -> None:
         for index, item in enumerate(self.series):
             runtime = self._series_runtime[item.series_id]
@@ -575,6 +571,7 @@ class SensorGraph:
                 imgui.pop_style_color(color_count)
             if pressed and _ctrl_held(imgui):
                 runtime.visible = not runtime.visible
+                runtime.mark_display_dirty()
                 self._y_limits = self._target_display_limits()
             if index < len(self.series) - 1:
                 imgui.same_line()
@@ -587,7 +584,7 @@ class SensorGraph:
             runtime = self._series_runtime[item.series_id]
             if not runtime.visible:
                 continue
-            timestamps, values = runtime.snapshot()
+            timestamps, values = runtime.display_snapshot(self.max_points_per_series)
             if timestamps.size == 0:
                 continue
             visible.append((item, timestamps, values))
@@ -597,8 +594,22 @@ class SensorGraph:
         self,
         visible_series: Sequence[tuple[GraphSeries, np.ndarray, np.ndarray]],
     ) -> tuple[tuple[float, float], tuple[float, float]]:
-        x_min = min(float(timestamps[0]) for _, timestamps, _ in visible_series)
-        x_max = max(float(timestamps[-1]) for _, timestamps, _ in visible_series)
+        raw_x_min = min(
+            float(runtime.timestamps[0])
+            for runtime in self._series_runtime.values()
+            if runtime.visible and runtime.timestamps.size > 0
+        )
+        raw_x_max = max(
+            float(runtime.timestamps[-1])
+            for runtime in self._series_runtime.values()
+            if runtime.visible and runtime.timestamps.size > 0
+        )
+        if self._latest_timestamp is not None:
+            x_max = float(self._latest_timestamp)
+            x_min = max(raw_x_min, x_max - self.window_seconds)
+        else:
+            x_min = raw_x_min
+            x_max = raw_x_max
         if x_min == x_max:
             x_max = x_min + 1.0
 
@@ -609,7 +620,11 @@ class SensorGraph:
 
     def _target_display_limits(self) -> tuple[float, float] | None:
         values: list[np.ndarray] = []
-        for _, timestamps, series_values in self._visible_series_snapshots():
+        for item in self.series:
+            runtime = self._series_runtime[item.series_id]
+            if not runtime.visible:
+                continue
+            timestamps, series_values = runtime.snapshot()
             if timestamps.size == 0:
                 continue
             values.append(series_values)
@@ -640,7 +655,6 @@ class SensorGraph:
         )
         return (y_min - padding, y_max + padding)
 
-
 def _validate_graph_series(series: Sequence[GraphSeries]) -> None:
     series_ids = set()
     stream_names = set()
@@ -651,6 +665,64 @@ def _validate_graph_series(series: Sequence[GraphSeries]) -> None:
             raise ValueError(f"Duplicate stream_name {item.stream_name!r}.")
         series_ids.add(item.series_id)
         stream_names.add(item.stream_name)
+
+
+def _downsample_time_series(
+    timestamps: np.ndarray,
+    values: np.ndarray,
+    *,
+    max_points: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    if timestamps.size <= max_points:
+        return timestamps, values
+    if max_points <= 1:
+        return (
+            np.asarray([float(timestamps[-1])], dtype=np.float64),
+            np.asarray([float(np.mean(values))], dtype=np.float64),
+        )
+
+    start = float(timestamps[0])
+    end = float(timestamps[-1])
+    if not np.isfinite(start) or not np.isfinite(end) or end <= start:
+        return _downsample_index_series(timestamps, values, max_points=max_points)
+
+    bucket_edges = np.linspace(start, end, num=max_points + 1, dtype=np.float64)
+    bucket_index = np.searchsorted(bucket_edges, timestamps, side="right") - 1
+    bucket_index = np.clip(bucket_index, 0, max_points - 1)
+    change_points = np.flatnonzero(np.diff(bucket_index)) + 1
+    starts = np.concatenate((np.array([0], dtype=np.int64), change_points))
+    stops = np.concatenate((change_points, np.array([timestamps.size], dtype=np.int64)))
+    counts = (stops - starts).astype(np.float64, copy=False)
+    reduced_timestamps = np.add.reduceat(timestamps, starts) / counts
+    reduced_values = np.add.reduceat(values, starts) / counts
+
+    reduced_timestamps[0] = float(timestamps[0])
+    reduced_timestamps[-1] = float(timestamps[-1])
+    return reduced_timestamps, reduced_values
+
+
+def _downsample_index_series(
+    timestamps: np.ndarray,
+    values: np.ndarray,
+    *,
+    max_points: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    if timestamps.size <= max_points:
+        return timestamps, values
+
+    edge_index = np.linspace(0, timestamps.size, num=max_points + 1, dtype=np.int64)
+    starts = edge_index[:-1]
+    stops = edge_index[1:]
+    keep_mask = stops > starts
+    starts = starts[keep_mask]
+    stops = stops[keep_mask]
+    counts = (stops - starts).astype(np.float64, copy=False)
+    reduced_timestamps = np.add.reduceat(timestamps, starts) / counts
+    reduced_values = np.add.reduceat(values, starts) / counts
+
+    reduced_timestamps[0] = float(timestamps[0])
+    reduced_timestamps[-1] = float(timestamps[-1])
+    return reduced_timestamps, reduced_values
 
 
 def _stabilize_graph_limits(
