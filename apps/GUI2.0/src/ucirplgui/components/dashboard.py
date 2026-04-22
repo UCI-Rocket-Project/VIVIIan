@@ -46,6 +46,8 @@ _PRIMARY_GRAPH_HEIGHT = 370.0
 _STATUS_COLUMN_WIDTH = 400.0
 _GAUGES_COLUMN_WIDTH = 400.0
 _CONNECTION_GAUGE_HEADER_RIGHT = "RX Age"
+_BACKEND_THROUGHPUT_HEADER_RIGHT = "Mbps"
+_BACKEND_THROUGHPUT_GAUGE_HIGH = 1.0
 
 
 class UCIRPLDashboard(ConsoleComponent):
@@ -114,12 +116,16 @@ class UCIRPLDashboard(ConsoleComponent):
         self.gse_connection_guage = self._make_connection_gauge("gse_connection")
         self.load_cell_connection_guage = self._make_connection_gauge("load_cell_connection")
         self.extr_ecu_connection_guage = self._make_connection_gauge("extr_ecu_connection")
+        self.backend_throughput_guage = self._make_backend_throughput_gauge(
+            "backend_throughput_mbps"
+        )
 
         self._telemetry_widgets = (
             self.gse_connection_guage,
             self.ecu_connection_guage,
             self.extr_ecu_connection_guage,
             self.load_cell_connection_guage,
+            self.backend_throughput_guage,
         )
 
 
@@ -254,6 +260,25 @@ class UCIRPLDashboard(ConsoleComponent):
             footer_right="",
         )
 
+    def _make_backend_throughput_gauge(self, stream_name: str) -> LedBarGauge:
+        return LedBarGauge(
+            gauge_id=stream_name,
+            label="BACKEND THROUGHPUT",
+            stream_name=stream_name,
+            low_value=0.0,
+            high_value=_BACKEND_THROUGHPUT_GAUGE_HIGH,
+            width=_CONNECTION_GAUGE_WIDTH,
+            height=_CONNECTION_GAUGE_HEIGHT,
+            theme_name="tau_ceti",
+            unit_label="Mbps",
+            display_precision=3,
+            secondary_value="1.0 Mbps",
+            show_stream_label=False,
+            header_right=_BACKEND_THROUGHPUT_HEADER_RIGHT,
+            footer_left="",
+            footer_right="",
+        )
+
     def _make_tank_gauge(
         self,
         gauge_id: str,
@@ -376,6 +401,7 @@ class UCIRPLDashboard(ConsoleComponent):
         self.ecu_connection_guage.render()
         self.extr_ecu_connection_guage.render()
         self.load_cell_connection_guage.render()
+        self.backend_throughput_guage.render()
         imgui.spacing()
         imgui.text_colored("GSE CONTROLS", *theme.INK_3)
         imgui.separator()

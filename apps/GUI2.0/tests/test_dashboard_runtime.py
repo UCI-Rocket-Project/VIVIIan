@@ -33,6 +33,17 @@ class DashboardRuntimeTests(unittest.TestCase):
             ),
         )
 
+    def test_backend_throughput_stream_is_registered(self) -> None:
+        self.assertIn(config.FRONTEND_BACKEND_THROUGHPUT_STREAM_ID, config.SCHEMAS)
+        self.assertIn(config.FRONTEND_BACKEND_THROUGHPUT_STREAM_ID, config.FRONTEND_STREAMS)
+        self.assertEqual(
+            config.FRONTEND_BACKEND_THROUGHPUT_COLUMNS,
+            (
+                "timestamp_s",
+                "backend_throughput_mbps",
+            ),
+        )
+
     def test_device_link_encode_decode_roundtrip(self) -> None:
         row = encode_device_link_row(
             board="gse",
@@ -159,6 +170,12 @@ class DashboardRuntimeTests(unittest.TestCase):
         )
         for gauge in gauges:
             self.assertEqual(gauge.header_right, "RX Age")
+
+    def test_backend_throughput_gauge_uses_mbps_units(self) -> None:
+        dashboard = build_dashboard(command_writer=None, link_store=DeviceLinkStore())
+        self.assertEqual(dashboard.backend_throughput_guage.stream_name, "backend_throughput_mbps")
+        self.assertEqual(dashboard.backend_throughput_guage.unit_label, "Mbps")
+        self.assertEqual(dashboard.backend_throughput_guage.header_right, "Mbps")
 
     def test_frontend_devlink_rx_latency_reports_age_ms(self) -> None:
         row = encode_device_link_row(

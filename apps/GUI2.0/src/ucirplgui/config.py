@@ -15,6 +15,10 @@ DEFAULT_ROWS_PER_BATCH = 64
 DEFAULT_BATCH_SLEEP_S = 0.01
 FRONTEND_FEED_SLEEP_S = 0.005
 DEVICE_LINK_PUBLISH_INTERVAL_S = 0.02
+BACKEND_DATA_DIR = "UCIRPLGUI/data"
+BACKEND_RAW_STORAGE_DIR = f"{BACKEND_DATA_DIR}/raw"
+BACKEND_RAW_STORAGE_ROWS_PER_FILE = 16384
+BACKEND_THROUGHPUT_WINDOW_S = 1.0
 
 SIMULATOR_HOST = "127.0.0.1"
 SIMULATOR_GSE_PORT = 10002
@@ -39,6 +43,7 @@ CONNECTOR_PORTS = {
     "frontend_loadcell": 7303,
     "frontend_fft": 7304,
     "frontend_gse_ecu_scalars": 7305,
+    "frontend_backend_throughput": 7306,
     # Device interfaces -> frontend link status (one Flight port per board).
     "device_link_gse": 7401,
     "device_link_ecu": 7402,
@@ -85,6 +90,7 @@ FRONTEND_LINE_PRESSURES_STREAM_ID = "ucirpl.frontend.line_pressures"
 FRONTEND_LOADCELL_STREAM_ID = "ucirpl.frontend.loadcell"
 FRONTEND_FFT_STREAM_ID = "ucirpl.frontend.fft"
 FRONTEND_GSE_ECU_SCALARS_STREAM_ID = "ucirpl.frontend.gse_ecu_scalars"
+FRONTEND_BACKEND_THROUGHPUT_STREAM_ID = "ucirpl.frontend.backend_throughput"
 
 GSE_RAW_COLUMNS = (
     "packet_time_ms",
@@ -201,6 +207,11 @@ FRONTEND_GSE_ECU_SCALARS_COLUMNS = (
     "temperature_copv_c",
 )
 
+FRONTEND_BACKEND_THROUGHPUT_COLUMNS = (
+    "timestamp_s",
+    "backend_throughput_mbps",
+)
+
 
 def make_schema(columns: tuple[str, ...]) -> pa.Schema:
     return pa.schema([(name, pa.float64()) for name in columns])
@@ -220,6 +231,9 @@ SCHEMAS = {
     FRONTEND_LOADCELL_STREAM_ID: make_schema(FRONTEND_LOADCELL_COLUMNS),
     FRONTEND_FFT_STREAM_ID: make_schema(FRONTEND_FFT_COLUMNS),
     FRONTEND_GSE_ECU_SCALARS_STREAM_ID: make_schema(FRONTEND_GSE_ECU_SCALARS_COLUMNS),
+    FRONTEND_BACKEND_THROUGHPUT_STREAM_ID: make_schema(
+        FRONTEND_BACKEND_THROUGHPUT_COLUMNS
+    ),
 }
 SCHEMAS.update(
     {device_link_status_stream_id(board): make_schema(DEVICE_LINK_STATUS_COLUMNS) for board in DEVICE_LINK_BOARDS}
@@ -239,4 +253,5 @@ FRONTEND_STREAMS = (
     FRONTEND_LOADCELL_STREAM_ID,
     FRONTEND_FFT_STREAM_ID,
     FRONTEND_GSE_ECU_SCALARS_STREAM_ID,
+    FRONTEND_BACKEND_THROUGHPUT_STREAM_ID,
 )

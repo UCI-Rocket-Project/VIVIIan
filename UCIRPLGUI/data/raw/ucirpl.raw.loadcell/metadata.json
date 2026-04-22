@@ -1,0 +1,19 @@
+{
+  "shape": [
+    1,
+    2
+  ],
+  "rows_per_file": 16384,
+  "compression": "snappy",
+  "timestamp_column": "database_timestamp_ns",
+  "schema": [
+    {
+      "name": "packet_time_ms",
+      "type": "float64"
+    },
+    {
+      "name": "total_force_lbf",
+      "type": "float64"
+    }
+  ]
+}
