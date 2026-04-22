@@ -86,10 +86,13 @@ class DashboardRuntimeTests(unittest.TestCase):
             command_connector=None,
         )
         mock_tx = MagicMock()
-        interface._ensure_link_tx = lambda: mock_tx  # type: ignore[method-assign]
         with (
             patch.object(config, "DEVICE_LINK_PUBLISH_INTERVAL_S", 0.02),
             patch("ucirplgui.device_interfaces.device_interfaces.time.time", side_effect=(100.0, 100.01, 100.03)),
+            patch(
+                "ucirplgui.device_interfaces.device_interfaces._build_device_link_send_connector",
+                return_value=mock_tx,
+            ),
         ):
             interface._publish_link(
                 connected=True,
