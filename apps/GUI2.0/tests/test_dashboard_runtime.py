@@ -1,29 +1,24 @@
 from __future__ import annotations
 
-import shutil
-import tempfile
 import unittest
-from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+
+import numpy as np
 
 from ucirplgui import config
 from ucirplgui.components.dashboard import DeviceLinkStore, build_dashboard
-from ucirplgui.device_link_publish import write_device_link_snapshot
-from ucirplgui.device_link_read import format_age_s, read_device_link_snapshots, staleness_severity
+from ucirplgui.device_link_read import (
+    decode_device_link_batches,
+    decode_device_link_row,
+    encode_device_link_row,
+    format_age_s,
+    staleness_severity,
+)
 from ucirplgui.device_interfaces.device_interfaces import BaseBoardInterface
 from ucirplgui.frontend.frontend import _devlink_rx_latency_ms
 
 
 class DashboardRuntimeTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self._tmpdir = Path(tempfile.mkdtemp(prefix="ucirpl_device_link_test_"))
-        self._original_dir = config.DEVICE_LINK_DIR
-        config.DEVICE_LINK_DIR = self._tmpdir
-
-    def tearDown(self) -> None:
-        config.DEVICE_LINK_DIR = self._original_dir
-        shutil.rmtree(self._tmpdir, ignore_errors=True)
-
     def test_scalars_stream_is_registered(self) -> None:
         self.assertIn(config.FRONTEND_GSE_ECU_SCALARS_STREAM_ID, config.SCHEMAS)
         self.assertIn(config.FRONTEND_GSE_ECU_SCALARS_STREAM_ID, config.FRONTEND_STREAMS)
@@ -38,8 +33,8 @@ class DashboardRuntimeTests(unittest.TestCase):
             ),
         )
 
-    def test_device_link_roundtrip_json(self) -> None:
-        write_device_link_snapshot(
+    def test_device_link_encode_decode_roundtrip(self) -> None:
+        row = encode_device_link_row(
             board="gse",
             connected=True,
             last_connect_epoch_s=100.0,
@@ -47,24 +42,24 @@ class DashboardRuntimeTests(unittest.TestCase):
             endpoint_host="127.0.0.1",
             endpoint_port=10002,
             last_error=None,
+            snapshot_epoch_s=150.0,
         )
-        snapshots = read_device_link_snapshots()
-        self.assertIn("gse", snapshots)
-        gse = snapshots["gse"]
-        self.assertTrue(gse.connected)
-        self.assertEqual(gse.endpoint_port, 10002)
-        self.assertEqual(gse.endpoint_host, "127.0.0.1")
-        self.assertAlmostEqual(gse.last_connect_epoch_s or 0.0, 100.0)
-        self.assertAlmostEqual(gse.last_rx_epoch_s or 0.0, 101.5)
+        snap = decode_device_link_row(row)
+        assert snap is not None
+        self.assertEqual(snap.board, "gse")
+        self.assertTrue(snap.connected)
+        self.assertEqual(snap.endpoint_port, 10002)
+        self.assertEqual(snap.endpoint_host, "127.0.0.1")
+        self.assertAlmostEqual(snap.last_connect_epoch_s or 0.0, 100.0)
+        self.assertAlmostEqual(snap.last_rx_epoch_s or 0.0, 101.5)
+        self.assertIsNone(snap.last_error)
 
-    def test_device_link_parser_tolerates_bad_json(self) -> None:
-        bad_file = self._tmpdir / "ecu.json"
-        bad_file.write_text("{not-json", encoding="utf-8")
-        snapshots = read_device_link_snapshots()
-        self.assertEqual(snapshots, {})
+    def test_device_link_decode_skips_bad_rows(self) -> None:
+        bad = np.zeros((1, 3), dtype=np.float64)
+        self.assertIsNone(decode_device_link_row(bad))
 
     def test_status_helpers(self) -> None:
-        write_device_link_snapshot(
+        row = encode_device_link_row(
             board="loadcell",
             connected=True,
             last_connect_epoch_s=10.0,
@@ -72,8 +67,10 @@ class DashboardRuntimeTests(unittest.TestCase):
             endpoint_host="127.0.0.1",
             endpoint_port=10069,
             last_error=None,
+            snapshot_epoch_s=10.0,
         )
-        snap = read_device_link_snapshots()["loadcell"]
+        snap = decode_device_link_row(row)
+        assert snap is not None
         self.assertEqual(staleness_severity(now_s=10.2, snap=snap), "ok")
         self.assertEqual(staleness_severity(now_s=11.2, snap=snap), "warn")
         self.assertEqual(staleness_severity(now_s=13.2, snap=snap), "crit")
@@ -88,10 +85,11 @@ class DashboardRuntimeTests(unittest.TestCase):
             send_connector=object(),
             command_connector=None,
         )
+        mock_tx = MagicMock()
+        interface._ensure_link_tx = lambda: mock_tx  # type: ignore[method-assign]
         with (
             patch.object(config, "DEVICE_LINK_PUBLISH_INTERVAL_S", 0.02),
             patch("ucirplgui.device_interfaces.device_interfaces.time.time", side_effect=(100.0, 100.01, 100.03)),
-            patch("ucirplgui.device_interfaces.device_interfaces.write_device_link_snapshot") as write_snapshot,
         ):
             interface._publish_link(
                 connected=True,
@@ -120,7 +118,33 @@ class DashboardRuntimeTests(unittest.TestCase):
                 last_error=None,
                 force=False,
             )
-        self.assertEqual(write_snapshot.call_count, 2)
+        self.assertEqual(mock_tx.send_numpy.call_count, 2)
+
+    def test_decode_device_link_batches_merges_sources(self) -> None:
+        class _Rx:
+            def __init__(self, row: object | None) -> None:
+                self._row = row
+                self.has_batch = row is not None
+                self.batch = row
+
+        gse_row = encode_device_link_row(
+            board="gse",
+            connected=True,
+            last_connect_epoch_s=1.0,
+            last_rx_epoch_s=2.0,
+            endpoint_host="127.0.0.1",
+            endpoint_port=1,
+            last_error=None,
+            snapshot_epoch_s=3.0,
+        )
+        merged = decode_device_link_batches(
+            {
+                "gse": _Rx(gse_row),
+                "ecu": _Rx(None),
+            }
+        )
+        self.assertIn("gse", merged)
+        self.assertNotIn("ecu", merged)
 
     def test_connection_gauges_are_labeled_rx_age(self) -> None:
         dashboard = build_dashboard(command_writer=None, link_store=DeviceLinkStore())
@@ -134,7 +158,7 @@ class DashboardRuntimeTests(unittest.TestCase):
             self.assertEqual(gauge.header_right, "RX Age")
 
     def test_frontend_devlink_rx_latency_reports_age_ms(self) -> None:
-        write_device_link_snapshot(
+        row = encode_device_link_row(
             board="gse",
             connected=True,
             last_connect_epoch_s=9.0,
@@ -142,8 +166,10 @@ class DashboardRuntimeTests(unittest.TestCase):
             endpoint_host="127.0.0.1",
             endpoint_port=10002,
             last_error=None,
+            snapshot_epoch_s=10.2,
         )
-        boards = read_device_link_snapshots()
+        snap = decode_device_link_row(row)
+        boards = {"gse": snap} if snap is not None else {}
         self.assertAlmostEqual(_devlink_rx_latency_ms("gse", boards, 10.3), 200.0)
         self.assertEqual(_devlink_rx_latency_ms("ecu", boards, 10.3), 250.0)
 

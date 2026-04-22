@@ -3,11 +3,14 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from collections.abc import Mapping
 
 import numpy as np
 from ucirplgui import config
 from ucirplgui.components.dashboard import DeviceLinkStore, build_dashboard
-from ucirplgui.device_link_read import read_device_link_snapshots
+from ucirplgui.device_link_read import decode_device_link_batches
+from viviian.connector_utils import ReceiveConnector, SendConnector, StreamSpec
+from viviian.frontend import Frontend, GlfwBackend
 
 
 _DEVLINK_CONNECTION_STREAMS = {
@@ -24,8 +27,6 @@ def _devlink_rx_latency_ms(board: str, boards: dict, now_s: float) -> float:
     if snap is None or not snap.connected or snap.last_rx_epoch_s is None:
         return 250.0
     return max(0.0, (now_s - snap.last_rx_epoch_s) * 1000.0)
-from viviian.connector_utils import ReceiveConnector, SendConnector, StreamSpec
-from viviian.frontend import Frontend, GlfwBackend
 
 
 LOGGER = logging.getLogger("ucirplgui.frontend")
@@ -112,6 +113,7 @@ class CommandBridgeWriter:
             return 0.0
         return float(snapshot[index])
 
+
 def run_frontend() -> None:
     link_store = DeviceLinkStore()
     tx_cmd_gse = SendConnector(_stream_spec(config.CMD_GSE_STREAM_ID), config.CONNECTOR_PORTS["cmd_gse"], host=config.DEFAULT_CONNECTOR_HOST)
@@ -130,14 +132,23 @@ def run_frontend() -> None:
     rx_fft = ReceiveConnector(_stream_spec(config.FRONTEND_FFT_STREAM_ID), config.CONNECTOR_PORTS["frontend_fft"], host=config.DEFAULT_CONNECTOR_HOST)
     rx_scalars = ReceiveConnector(_stream_spec(config.FRONTEND_GSE_ECU_SCALARS_STREAM_ID), config.CONNECTOR_PORTS["frontend_gse_ecu_scalars"], host=config.DEFAULT_CONNECTOR_HOST)
 
-    for connector in (rx_tank, rx_line, rx_load, rx_fft, rx_scalars, tx_cmd_gse, tx_cmd_ecu):
+    rx_device_link = {
+        board: ReceiveConnector(
+            _stream_spec(config.device_link_status_stream_id(board)),
+            config.device_link_status_port(board),
+            host=config.DEFAULT_CONNECTOR_HOST,
+        )
+        for board in config.DEVICE_LINK_BOARDS
+    }
+
+    for connector in (*rx_device_link.values(), rx_tank, rx_line, rx_load, rx_fft, rx_scalars, tx_cmd_gse, tx_cmd_ecu):
         connector.open()
 
     readers = {name: ScalarSeriesReader() for name in frontend.required_reads}
 
     def feed_loop() -> None:
         while True:
-            boards = read_device_link_snapshots()
+            boards = decode_device_link_batches(rx_device_link)
             link_store.update(boards)
             now = time.time()
             for board, stream_name in _DEVLINK_CONNECTION_STREAMS.items():

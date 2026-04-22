@@ -12,7 +12,7 @@ from typing import Callable
 
 import numpy as np
 from ucirplgui import config
-from ucirplgui.device_link_publish import write_device_link_snapshot
+from ucirplgui.device_link_read import encode_device_link_row
 from viviian.connector_utils import ReceiveConnector, SendConnector, StreamSpec
 
 
@@ -73,6 +73,19 @@ def _build_receive_connector(stream_id: str, port: int) -> ReceiveConnector:
     )
 
 
+def _build_device_link_send_connector(board: str) -> SendConnector:
+    stream_id = config.device_link_status_stream_id(board)
+    return SendConnector(
+        StreamSpec(
+            stream_id=stream_id,
+            schema=config.SCHEMAS[stream_id],
+            shape=(config.ROWS_PER_FRAME, len(config.DEVICE_LINK_STATUS_COLUMNS)),
+        ),
+        port=config.device_link_status_port(board),
+        host=config.DEFAULT_CONNECTOR_HOST,
+    )
+
+
 def _read_exact(sock: socket.socket, total_bytes: int) -> bytes | None:
     chunks: list[bytes] = []
     remaining = total_bytes
@@ -100,6 +113,12 @@ class BaseBoardInterface:
     send_connector: SendConnector
     command_connector: ReceiveConnector | None = None
     _last_link_publish_s: float = 0.0
+    _link_tx: SendConnector | None = None
+
+    def _ensure_link_tx(self) -> SendConnector:
+        if self._link_tx is None:
+            self._link_tx = _build_device_link_send_connector(self.board_name)
+        return self._link_tx
 
     def _telemetry_endpoint(self) -> tuple[str, int]:
         """TCP host/port for the board telemetry stream (and bidirectional commands if applicable)."""
@@ -122,7 +141,7 @@ class BaseBoardInterface:
             if (now - self._last_link_publish_s) < publish_interval_s:
                 return
         self._last_link_publish_s = now
-        write_device_link_snapshot(
+        row = encode_device_link_row(
             board=self.board_name,
             connected=connected,
             last_connect_epoch_s=last_connect,
@@ -130,10 +149,13 @@ class BaseBoardInterface:
             endpoint_host=host,
             endpoint_port=port,
             last_error=last_error,
+            snapshot_epoch_s=now,
         )
+        self._ensure_link_tx().send_numpy(row)
 
     def run_forever(self) -> None:
         self.send_connector.open()
+        self._ensure_link_tx().open()
         if self.command_connector is not None:
             self.command_connector.open()
         while True:

@@ -1,18 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pyarrow as pa
 
 WINDOW_TITLE = "UCIRPLGUI"
 
-
-def ucirplgui_package_root() -> Path:
-    """UCIRPLGUI project root (directory containing ``src/``)."""
-    return Path(__file__).resolve().parents[2]
-
-
-DEVICE_LINK_DIR = ucirplgui_package_root() / "data" / "device_link"
 THEME_NAME = "tau_ceti"
 
 ROWS_PER_FRAME = 1
@@ -48,7 +39,36 @@ CONNECTOR_PORTS = {
     "frontend_loadcell": 7303,
     "frontend_fft": 7304,
     "frontend_gse_ecu_scalars": 7305,
+    # Device interfaces -> frontend link status (one Flight port per board).
+    "device_link_gse": 7401,
+    "device_link_ecu": 7402,
+    "device_link_extr_ecu": 7403,
+    "device_link_loadcell": 7404,
 }
+
+DEVICE_LINK_STATUS_STREAM_ID = "ucirpl.device_link"
+DEVICE_LINK_STATUS_COLUMNS = (
+    "board_id",
+    "connected_flag",
+    "last_connect_epoch_s",
+    "last_rx_epoch_s",
+    "endpoint_host_ipv4",
+    "endpoint_port",
+    "snapshot_epoch_s",
+    "last_error_code",
+)
+DEVICE_LINK_BOARDS = ("gse", "ecu", "extr_ecu", "loadcell")
+
+
+def device_link_status_stream_id(board: str) -> str:
+    if board not in DEVICE_LINK_BOARDS:
+        raise ValueError(f"unknown device link board: {board!r}")
+    return f"{DEVICE_LINK_STATUS_STREAM_ID}.{board}"
+
+
+def device_link_status_port(board: str) -> int:
+    return CONNECTOR_PORTS[f"device_link_{board}"]
+
 
 RAW_GSE_STREAM_ID = "ucirpl.raw.gse"
 RAW_ECU_STREAM_ID = "ucirpl.raw.ecu"
@@ -201,6 +221,9 @@ SCHEMAS = {
     FRONTEND_FFT_STREAM_ID: make_schema(FRONTEND_FFT_COLUMNS),
     FRONTEND_GSE_ECU_SCALARS_STREAM_ID: make_schema(FRONTEND_GSE_ECU_SCALARS_COLUMNS),
 }
+SCHEMAS.update(
+    {device_link_status_stream_id(board): make_schema(DEVICE_LINK_STATUS_COLUMNS) for board in DEVICE_LINK_BOARDS}
+)
 
 
 RAW_STREAMS = (
