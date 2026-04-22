@@ -44,4 +44,5 @@ UCIRPLGUI/data/device_link/
 *.obj
 
 src/gui_assets/compiled/
+packages/viviian_core/src/gui_assets/compiled/*.npz
 opencode.sh

@@ -77,6 +77,7 @@ class _AnalogLayout:
 
 GaugeSeverity = Literal["info", "ok", "warn", "crit"]
 AnalogGaugeLayoutStyle = Literal["sweep", "radial"]
+GaugeStatusLayout = Literal["inline", "centered", "hidden"]
 
 
 class SensorGauge:
@@ -108,6 +109,9 @@ class SensorGauge:
         display_precision: int = 2,
         status_text: str | None = None,
         status_severity: GaugeSeverity | None = None,
+        status_layout: GaugeStatusLayout = "inline",
+        show_stream_label: bool = True,
+        header_right: str | None = None,
         footer_left: str | None = None,
         footer_right: str | None = None,
         secondary_label: str | None = None,
@@ -135,6 +139,8 @@ class SensorGauge:
         resolved_precision = int(display_precision)
         if resolved_precision < 0:
             raise ValueError("display_precision must be greater than or equal to 0.")
+        if status_layout not in ("inline", "centered", "hidden"):
+            raise ValueError("status_layout must be 'inline', 'centered', or 'hidden'.")
 
         self.gauge_id = gauge_id
         self.label = label
@@ -161,8 +167,11 @@ class SensorGauge:
         self.display_precision = resolved_precision
         self.status_text = _coerce_optional_text(status_text)
         self.status_severity = _coerce_optional_severity(status_severity)
-        self.footer_left = _coerce_optional_text(footer_left)
-        self.footer_right = _coerce_optional_text(footer_right)
+        self.status_layout = status_layout
+        self.show_stream_label = bool(show_stream_label)
+        self.header_right = _coerce_optional_footer_text(header_right)
+        self.footer_left = _coerce_optional_footer_text(footer_left)
+        self.footer_right = _coerce_optional_footer_text(footer_right)
         self.secondary_label = _coerce_optional_text(secondary_label)
         self.secondary_value = _coerce_optional_text(secondary_value)
 
@@ -385,8 +394,11 @@ class SensorGauge:
             "display_precision": int(data.get("display_precision", 2)),
             "status_text": _coerce_optional_text(data.get("status_text")),
             "status_severity": _coerce_optional_severity(data.get("status_severity")),
-            "footer_left": _coerce_optional_text(data.get("footer_left")),
-            "footer_right": _coerce_optional_text(data.get("footer_right")),
+            "status_layout": str(data.get("status_layout", "inline")),
+            "show_stream_label": bool(data.get("show_stream_label", True)),
+            "header_right": _coerce_optional_footer_text(data.get("header_right")),
+            "footer_left": _coerce_optional_footer_text(data.get("footer_left")),
+            "footer_right": _coerce_optional_footer_text(data.get("footer_right")),
             "secondary_label": _coerce_optional_text(data.get("secondary_label")),
             "secondary_value": _coerce_optional_text(data.get("secondary_value")),
         }
@@ -412,6 +424,12 @@ class SensorGauge:
             lines.append(f"status_text = {toml_string(self.status_text)}")
         if self.status_severity is not None:
             lines.append(f"status_severity = {toml_string(self.status_severity)}")
+        if self.status_layout != "inline":
+            lines.append(f"status_layout = {toml_string(self.status_layout)}")
+        if not self.show_stream_label:
+            lines.append("show_stream_label = false")
+        if self.header_right is not None:
+            lines.append(f"header_right = {toml_string(self.header_right)}")
         if self.footer_left is not None:
             lines.append(f"footer_left = {toml_string(self.footer_left)}")
         if self.footer_right is not None:
@@ -441,7 +459,7 @@ class SensorGauge:
             width=_resolved_widget_width(imgui, self.width),
             height=self.height,
             label=self.label.upper(),
-            label_right=self.KIND,
+            label_right=self.KIND if self.header_right is None else self.header_right,
             dot_color=self._status_dot_color(),
             padding=theme.GAUGE_PADDING_PX,
         )
@@ -454,15 +472,17 @@ class SensorGauge:
         draw_list = panel.draw_list
         left, top, right, bottom = panel.inner_bounds
         value_text = self._formatted_display_value()
-        draw_list.add_text(left, top, rgba_u32(imgui, theme.INK_3), f"STREAM / {self.stream_name}")
+        if self.show_stream_label:
+            draw_list.add_text(left, top, rgba_u32(imgui, theme.INK_3), f"STREAM / {self.stream_name}")
         if self.unit_label:
             unit_text = f"UNIT · {self.unit_label}"
             unit_width, _ = estimate_text_size(imgui, unit_text)
             draw_list.add_text(right - unit_width, top, rgba_u32(imgui, theme.INK_3), unit_text)
         value_width, value_height = estimate_text_size(imgui, value_text)
+        value_y = top + (14.0 if self.show_stream_label else 0.0)
         draw_list.add_text(
             right - value_width,
-            top + 14.0,
+            value_y,
             rgba_u32(imgui, theme.INK),
             value_text,
         )
@@ -470,7 +490,7 @@ class SensorGauge:
             imgui,
             draw_list,
             outer_bounds=panel.outer_bounds,
-            inner_bounds=(left, top + value_height + 28.0, right, bottom),
+            inner_bounds=(left, top + value_height + (28.0 if self.show_stream_label else 14.0), right, bottom),
         )
 
     def _resolved_status_severity(self) -> GaugeSeverity:
@@ -542,6 +562,9 @@ class AnalogNeedleGauge(SensorGauge):
         display_precision: int = 2,
         status_text: str | None = None,
         status_severity: GaugeSeverity | None = None,
+        status_layout: GaugeStatusLayout = "inline",
+        show_stream_label: bool = True,
+        header_right: str | None = None,
         footer_left: str | None = None,
         footer_right: str | None = None,
         secondary_label: str | None = None,
@@ -563,6 +586,9 @@ class AnalogNeedleGauge(SensorGauge):
             display_precision=display_precision,
             status_text=status_text,
             status_severity=status_severity,
+            status_layout=status_layout,
+            show_stream_label=show_stream_label,
+            header_right=header_right,
             footer_left=footer_left,
             footer_right=footer_right,
             secondary_label=secondary_label,
@@ -717,16 +743,19 @@ class AnalogNeedleGauge(SensorGauge):
     def _render_tau_ceti_sweep_panel(self, imgui: Any, panel: Any) -> None:
         draw_list = panel.draw_list
         left, top, right, bottom = panel.inner_bounds
-        top_text = f"STREAM / {self.stream_name}"
-        draw_list.add_text(left, top, rgba_u32(imgui, theme.INK_3), top_text)
+        if self.show_stream_label:
+            top_text = f"STREAM / {self.stream_name}"
+            draw_list.add_text(left, top, rgba_u32(imgui, theme.INK_3), top_text)
         if self.unit_label:
             unit_text = f"UNIT · {self.unit_label}"
             unit_width, _ = estimate_text_size(imgui, unit_text)
             draw_list.add_text(right - unit_width, top, rgba_u32(imgui, theme.INK_3), unit_text)
 
-        footer_height = 18.0
-        face_top = top + 18.0
-        face_bottom = bottom - footer_height - 8.0
+        show_status = self.status_layout != "hidden"
+        status_height = 18.0 if show_status else 0.0
+        value_band_height = 24.0
+        face_top = top + (18.0 if self.show_stream_label else 8.0)
+        face_bottom = bottom - status_height - value_band_height - 8.0
         self._render_tau_ceti_sweep_face(
             imgui,
             draw_list,
@@ -735,9 +764,10 @@ class AnalogNeedleGauge(SensorGauge):
 
         value_text = self._formatted_display_value()
         value_width, _ = estimate_text_size(imgui, value_text)
-        value_y = face_bottom - 8.0
+        value_x = (left + right - value_width) * 0.5
+        value_y = face_bottom + 6.0
         draw_list.add_text(
-            (left + right - value_width) * 0.5,
+            value_x,
             value_y,
             rgba_u32(imgui, theme.INK),
             value_text,
@@ -745,38 +775,56 @@ class AnalogNeedleGauge(SensorGauge):
         if self.unit_label:
             unit_width, _ = estimate_text_size(imgui, self.unit_label)
             draw_list.add_text(
-                ((left + right - value_width) * 0.5) + value_width + 4.0,
+                value_x + value_width + 4.0,
                 value_y + 2.0,
                 rgba_u32(imgui, theme.INK_3),
                 self.unit_label,
             )
 
-        footer_y = bottom - 18.0
-        chip_width, _ = draw_status_chip(
-            imgui,
-            draw_list,
-            x0=left,
-            y0=footer_y - 2.0,
-            text=self._resolved_status_text(),
-            color=_status_rgba(self._resolved_status_severity()),
-        )
-        footer_left = self.footer_left or self._formatted_rate()
-        footer_right = self.footer_right or self.gauge_id.upper()
-        draw_list.add_text(left + chip_width + 12.0, footer_y, rgba_u32(imgui, theme.INK_2), footer_left)
-        footer_right_width, _ = estimate_text_size(imgui, footer_right)
-        draw_list.add_text(right - footer_right_width, footer_y, rgba_u32(imgui, theme.INK_3), footer_right)
+        if show_status:
+            footer_y = bottom - 18.0
+            if self.status_layout == "centered":
+                status_text = self._resolved_status_text()
+                status_width, status_height = estimate_text_size(imgui, status_text)
+                chip_x = (left + right - (status_width + 18.0)) * 0.5
+                draw_status_chip(
+                    imgui,
+                    draw_list,
+                    x0=chip_x,
+                    y0=footer_y - max(0.0, (max(18.0, status_height + 8.0) - 14.0) * 0.5),
+                    text=status_text,
+                    color=_status_rgba(self._resolved_status_severity()),
+                )
+            else:
+                chip_width, _ = draw_status_chip(
+                    imgui,
+                    draw_list,
+                    x0=left,
+                    y0=footer_y - 2.0,
+                    text=self._resolved_status_text(),
+                    color=_status_rgba(self._resolved_status_severity()),
+                )
+                footer_left = self._formatted_rate() if self.footer_left is None else self.footer_left
+                footer_right = self.gauge_id.upper() if self.footer_right is None else self.footer_right
+                draw_list.add_text(left + chip_width + 12.0, footer_y, rgba_u32(imgui, theme.INK_2), footer_left)
+                footer_right_width, _ = estimate_text_size(imgui, footer_right)
+                draw_list.add_text(right - footer_right_width, footer_y, rgba_u32(imgui, theme.INK_3), footer_right)
 
     def _render_tau_ceti_radial_panel(self, imgui: Any, panel: Any) -> None:
         draw_list = panel.draw_list
         left, top, right, bottom = panel.inner_bounds
-        draw_list.add_text(left, top, rgba_u32(imgui, theme.INK_3), f"STREAM / {self.stream_name}")
+        if self.show_stream_label:
+            draw_list.add_text(left, top, rgba_u32(imgui, theme.INK_3), f"STREAM / {self.stream_name}")
         if self.unit_label:
             unit_text = f"UNIT · {self.unit_label}"
             unit_width, _ = estimate_text_size(imgui, unit_text)
             draw_list.add_text(right - unit_width, top, rgba_u32(imgui, theme.INK_3), unit_text)
 
-        face_top = top + 16.0
-        face_bottom = bottom - 24.0
+        show_status = self.status_layout != "hidden"
+        status_height = 18.0 if show_status else 0.0
+        value_band_height = 22.0
+        face_top = top + (16.0 if self.show_stream_label else 8.0)
+        face_bottom = bottom - status_height - value_band_height - 8.0
         self._render_tau_ceti_radial_face(
             imgui,
             draw_list,
@@ -786,19 +834,37 @@ class AnalogNeedleGauge(SensorGauge):
         value_text = self._formatted_display_value()
         value_width, _ = estimate_text_size(imgui, value_text)
         value_x = (left + right - value_width) * 0.5
-        value_y = bottom - 34.0
+        value_y = face_bottom + 6.0
         draw_list.add_text(value_x, value_y, rgba_u32(imgui, theme.INK), value_text)
         if self.unit_label:
             draw_list.add_text(value_x + value_width + 4.0, value_y + 2.0, rgba_u32(imgui, theme.INK_3), self.unit_label)
 
-        status_text = self.footer_left or f"● {self._resolved_status_text()} · {self._formatted_rate().replace('Δ ', '')}"
-        status_width, _ = estimate_text_size(imgui, status_text)
-        draw_list.add_text(
-            (left + right - status_width) * 0.5,
-            bottom - 16.0,
-            rgba_u32(imgui, _status_rgba(self._resolved_status_severity())),
-            status_text,
-        )
+        if show_status:
+            if self.status_layout == "centered":
+                status_text = self._resolved_status_text()
+                status_width, status_height = estimate_text_size(imgui, status_text)
+                chip_x = (left + right - (status_width + 18.0)) * 0.5
+                draw_status_chip(
+                    imgui,
+                    draw_list,
+                    x0=chip_x,
+                    y0=(bottom - 16.0) - max(0.0, (max(18.0, status_height + 8.0) - 14.0) * 0.5),
+                    text=status_text,
+                    color=_status_rgba(self._resolved_status_severity()),
+                )
+            else:
+                status_text = (
+                    f"● {self._resolved_status_text()} · {self._formatted_rate().replace('Δ ', '')}"
+                    if self.footer_left is None
+                    else self.footer_left
+                )
+                status_width, _ = estimate_text_size(imgui, status_text)
+                draw_list.add_text(
+                    (left + right - status_width) * 0.5,
+                    bottom - 16.0,
+                    rgba_u32(imgui, _status_rgba(self._resolved_status_severity())),
+                    status_text,
+                )
 
     def _render_tau_ceti_sweep_face(
         self,
@@ -953,6 +1019,9 @@ class LedBarGauge(SensorGauge):
         display_precision: int = 2,
         status_text: str | None = None,
         status_severity: GaugeSeverity | None = None,
+        status_layout: GaugeStatusLayout = "inline",
+        show_stream_label: bool = True,
+        header_right: str | None = None,
         footer_left: str | None = None,
         footer_right: str | None = None,
         secondary_label: str | None = None,
@@ -974,6 +1043,9 @@ class LedBarGauge(SensorGauge):
             display_precision=display_precision,
             status_text=status_text,
             status_severity=status_severity,
+            status_layout=status_layout,
+            show_stream_label=show_stream_label,
+            header_right=header_right,
             footer_left=footer_left,
             footer_right=footer_right,
             secondary_label=secondary_label,
@@ -1077,11 +1149,13 @@ class LedBarGauge(SensorGauge):
         draw_list = panel.draw_list
         left, top, right, bottom = panel.inner_bounds
         readout_top = top
-        draw_list.add_text(left, readout_top, rgba_u32(imgui, theme.INK_3), f"STREAM / {self.stream_name}")
+        if self.show_stream_label:
+            draw_list.add_text(left, readout_top, rgba_u32(imgui, theme.INK_3), f"STREAM / {self.stream_name}")
 
         value_text = self._formatted_display_value()
         value_width, _ = estimate_text_size(imgui, value_text)
-        value_y = readout_top + 16.0
+        has_top_row = self.show_stream_label or bool(self.secondary_label)
+        value_y = readout_top + (16.0 if has_top_row else 0.0)
         draw_list.add_text(left, value_y, rgba_u32(imgui, _status_rgba(self._resolved_status_severity())), value_text)
         if self.unit_label:
             draw_list.add_text(left + value_width + 4.0, value_y + 2.0, rgba_u32(imgui, theme.INK_3), self.unit_label)
@@ -1093,8 +1167,16 @@ class LedBarGauge(SensorGauge):
             sec_width, _ = estimate_text_size(imgui, self.secondary_value)
             draw_list.add_text(right - sec_width, value_y, rgba_u32(imgui, theme.INK_2), self.secondary_value)
 
+        footer_left = self._formatted_range() if self.footer_left is None else self.footer_left
+        footer_right = (
+            f"RESP · {self.animation_response_hz:.1f} HZ"
+            if self.footer_right is None
+            else self.footer_right
+        )
+        show_footer = bool(footer_left) or bool(footer_right)
+
         footer_y = bottom - 14.0
-        scale_y = footer_y - 16.0
+        scale_y = footer_y - 16.0 if show_footer else bottom - 14.0
         face_top = value_y + 22.0
         face_bottom = scale_y - 6.0
         self._render_tau_ceti_led_face(
@@ -1104,11 +1186,10 @@ class LedBarGauge(SensorGauge):
         )
         _draw_led_scale(imgui, draw_list, left=left, right=right, baseline_y=scale_y, segment_count=self.segment_count)
 
-        footer_left = self.footer_left or self._formatted_range()
-        footer_right = self.footer_right or f"RESP · {self.animation_response_hz:.1f} HZ"
-        draw_list.add_text(left, footer_y, rgba_u32(imgui, _status_rgba(self._resolved_status_severity())), footer_left)
-        footer_right_width, _ = estimate_text_size(imgui, footer_right)
-        draw_list.add_text(right - footer_right_width, footer_y, rgba_u32(imgui, theme.INK_3), footer_right)
+        if show_footer:
+            draw_list.add_text(left, footer_y, rgba_u32(imgui, _status_rgba(self._resolved_status_severity())), footer_left)
+            footer_right_width, _ = estimate_text_size(imgui, footer_right)
+            draw_list.add_text(right - footer_right_width, footer_y, rgba_u32(imgui, theme.INK_3), footer_right)
 
     def _render_tau_ceti_led_face(
         self,
@@ -1624,6 +1705,12 @@ def _coerce_optional_text(value: object) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _coerce_optional_footer_text(value: object) -> str | None:
+    if value is None:
+        return None
+    return str(value).strip()
 
 
 def _coerce_optional_severity(value: object) -> GaugeSeverity | None:

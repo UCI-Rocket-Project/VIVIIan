@@ -20,6 +20,7 @@ dependencies = [
 [project.optional-dependencies]
 ni  = ["nidaqmx"]
 gui = ["imgui", "glfw", "PyOpenGL"]
+dev = ["watchdog"]
 
 [tool.setuptools.packages.find]
 where = ["packages/viviian_core/src"]

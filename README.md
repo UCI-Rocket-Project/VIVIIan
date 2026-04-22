@@ -15,9 +15,11 @@ VIVIIan is a public-facing Python telemetry and control monorepo for hardware-or
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e .[gui]
+pip install -e "packages/pythusa" -e ".[gui]"
 python apps/ucirplgui/scripts/run_all.py
 ```
+
+`pythusa` lives under `packages/pythusa` and must be installed as an editable package (or otherwise on `PYTHONPATH`) before imports like `from pythusa import Pipeline` will resolve.
 
 ## Documentation
 

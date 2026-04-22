@@ -1,1 +1,1 @@
-{"board":"extr_ecu","connected":false,"endpoint_host":"127.0.0.1","endpoint_port":10006,"last_connect_epoch_s":null,"last_error":"[Errno 61] Connection refused","last_rx_epoch_s":null,"snapshot_epoch_s":1776745949.198121}
+{"board":"extr_ecu","connected":false,"endpoint_host":"127.0.0.1","endpoint_port":10006,"last_connect_epoch_s":null,"last_error":"[Errno 61] Connection refused","last_rx_epoch_s":null,"snapshot_epoch_s":1776832217.206423}

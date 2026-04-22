@@ -18,8 +18,10 @@ The pages in this section are the shortest path from "I need to build X" to
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e .[gui]
+pip install -e "packages/pythusa" -e ".[gui]"
 ```
+
+Install `packages/pythusa` first so `from pythusa import ...` resolves to the in-repo runtime, not a missing optional extra.
 
 ### Run the reference app
 

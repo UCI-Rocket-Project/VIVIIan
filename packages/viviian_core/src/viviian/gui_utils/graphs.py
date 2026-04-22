@@ -12,7 +12,7 @@ from ._streaming import (
     normalize_numeric_batch,
     validate_numeric_reader,
 )
-from .chrome import draw_dashed_line, rgba_u32, xy
+from .chrome import draw_dashed_line, estimate_text_size, rgba_u32, xy
 from .configure import (
     parse_color_rgba,
     read_toml_document,
@@ -32,6 +32,11 @@ _GRAPH_PADDING_RATIO = 0.08
 _GRAPH_PADDING_FLOOR_RATIO = 2.5e-5
 _GRAPH_MIN_SPAN_RATIO = 1.0e-4
 _GRAPH_RANGE_SHRINK_ALPHA = 0.18
+_GRAPH_GRID_COLUMNS = 8
+_GRAPH_GRID_ROWS = 6
+_GRAPH_AXIS_LEFT_PAD = 46.0
+_GRAPH_AXIS_BOTTOM_PAD = 22.0
+_GRAPH_AXIS_INNER_PAD = 3.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -187,6 +192,7 @@ class SensorGraph:
         y_min_span_ratio: float = _GRAPH_MIN_SPAN_RATIO,
         y_shrink_alpha: float = _GRAPH_RANGE_SHRINK_ALPHA,
         theme_name: theme.GuiThemeName = "legacy",
+        plot_width: float | None = None,
         plot_height: float = _DEFAULT_PLOT_HEIGHT,
     ) -> None:
         if not graph_id:
@@ -222,6 +228,9 @@ class SensorGraph:
         if theme_name not in ("legacy", "tau_ceti"):
             raise ValueError("theme_name must be 'legacy' or 'tau_ceti'.")
         self.theme_name = theme_name
+        if plot_width is not None and float(plot_width) <= 0.0:
+            raise ValueError("plot_width must be greater than 0.")
+        self.plot_width = None if plot_width is None else float(plot_width)
         self.plot_height = float(plot_height)
 
         _validate_graph_series(self.series)
@@ -328,6 +337,8 @@ class SensorGraph:
         plot_height = self.plot_height
         if plot_width <= 0.0:
             plot_width = 640.0
+        if self.plot_width is not None:
+            plot_width = min(plot_width, self.plot_width)
 
         draw_pos = imgui.get_cursor_screen_pos()
         imgui.dummy(plot_width, plot_height)
@@ -345,10 +356,10 @@ class SensorGraph:
         draw_list.add_rect_filled(x0, y0, x1, y1, bg)
         draw_list.add_rect(x0, y0, x1, y1, border)
 
-        inner_left = x0 + 3.0
-        inner_top = y0 + 3.0
-        inner_right = x1 - 3.0
-        inner_bottom = y1 - 3.0
+        inner_left = x0 + (_GRAPH_AXIS_LEFT_PAD if self.show_axes else _GRAPH_AXIS_INNER_PAD)
+        inner_top = y0 + _GRAPH_AXIS_INNER_PAD
+        inner_right = x1 - _GRAPH_AXIS_INNER_PAD
+        inner_bottom = y1 - (_GRAPH_AXIS_BOTTOM_PAD if self.show_axes else _GRAPH_AXIS_INNER_PAD)
         inner_width = max(1.0, inner_right - inner_left)
         inner_height = max(1.0, inner_bottom - inner_top)
 
@@ -356,6 +367,38 @@ class SensorGraph:
         y_min, y_max = y_limits
         x_scale = inner_width / max(x_max - x_min, 1e-9)
         y_scale = inner_height / max(y_max - y_min, 1e-9)
+
+        _draw_plot_grid(
+            draw_list,
+            left=inner_left,
+            top=inner_top,
+            right=inner_right,
+            bottom=inner_bottom,
+            color=_graph_grid_color(imgui, theme_name=self.theme_name),
+            columns=_GRAPH_GRID_COLUMNS,
+            rows=_GRAPH_GRID_ROWS,
+        )
+
+        if self.show_axes:
+            _draw_graph_axis_labels(
+                imgui,
+                draw_list,
+                outer_left=x0,
+                outer_top=y0,
+                outer_right=x1,
+                outer_bottom=y1,
+                plot_left=inner_left,
+                plot_top=inner_top,
+                plot_right=inner_right,
+                plot_bottom=inner_bottom,
+                x_min=x_min,
+                x_max=x_max,
+                y_min=y_min,
+                y_max=y_max,
+                rows=_GRAPH_GRID_ROWS,
+                columns=_GRAPH_GRID_COLUMNS,
+                color=rgba_u32(imgui, theme.GRAPH_TEXT),
+            )
 
         if self.show_axes and y_min <= 0.0 <= y_max:
             zero_y = inner_bottom - ((0.0 - y_min) * y_scale)
@@ -452,6 +495,8 @@ class SensorGraph:
                 f"y_min_span_ratio = {self.y_min_span_ratio!r}",
                 f"y_shrink_alpha = {self.y_shrink_alpha!r}",
                 f"theme_name = {toml_string(self.theme_name)}",
+                *( [f"plot_width = {self.plot_width!r}"] if self.plot_width is not None else [] ),
+                f"plot_height = {self.plot_height!r}",
                 "",
             ]
         )
@@ -502,6 +547,8 @@ class SensorGraph:
             y_min_span_ratio=float(data.get("y_min_span_ratio", _GRAPH_MIN_SPAN_RATIO)),
             y_shrink_alpha=float(data.get("y_shrink_alpha", _GRAPH_RANGE_SHRINK_ALPHA)),
             theme_name=str(data.get("theme_name", "legacy")),
+            plot_width=(float(data["plot_width"]) if data.get("plot_width") is not None else None),
+            plot_height=float(data.get("plot_height", _DEFAULT_PLOT_HEIGHT)),
         )
 
     def series_snapshot(self, series_id: str) -> np.ndarray:
@@ -742,6 +789,124 @@ def _draw_live_badges(
         rgba_u32(imgui, theme.INK_2),
         right_text,
     )
+
+
+def _draw_plot_grid(
+    draw_list: Any,
+    *,
+    left: float,
+    top: float,
+    right: float,
+    bottom: float,
+    color: int,
+    columns: int,
+    rows: int,
+) -> None:
+    width = max(1.0, right - left)
+    height = max(1.0, bottom - top)
+
+    if columns > 1:
+        x_step = width / columns
+        for index in range(1, columns):
+            x = left + (x_step * index)
+            draw_list.add_line(x, top, x, bottom, color, 1.0)
+
+    if rows > 1:
+        y_step = height / rows
+        for index in range(1, rows):
+            y = top + (y_step * index)
+            draw_list.add_line(left, y, right, y, color, 1.0)
+
+
+def _draw_graph_axis_labels(
+    imgui: Any,
+    draw_list: Any,
+    *,
+    outer_left: float,
+    outer_top: float,
+    outer_right: float,
+    outer_bottom: float,
+    plot_left: float,
+    plot_top: float,
+    plot_right: float,
+    plot_bottom: float,
+    x_min: float,
+    x_max: float,
+    y_min: float,
+    y_max: float,
+    rows: int,
+    columns: int,
+    color: int,
+) -> None:
+    plot_width = max(1.0, plot_right - plot_left)
+    plot_height = max(1.0, plot_bottom - plot_top)
+    y_span = y_max - y_min
+    x_span = x_max - x_min
+
+    for index in range(rows + 1):
+        fraction = index / max(rows, 1)
+        y = plot_bottom - (plot_height * fraction)
+        value = y_min + (y_span * fraction)
+        label = _format_graph_tick_value(value)
+        text_width, text_height = estimate_text_size(imgui, label)
+        text_x = max(outer_left + 4.0, plot_left - 8.0 - text_width)
+        text_y = min(
+            max(outer_top + 4.0, y - (0.5 * text_height)),
+            outer_bottom - text_height - 4.0,
+        )
+        draw_list.add_text(
+            text_x,
+            text_y,
+            color,
+            label,
+        )
+
+    for index in range(columns + 1):
+        fraction = index / max(columns, 1)
+        x = plot_left + (plot_width * fraction)
+        label = _format_graph_time_tick((x_min + (x_span * fraction)) - x_max)
+        text_width, text_height = estimate_text_size(imgui, label)
+        text_x = min(
+            max(outer_left + 4.0, x - (0.5 * text_width)),
+            outer_right - text_width - 4.0,
+        )
+        text_y = min(plot_bottom + 6.0, outer_bottom - text_height - 4.0)
+        draw_list.add_text(
+            text_x,
+            text_y,
+            color,
+            label,
+        )
+
+
+def _graph_grid_color(imgui: Any, *, theme_name: theme.GuiThemeName) -> int:
+    if theme_name == "tau_ceti":
+        return rgba_u32(imgui, (theme.GRAPH_GRIDLINE[0], theme.GRAPH_GRIDLINE[1], theme.GRAPH_GRIDLINE[2], 0.65))
+    return _rgba_u32(imgui, (0.150, 0.235, 0.330, 0.22))
+
+
+def _format_graph_tick_value(value: float) -> str:
+    abs_value = abs(value)
+    if abs_value >= 1000.0:
+        return f"{value:.0f}"
+    if abs_value >= 100.0:
+        return f"{value:.1f}"
+    if abs_value >= 10.0:
+        return f"{value:.1f}"
+    if abs_value >= 1.0:
+        return f"{value:.2f}"
+    return f"{value:.3f}"
+
+
+def _format_graph_time_tick(offset_s: float) -> str:
+    if abs(offset_s) < 0.05:
+        return "now"
+    abs_offset = abs(offset_s)
+    if abs_offset >= 100.0:
+        return f"-{abs_offset:.0f}s"
+    if abs_offset >= 10.0:
+        return f"-{abs_offset:.1f}s"
+    return f"-{abs_offset:.2f}s"
 
 
 def _map_segment_to_screen(

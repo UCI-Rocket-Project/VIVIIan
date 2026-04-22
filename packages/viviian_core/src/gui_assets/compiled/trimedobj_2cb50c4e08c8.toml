@@ -1,9 +1,9 @@
 format_version = 1
-kind = "rocket_mesh_manifest"
+kind = "model_mesh_manifest"
 
 mesh_cache_version = 1
 source_asset_kind = "obj"
-source_asset_path = "/Users/daciwolf/Documents/VIVIIan/gui_assets/cad/trimedobj.obj"
+source_asset_path = "/Users/daciwolf/Documents/VIVIIan/packages/viviian_core/src/gui_assets/cad/trimedobj.obj"
 source_sha256 = "2cb50c4e08c8ed21d59f0e070a6c1ffb112f5fa0798ad2d6a4897b28bd7d3039"
 cache_file = "trimedobj_2cb50c4e08c8.npz"
 
