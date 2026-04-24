@@ -87,6 +87,7 @@ class SimulatorConfig:
     seed: int = 42
     # When True, do not bind the local fake ECU port (device_ecu talks to hardware instead).
     skip_ecu_duplex: bool = False
+    uncapped: bool = False
 
 
 @dataclass(slots=True)
@@ -534,16 +535,25 @@ class DeviceSimulatorService:
     def _now_ms(self) -> int:
         return int((time.monotonic() - self._start_monotonic) * 1000)
 
+    def _uncapped(self, hz: float) -> bool:
+        return self.config.uncapped or hz <= 0.0
+
     def _advance_loop(self) -> None:
-        period = 1.0 / self.config.update_hz
+        period = 0.0 if self._uncapped(self.config.update_hz) else (1.0 / self.config.update_hz)
         next_tick = time.monotonic()
         while not self._stop_event.is_set():
             now = time.monotonic()
-            dt = max(0.0, now - (next_tick - period))
+            if period > 0.0:
+                dt = max(0.0, now - (next_tick - period))
+            else:
+                dt = max(0.0, now - next_tick)
             with self._state_lock:
                 self.model.advance(dt_s=dt, now_ms=self._now_ms(), rng=self._rng)
-            next_tick += period
-            time.sleep(max(0.0, next_tick - time.monotonic()))
+            if period > 0.0:
+                next_tick += period
+                time.sleep(max(0.0, next_tick - time.monotonic()))
+            else:
+                next_tick = now
 
     def _run_bidirectional_server(
         self,
@@ -598,7 +608,7 @@ class DeviceSimulatorService:
                 with self._state_lock:
                     applier(decoded)
 
-        period = 1.0 / self.config.telemetry_hz
+        period = 0.0 if self._uncapped(self.config.telemetry_hz) else (1.0 / self.config.telemetry_hz)
         with client:
             reader = threading.Thread(target=read_commands_loop, daemon=True)
             reader.start()
@@ -607,7 +617,8 @@ class DeviceSimulatorService:
                     with self._state_lock:
                         packet = packet_builder(self.model)
                     client.sendall(packet)
-                    time.sleep(period)
+                    if period > 0.0:
+                        time.sleep(period)
                 except OSError:
                     break
             stop_reader.set()
@@ -643,14 +654,15 @@ class DeviceSimulatorService:
         client: socket.socket,
         packet_builder: Callable[[DeviceModel], bytes],
     ) -> None:
-        period = 1.0 / self.config.telemetry_hz
+        period = 0.0 if self._uncapped(self.config.telemetry_hz) else (1.0 / self.config.telemetry_hz)
         with client:
             while not self._stop_event.is_set():
                 try:
                     with self._state_lock:
                         packet = packet_builder(self.model)
                     client.sendall(packet)
-                    time.sleep(period)
+                    if period > 0.0:
+                        time.sleep(period)
                 except OSError:
                     return
 
@@ -779,6 +791,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--loadcell-port", type=int, default=10069)
     parser.add_argument("--update-hz", type=float, default=2000.0)
     parser.add_argument("--telemetry-hz", type=float, default=1000.0)
+    parser.add_argument(
+        "--uncapped",
+        action="store_true",
+        help="Run model updates and telemetry sends with no sleep cap.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--skip-self-checks", action="store_true")
     return parser.parse_args()
@@ -805,6 +822,7 @@ def main() -> None:
         telemetry_hz=args.telemetry_hz,
         seed=args.seed,
         skip_ecu_duplex=skip_ecu,
+        uncapped=args.uncapped,
     )
     service = DeviceSimulatorService(config)
     service.run_forever()

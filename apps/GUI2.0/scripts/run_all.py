@@ -53,6 +53,11 @@ def parse_args() -> argparse.Namespace:
         help="Start simulator/device/backend only (skip frontend window).",
     )
     parser.add_argument(
+        "--max-throughput",
+        action="store_true",
+        help="Run the simulator uncapped so devices publish telemetry as fast as possible.",
+    )
+    parser.add_argument(
         "--real-ecu",
         action="store_true",
         help=(
@@ -117,10 +122,13 @@ def main() -> int:
     processes: list[tuple[str, subprocess.Popen[bytes]]] = []
 
     try:
+        simulator_command = [python, "-u", "-m", "device_simulations.device_simulator"]
+        if args.max_throughput:
+            simulator_command.append("--uncapped")
         processes.append(
             _launch(
                 name="simulator",
-                command=[python, "-u", "-m", "device_simulations.device_simulator"],
+                command=simulator_command,
                 pythonpath=pythonpath,
                 env_extra={"UCIRPL_SKIP_SIMULATOR_ECU": "1"} if ecu_real_env is not None else None,
             )

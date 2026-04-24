@@ -64,59 +64,6 @@ class StreamSpec:
         return batch
 
 
-@dataclass(slots=True)
-class _MirroredStreamWriter:
-    stream: Any
-    row_count: int
-    column_count: int
-    batch: np.ndarray = field(init=False, repr=False)
-    time_column_index: int = field(init=False)
-    alive_column_index: int = field(init=False)
-
-    @classmethod
-    def from_stream_spec(cls, stream_spec: StreamSpec) -> _MirroredStreamWriter | None:
-        if stream_spec.stream is None:
-            return None
-        return cls(
-            stream=stream_spec.stream,
-            row_count=stream_spec.row_count,
-            column_count=stream_spec.column_count,
-        )
-
-    def __post_init__(self) -> None:
-        self.time_column_index = self.column_count
-        self.alive_column_index = self.column_count + 1
-        self.batch = np.empty(
-            (self.row_count, self.column_count + 2),
-            dtype=np.float64,
-        )
-        self._configure_stream_binding()
-
-    def write_live(self, payload_batch: np.ndarray) -> None:
-        np.copyto(self.batch[:, : self.column_count], payload_batch)
-        self._publish(connection_alive_value=1.0)
-
-    def write_disconnect(self) -> None:
-        self.batch[:, : self.column_count].fill(np.nan)
-        self._publish(connection_alive_value=0.0)
-
-    def _publish(self, *, connection_alive_value: float) -> None:
-        self.batch[:, self.time_column_index].fill(float(time.time_ns()))
-        self.batch[:, self.alive_column_index].fill(connection_alive_value)
-        try:
-            self.stream.write(self.batch)
-        except Exception:
-            pass
-
-    def _configure_stream_binding(self) -> None:
-        frame_shape = tuple(self.batch.shape)
-        if hasattr(self.stream, "shape"):
-            self.stream.shape = frame_shape
-        if hasattr(self.stream, "frame_nbytes"):
-            self.stream.frame_nbytes = int(self.batch.nbytes)
-        if hasattr(self.stream, "frame_size"):
-            self.stream.frame_size = int(np.prod(frame_shape, dtype=np.int64))
-
 
 class SendConnector(flight.FlightServerBase):
     def __init__(
@@ -257,6 +204,7 @@ class ReceiveConnector(flight.FlightClient):
         self._reader: flight.FlightStreamReader | None = None
         self._closing = False
         self._closed = False
+        self.stream = stream_spec.stream
         super().__init__(f"grpc://{self.host}:{self.connect_port}")
 
     @property
@@ -294,15 +242,16 @@ class ReceiveConnector(flight.FlightClient):
         self._closed = True
 
     def _reader_loop(self) -> None:
-        mirrored_writer = _MirroredStreamWriter.from_stream_spec(self.stream_spec)
         connection_alive = False
 
         def write_disconnect_batch() -> None:
             nonlocal connection_alive
             if not connection_alive:
                 return
-            if mirrored_writer is not None:
-                mirrored_writer.write_disconnect()
+            if self.stream is not None:
+                self.stream.write(
+                    np.full(self.stream_spec.shape, np.nan, dtype=np.float64)
+                )
             connection_alive = False
 
         while not self._closing:
@@ -319,8 +268,8 @@ class ReceiveConnector(flight.FlightClient):
                             zero_copy_only=False
                         )
                     self.has_batch = True
-                    if mirrored_writer is not None:
-                        mirrored_writer.write_live(self.batch)
+                    if self.stream is not None:
+                        self.stream.write(self.batch.copy())
             except StopIteration:
                 write_disconnect_batch()
             except pa.ArrowException:

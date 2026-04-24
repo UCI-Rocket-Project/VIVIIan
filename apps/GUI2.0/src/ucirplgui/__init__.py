@@ -5,16 +5,12 @@ __all__ = [
     "EXTRECUDeviceInterface",
     "GSEDeviceInterface",
     "LoadCellDeviceInterface",
-    "build_ucirplgui_pipeline",
     "run_device_interface",
     "run_frontend",
 ]
 
 
 def __getattr__(name: str):
-    if name == "build_ucirplgui_pipeline":
-        from .backend import build_ucirplgui_pipeline
-        return build_ucirplgui_pipeline
     if name == "run_frontend":
         from .frontend.frontend import run_frontend
         return run_frontend

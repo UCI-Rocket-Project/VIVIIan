@@ -1,3 +1,3 @@
-from .orchestrator import Orchestrator
+from .orchestrator import Orchestrator, VIVIIan
 
-__all__ = ["Orchestrator"]
+__all__ = ["Orchestrator", "VIVIIan"]

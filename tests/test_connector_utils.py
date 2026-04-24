@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import socket
 import time
 import unittest
 import uuid
@@ -40,6 +41,20 @@ _CONNECTOR_STRESS_TIMEOUT_SECONDS = 30.0
 _RUN_CONNECTOR_STRESS_TESTS = os.environ.get("RUN_CONNECTOR_STRESS_TESTS") == "1"
 _TIME_RECEIVED_COLUMN = 2
 _CONNECTION_ALIVE_COLUMN = 3
+
+
+def _local_flight_bind_available() -> bool:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("127.0.0.1", 0))
+    except OSError:
+        return False
+    finally:
+        sock.close()
+    return True
+
+
+_LOCAL_FLIGHT_BIND_AVAILABLE = _local_flight_bind_available()
 
 
 def _connector_schema() -> pa.Schema:
@@ -293,6 +308,33 @@ class CountingSendConnector(SendConnector):
         return super()._batch_to_record_batch(batch)
 
 
+class RecordingStream:
+    def __init__(self) -> None:
+        self.frames: list[np.ndarray] = []
+
+    def write(self, batch: np.ndarray) -> None:
+        self.frames.append(np.array(batch, copy=True))
+
+
+class FakeChunk:
+    def __init__(self, batch: pa.RecordBatch) -> None:
+        self.data = batch
+
+
+class FakeReader:
+    def __init__(self, batches: list[pa.RecordBatch]) -> None:
+        self._batches = list(batches)
+        self.cancelled = False
+
+    def read_chunk(self) -> FakeChunk:
+        if not self._batches:
+            raise StopIteration
+        return FakeChunk(self._batches.pop(0))
+
+    def cancel(self) -> None:
+        self.cancelled = True
+
+
 class ConnectorUtilsTests(unittest.TestCase):
     def make_schema(self) -> pa.Schema:
         return _connector_schema()
@@ -325,6 +367,10 @@ class ConnectorUtilsTests(unittest.TestCase):
                 return value
             time.sleep(0.01)
         return None
+
+    def require_local_flight(self) -> None:
+        if not _LOCAL_FLIGHT_BIND_AVAILABLE:
+            self.skipTest("local Flight socket binding is not permitted in this environment")
 
     def test_stream_spec_requires_explicit_2d_shape(self) -> None:
         with self.assertRaises(TypeError):
@@ -363,6 +409,7 @@ class ConnectorUtilsTests(unittest.TestCase):
                 )
 
     def test_open_and_close_are_idempotent(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec()
 
         sender = SendConnector(spec, port=0)
@@ -380,6 +427,7 @@ class ConnectorUtilsTests(unittest.TestCase):
         receiver.close()
 
     def test_send_connector_requires_numpy_and_exact_2d_shape(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec(rows=3)
         sender = SendConnector(spec, port=9107)
 
@@ -396,6 +444,7 @@ class ConnectorUtilsTests(unittest.TestCase):
             sender.send_numpy(np.ones((3, 3), dtype=np.float64))
 
     def test_round_trip_updates_latest_batch_and_has_batch(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec(rows=2)
         expected = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
 
@@ -416,6 +465,7 @@ class ConnectorUtilsTests(unittest.TestCase):
         np.testing.assert_array_equal(received, expected)
 
     def test_multiple_sends_leave_only_latest_batch(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec(rows=2)
         first = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
         second = np.array([[3.0, 30.0], [4.0, 40.0]], dtype=np.float64)
@@ -440,6 +490,7 @@ class ConnectorUtilsTests(unittest.TestCase):
         np.testing.assert_array_equal(received, third)
 
     def test_send_connector_is_nonblocking_under_slow_stream(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec(rows=2)
         batches = [
             np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64),
@@ -469,6 +520,7 @@ class ConnectorUtilsTests(unittest.TestCase):
         np.testing.assert_array_equal(received, batches[-1])
 
     def test_receiver_auto_reconnects_when_sender_starts_later(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec(rows=2)
         expected = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
         receiver = ReceiveConnector(spec, port=9117)
@@ -489,6 +541,7 @@ class ConnectorUtilsTests(unittest.TestCase):
         np.testing.assert_array_equal(received, expected)
 
     def test_receiver_auto_reconnects_after_sender_restart(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec(rows=2)
         first = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
         second = np.array([[5.0, 50.0], [6.0, 60.0]], dtype=np.float64)
@@ -525,6 +578,7 @@ class ConnectorUtilsTests(unittest.TestCase):
         np.testing.assert_array_equal(received, second)
 
     def test_multiple_sends_use_one_do_get_stream(self) -> None:
+        self.require_local_flight()
         spec = self.make_spec(rows=2)
         batches = [
             np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64),
@@ -552,6 +606,7 @@ class ConnectorUtilsTests(unittest.TestCase):
 
     @unittest.skipIf(Pipeline is None, "pythusa pipeline runtime dependencies are required")
     def test_receiver_mirrors_into_real_pythusa_pipeline_stream(self) -> None:
+        self.require_local_flight()
         sender = SendConnector(
             self.make_spec(stream_id=_PIPELINE_STREAM_ID),
             port=_PIPELINE_CONNECTOR_PORT,
@@ -685,11 +740,51 @@ class ConnectorUtilsTests(unittest.TestCase):
             _close_ring(writer_ring, unlink=True)
 
     def test_send_after_close_fails_clearly(self) -> None:
+        self.require_local_flight()
         sender = SendConnector(self.make_spec(), port=9107)
         sender.close()
 
         with self.assertRaisesRegex(RuntimeError, "closed"):
             sender.send_numpy(np.ones((2, 2), dtype=np.float64))
+
+    def test_receive_connector_uses_stream_from_stream_spec_by_default(self) -> None:
+        mirrored = RecordingStream()
+        spec = self.make_spec(stream=mirrored)
+
+        receiver = ReceiveConnector(spec, port=0)
+
+        self.assertIs(receiver.stream, mirrored)
+        receiver.close()
+
+    def test_reader_loop_mirrors_batches_and_disconnect_into_stream(self) -> None:
+        mirrored = RecordingStream()
+        payload = np.array([[1.0, 10.0], [2.0, 20.0]], dtype=np.float64)
+        batch = pa.record_batch(
+            [pa.array(payload[:, 0]), pa.array(payload[:, 1])],
+            names=["signal", "weight"],
+        )
+        spec = self.make_spec(stream=mirrored)
+        receiver = ReceiveConnector(spec, port=0)
+        attempts = 0
+
+        def fake_do_get(_ticket):
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                return FakeReader([batch])
+            receiver._closing = True
+            raise pa.ArrowException("stop reconnect loop")
+
+        receiver.do_get = fake_do_get  # type: ignore[method-assign]
+
+        receiver._reader_loop()
+
+        self.assertEqual(len(mirrored.frames), 2)
+        np.testing.assert_array_equal(mirrored.frames[0], payload)
+        self.assertEqual(mirrored.frames[0].dtype, np.float64)
+        self.assertTrue(np.isnan(mirrored.frames[1]).all())
+        self.assertEqual(mirrored.frames[1].shape, payload.shape)
+        receiver.close()
 
 
 if __name__ == "__main__":

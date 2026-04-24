@@ -28,6 +28,8 @@ GSE_PACKET_LEN = 91
 ECU_PACKET_LEN = 144
 LOADCELL_PACKET_LEN = 8
 
+_READ_TIMEOUT = object()
+
 
 def _pressure_from_voltage(channel_name: str, voltage: float) -> float:
     scaling, intercept = {
@@ -86,14 +88,16 @@ def _build_device_link_send_connector(board: str) -> SendConnector:
     )
 
 
-def _read_exact(sock: socket.socket, total_bytes: int) -> bytes | None:
+def _read_exact(sock: socket.socket, total_bytes: int) -> bytes | None | object:
     chunks: list[bytes] = []
     remaining = total_bytes
     while remaining > 0:
         try:
             chunk = sock.recv(remaining)
         except socket.timeout:
-            return None
+            if chunks:
+                continue
+            return _READ_TIMEOUT
         if not chunk:
             return None
         chunks.append(chunk)
@@ -200,6 +204,17 @@ class BaseBoardInterface:
         while True:
             self._maybe_send_command(sock)
             packet = _read_exact(sock, self.telemetry_len)
+            if packet is _READ_TIMEOUT:
+                self._publish_link(
+                    connected=True,
+                    host=host,
+                    port=port,
+                    last_connect=connect_ts,
+                    last_rx=last_rx,
+                    last_error=None,
+                    force=False,
+                )
+                continue
             if packet is None:
                 self._publish_link(
                     connected=False,
