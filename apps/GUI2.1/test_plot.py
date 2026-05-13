@@ -15,7 +15,7 @@ if str(_gui21) not in sys.path:
 
 from legacy_conn import GSE_FIELD_NAMES
 
-DATA_DIR = _gui21 / "data"
+DATA_DIR = _gui21 / "data" / "gse_raw_telemetry_data"
 
 BOOL_FIELDS = {
     "igniterArmed",

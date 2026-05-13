@@ -9,6 +9,7 @@ import numpy as np
 import pyarrow as pa
 import pythusa
 from pyarrow import flight
+from constants import GSE_SIGNAL_LISTS
 
 from data_storage import write_from_stream
 from legacy_conn import (
@@ -30,6 +31,12 @@ GSE_FLIGHT_BIND = "grpc://0.0.0.0:8815"
 ECU_FLIGHT_BIND = "grpc://0.0.0.0:8816"
 EXTR_ECU_FLIGHT_BIND = "grpc://0.0.0.0:8817"
 LOAD_CELL_FLIGHT_BIND = "grpc://0.0.0.0:8818"
+
+
+
+
+
+GSE_AVERAGE_OVER = 200
 
 
 class StorageServer(flight.FlightServerBase):
@@ -105,6 +112,36 @@ def backend_storage_sink(*, stream) -> None:
             received_bytes = 0
 
 
+def gse_decimate_signals(*, window_size: int, col_names: list[str], instream, outstream) -> None:
+    col_indices = [GSE_FIELD_NAMES.index(name) for name in col_names]  # col_names: e.g. tuple[str, ...]
+    k = len(col_indices)
+    if GSE_ROWS_PER_FRAME % window_size != 0:
+        raise ValueError(
+            f"window_size must divide GSE_ROWS_PER_FRAME ({GSE_ROWS_PER_FRAME}), got {window_size}"
+        )
+    out_rows = GSE_ROWS_PER_FRAME // window_size
+
+    while True:
+        frame = instream.read()
+        if frame is None:
+            time.sleep(0.001)
+            continue
+
+        subset = frame[:, col_indices]  # (GSE_ROWS_PER_FRAME, k)
+        out = subset.reshape(out_rows, window_size, k).mean(axis=1)  # (out_rows, k)
+        outstream.write(out.astype(np.float64, copy=False))
+
+
+
+
+
+
+
+
+
+
+
+
 def gse_raw_telemetry_storage_write(*, stream) -> None:
     column_names = list(GSE_FIELD_NAMES)
     column_types = [pa.float64() for _ in range(GSE_NUM_SIGNALS)]
@@ -166,7 +203,13 @@ def main() -> None:
             cache_align=True,
             frames=64,
         )
-
+        pipeline.add_stream(
+            "gse_decimate_signals", 
+            shape=(GSE_ROWS_PER_FRAME, len(GSE_SIGNAL_LISTS)), 
+            dtype=np.float64, 
+            cache_align=True,
+            frames=256
+        )
         pipeline.add_stream(
             "ecu_received_data",
             shape=(ECU_ROWS_PER_FRAME, ECU_NUM_SIGNALS),
@@ -174,7 +217,6 @@ def main() -> None:
             cache_align=True,
             frames=64,
         )
-
         pipeline.add_stream(
             "extr_ecu_received_data",
             shape=(EXTR_ECU_ROWS_PER_FRAME, EXTR_ECU_NUM_SIGNALS),

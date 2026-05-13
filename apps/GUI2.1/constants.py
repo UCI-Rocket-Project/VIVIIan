@@ -1,0 +1,18 @@
+GSE_SIGNAL_LISTS = ["supplyVoltage0",
+    "supplyVoltage1",
+    "solenoidCurrentGn2Fill",
+    "solenoidCurrentGn2Vent",
+    "solenoidCurrentGn2Disconnect",
+    "solenoidCurrentMvasFill",
+    "solenoidCurrentMvasVent",
+    "solenoidCurrentMvasOpen",
+    "solenoidCurrentMvasClose",
+    "solenoidCurrentLoxVent",
+    "solenoidCurrentLngVent",
+    "temperatureEngine1",
+    "temperatureEngine2",
+    "pressureGn2",
+    "pressureLoxInjTee",
+    "pressureVent",
+    "pressureLoxMvas"
+]
