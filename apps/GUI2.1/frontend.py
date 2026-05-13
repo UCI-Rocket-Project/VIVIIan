@@ -1,3 +1,18 @@
+#some stuff to implement 
+# buttons: 
+# they update state all the tiem, then you have a small function on a timer, reads through the state, 
+# learns how to find toggls or state buttons, triggers events 
+# resets at the end, sleeps a little then wakes up and does it again 
+# good because we control how often commands get set, can be fast enough for anything practical 
+# avoids hanging gui on commands that don't matter 
+
+
+
+
+
+
+
+
 from __future__ import annotations
 
 import colorsys
