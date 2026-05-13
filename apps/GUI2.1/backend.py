@@ -10,7 +10,7 @@ import pyarrow as pa
 import pythusa
 from pyarrow import flight
 from constants import GSE_SIGNAL_LISTS
-
+from generic_connector import generic_connector, StorageServer
 from data_storage import write_from_stream
 from legacy_conn import (
     ECU_FIELD_NAMES,
@@ -33,51 +33,14 @@ EXTR_ECU_FLIGHT_BIND = "grpc://0.0.0.0:8817"
 LOAD_CELL_FLIGHT_BIND = "grpc://0.0.0.0:8818"
 
 
+FRONTEND_FLIGHT_GSE_BIND = "grpc://0.0.0.0:8819"
+FRONTEND_FLIGHT_ECU_BIND = "grpc://0.0.0.0:8820"
+FRONTEND_FLIGHT_EXTR_ECU_BIND = "grpc://0.0.0.0:8821"
+FRONTEND_FLIGHT_LOAD_CELL_BIND = "grpc://0.0.0.0:8822"
+FRONTEND_FLIGHT_GSE_CONNECT = "grpc://127.0.0.1:8819"
 
 
-
-GSE_AVERAGE_OVER = 200
-
-
-class StorageServer(flight.FlightServerBase):
-    """Flight receiver: each do_put stream is turned into NumPy frames on the pythusa ring."""
-
-    def __init__(
-        self,
-        location: str,
-        stream_writer,
-        *,
-        rows_per_frame: int,
-        num_signals: int,
-    ) -> None:
-        super().__init__(location)
-        self._stream = stream_writer
-        self._write_lock = threading.Lock()
-        self._rows_per_frame = rows_per_frame
-        self._num_signals = num_signals
-
-    def do_put(self, context, descriptor, reader, writer):
-        print("Test stand started streaming (Flight do_put)...")
-        start_time = time.time()
-        received_bytes = 0
-        for chunk in reader:
-            record_batch = chunk.data
-            arrays = [
-                record_batch.column(i).to_numpy(zero_copy_only=False) for i in range(record_batch.num_columns)
-            ]
-            data = np.column_stack(arrays).astype(np.float64, copy=False)
-            if data.shape != (self._rows_per_frame, self._num_signals):
-                raise ValueError(
-                    f"Expected frame shape {(self._rows_per_frame, self._num_signals)}, got {data.shape}"
-                )
-            with self._write_lock:
-                self._stream.write(data)
-            received_bytes += int(data.nbytes)
-            if time.time() - start_time > 1.0:
-                print(f"Flight ingest: {received_bytes / 1_000_000:.2f} MB in the last second (approx)")
-                start_time = time.time()
-                received_bytes = 0
-
+GSE_AVERAGE_OVER = 20
 
 def backend_run_flight_server(
     *,
@@ -132,22 +95,17 @@ def gse_decimate_signals(*, window_size: int, col_names: list[str], instream, ou
         outstream.write(out.astype(np.float64, copy=False))
 
 
-
-
-
-
-
-
-
-
-
-
 def gse_raw_telemetry_storage_write(*, stream) -> None:
     column_names = list(GSE_FIELD_NAMES)
     column_types = [pa.float64() for _ in range(GSE_NUM_SIGNALS)]
     path = Path(__file__).resolve().parent / "data" / "gse_raw_telemetry_data"
     write_from_stream(stream, path, column_names, column_types)
 
+def gse_decimate_telemetry_storage_write(*, stream) -> None:
+    column_names = list(GSE_SIGNAL_LISTS)
+    column_types = [pa.float64() for _ in range(len(GSE_SIGNAL_LISTS))]
+    path = Path(__file__).resolve().parent / "data" / "gse_decimated_telemetry_data"
+    write_from_stream(stream, path, column_names, column_types)
 
 def ecu_raw_telemetry_storage_write(*, stream) -> None:
     column_names = list(ECU_FIELD_NAMES)
@@ -170,12 +128,25 @@ def load_cell_raw_telemetry_storage_write(*, stream) -> None:
     write_from_stream(stream, path, column_names, column_types)
 
 
+
+
+
 def main() -> None:
     gse_flight_fn = functools.partial(
         backend_run_flight_server,
         grpc_bind=GSE_FLIGHT_BIND,
         rows_per_frame=GSE_ROWS_PER_FRAME,
         num_signals=GSE_NUM_SIGNALS,
+    )
+    gse_decimate_fn = functools.partial(
+        gse_decimate_signals,
+        window_size=GSE_AVERAGE_OVER,
+        col_names=GSE_SIGNAL_LISTS,
+    )
+    frontend_gse_generic_connector_fn = functools.partial(
+        generic_connector,
+        field_names=GSE_SIGNAL_LISTS,
+        flight_address=FRONTEND_FLIGHT_GSE_CONNECT,
     )
     ecu_flight_fn = functools.partial(
         backend_run_flight_server,
@@ -195,6 +166,7 @@ def main() -> None:
         rows_per_frame=LOAD_CELL_ROWS_PER_FRAME,
         num_signals=LOAD_CELL_NUM_SIGNALS,
     )
+
     with pythusa.Pipeline("backend") as pipeline:
         pipeline.add_stream(
             "gse_received_data",
@@ -204,8 +176,8 @@ def main() -> None:
             frames=64,
         )
         pipeline.add_stream(
-            "gse_decimate_signals", 
-            shape=(GSE_ROWS_PER_FRAME, len(GSE_SIGNAL_LISTS)), 
+            "gse_decimated_signals", 
+            shape=(GSE_ROWS_PER_FRAME // GSE_AVERAGE_OVER, len(GSE_SIGNAL_LISTS)), 
             dtype=np.float64, 
             cache_align=True,
             frames=256
@@ -235,6 +207,12 @@ def main() -> None:
             "gse_flight_server",
             fn=gse_flight_fn,
             writes={"stream": "gse_received_data"},
+        )
+        pipeline.add_task(
+            "gse_decimate_signals",
+            fn=gse_decimate_fn,
+            reads={"instream": "gse_received_data"},
+            writes={"outstream": "gse_decimated_signals"},
         )
         pipeline.add_task(
             "ecu_flight_server",
@@ -277,6 +255,11 @@ def main() -> None:
             reads={"stream": "gse_received_data"},
         )
         pipeline.add_task(
+            "gse_decimate_telemetry_storage_write",
+            fn=gse_decimate_telemetry_storage_write,
+            reads={"stream": "gse_decimated_signals"},
+        )
+        pipeline.add_task(
             "ecu_raw_telemetry_storage_write",
             fn=ecu_raw_telemetry_storage_write,
             reads={"stream": "ecu_received_data"},
@@ -291,6 +274,15 @@ def main() -> None:
             fn=load_cell_raw_telemetry_storage_write,
             reads={"stream": "load_cell_received_data"},
         )
+
+
+
+        pipeline.add_task(
+            "frontend_gse_generic_connector",
+            fn=frontend_gse_generic_connector_fn,
+            reads={"stream": "gse_decimated_signals"},
+        )
+
         pipeline.run()
 
 

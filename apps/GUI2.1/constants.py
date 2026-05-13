@@ -1,4 +1,6 @@
-GSE_SIGNAL_LISTS = ["supplyVoltage0",
+GSE_SIGNAL_LISTS = [
+    "packet_time",
+    "supplyVoltage0",
     "supplyVoltage1",
     "solenoidCurrentGn2Fill",
     "solenoidCurrentGn2Vent",

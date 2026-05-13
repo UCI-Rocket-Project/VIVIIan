@@ -18,32 +18,36 @@ def write_from_stream(stream, path, column_names, column_types, file_size: int =
     while True: 
         file_path = path / f"part-{time.time_ns()}.parquet"
         bytes_written = 0
-        
+        try:
         # Open the writer for the new file
-        with pq.ParquetWriter(file_path, schema) as writer:
-            
-            # Inner loop: Keeps writing to the CURRENT file until it gets too big
-            while bytes_written < file_size:
+            with pq.ParquetWriter(file_path, schema) as writer:
                 
-                frame = stream.read() # Expected to return a list/tuple of numpy arrays or 2D array
-                
-                if frame is None:
-                    # Note: If 'None' means the stream is permanently finished, change 
-                    # this to 'return' so the function ends. 
-                    # If it just means "no data right now", we wait a tiny bit so 
-                    # the CPU doesn't spin at 100% usage doing nothing.
-                    time.sleep(0.01) 
-                    continue
-                
-                # Convert the NumPy data into a PyArrow Table
-                columns = [frame[:, i] for i in range(frame.shape[1])]
-                table = pa.Table.from_arrays(columns, names=column_names)
-                
-                # Append the chunk to the open file
-                writer.write_table(table)
-                
-                # Add the size of this PyArrow table to our tracker
-                bytes_written += table.nbytes
+                # Inner loop: Keeps writing to the CURRENT file until it gets too big
+                while bytes_written < file_size:
+                    
+                    frame = stream.read() # Expected to return a list/tuple of numpy arrays or 2D array
+                    
+                    if frame is None:
+                        # Note: If 'None' means the stream is permanently finished, change 
+                        # this to 'return' so the function ends. 
+                        # If it just means "no data right now", we wait a tiny bit so 
+                        # the CPU doesn't spin at 100% usage doing nothing.
+                        time.sleep(0.01) 
+                        continue
+                    
+                    # Convert the NumPy data into a PyArrow Table
+                    columns = [frame[:, i] for i in range(frame.shape[1])]
+                    table = pa.Table.from_arrays(columns, names=column_names)
+                    
+                    # Append the chunk to the open file
+                    writer.write_table(table)
+                    
+                    # Add the size of this PyArrow table to our tracker
+                    bytes_written += table.nbytes
+        except Exception as e:
+            print(f"Error writing to Parquet file: {e}")
+            time.sleep(0.01)
+            continue
                 
         # Once bytes_written >= file_size, the 'while' loop breaks.
         # The 'with' block ends, automatically closing and finalizing the Parquet file.

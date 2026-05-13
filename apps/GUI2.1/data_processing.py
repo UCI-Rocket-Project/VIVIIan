@@ -1,3 +1,8 @@
+# why do i even have this file? it is doing nothing.
+
+
+
+
 import numpy as np 
 from scipy import signal
 
