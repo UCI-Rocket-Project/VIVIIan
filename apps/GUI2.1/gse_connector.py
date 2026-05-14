@@ -1,15 +1,17 @@
 """
-TCP client for the legacy GSE board link (command frames out, telemetry in),
-plus a pythusa pipeline that buffers telemetry into ring frames and forwards
-them to ``backend.py`` over Arrow Flight the same way board1 did (float64
-``sensor_*`` batches on ``high_speed_test``).
+TCP client for the legacy GSE board (command frames out, telemetry in).
 
-Board TCP: ``socket(AF_INET, SOCK_STREAM)``, ``connect()``, ``sendall()`` on
-``gse_cmd_pack(...)``, ``recv()`` for 91-byte telemetry. See
-``legacy_connection.md`` and ``legacy_conn.py``.
+Telemetry path
+    board TCP ──recv──▸ pythusa ring ──generic_connector──▸ backend Flight
 
-Run the pipeline: ``python apps/GUI2.1/gse_connector.py`` (set ``GSE_IP``,
-``GSE_PORT``; optional ``GUI21_FLIGHT``, default ``grpc://localhost:8815``).
+Command path
+    frontend ──generic_connector (do_put)──▸ CommandBuffer ──▸ board TCP sendall
+
+The Flight command receiver runs in a **thread** of the process that owns the
+board TCP socket so ``send_gse_command`` can use the same connection.
+
+Run:  ``python apps/GUI2.1/gse_connector.py``
+Env:  GSE_IP, GSE_PORT, GUI21_FLIGHT, GSE_CMD_FLIGHT_BIND
 """
 
 from __future__ import annotations
@@ -18,17 +20,14 @@ import functools
 import os
 import socket
 import sys
+import threading
 import time
 from pathlib import Path
-from typing import Mapping, Optional, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
-import pyarrow as pa
 import pythusa
-from pyarrow import flight
 
-# Same-directory import when launched as ``python apps/GUI2.1/gse_connector.py``
-# from repo root (``legacy_conn`` is not a top-level package).
 _gui21 = Path(__file__).resolve().parent
 if str(_gui21) not in sys.path:
     sys.path.insert(0, str(_gui21))
@@ -38,15 +37,36 @@ from legacy_conn import (  # noqa: E402
     GSE_FIELD_NAMES,
     gse_cmd_pack,
     gse_recv_unpack,
-    tuple_as_dict,
 )
+from generic_connector import generic_connector, run_generic_receiver  # noqa: E402
 
 ROWS_PER_FRAME = 1000
 NUM_SIGNALS = len(GSE_FIELD_NAMES)
 
+GSE_CMD_FIELD_NAMES = [
+    "igniter0",
+    "igniter1",
+    "alarm",
+    "sol_gn2_fill",
+    "sol_gn2_vent",
+    "sol_gn2_disconnect",
+    "sol_mvas_fill",
+    "sol_mvas_vent",
+    "sol_mvas_open",
+    "sol_mvas_close",
+    "sol_lox_vent",
+    "sol_lng_vent",
+]
+NUM_CMD_SIGNALS = len(GSE_CMD_FIELD_NAMES)
+CMD_ROWS_PER_FRAME = 1
+
+
+# ---------------------------------------------------------------------------
+# TCP helpers (unchanged)
+# ---------------------------------------------------------------------------
 
 def recv_exact(sock: socket.socket, nbytes: int) -> bytes:
-    """Read exactly ``nbytes`` from a blocking stream socket."""
+    """Read exactly *nbytes* from a blocking stream socket."""
     parts: list[bytes] = []
     remaining = nbytes
     while remaining > 0:
@@ -61,10 +81,7 @@ def recv_exact(sock: socket.socket, nbytes: int) -> bytes:
 
 
 class GSETcpBoard:
-    """
-    TCP interface to a GSE board: send CRC-protected command packets and parse
-    fixed-size telemetry using ``legacy_conn`` helpers.
-    """
+    """TCP interface to a GSE board: command packets out, telemetry in."""
 
     def __init__(
         self,
@@ -77,6 +94,7 @@ class GSETcpBoard:
         self._port = int(port)
         self._connect_timeout = connect_timeout
         self._sock: Optional[socket.socket] = None
+        self._send_lock = threading.Lock()
 
     @property
     def connected(self) -> bool:
@@ -132,29 +150,17 @@ class GSETcpBoard:
         sol_lox_vent: bool,
         sol_lng_vent: bool,
     ) -> None:
-        """Pack a GSE command with CRC (``legacy_conn.gse_cmd_pack``) and ``sendall``."""
         payload = gse_cmd_pack(
-            igniter0,
-            igniter1,
-            alarm,
-            sol_gn2_fill,
-            sol_gn2_vent,
-            sol_gn2_disconnect,
-            sol_mvas_fill,
-            sol_mvas_vent,
-            sol_mvas_open,
-            sol_mvas_close,
-            sol_lox_vent,
-            sol_lng_vent,
+            igniter0, igniter1, alarm,
+            sol_gn2_fill, sol_gn2_vent, sol_gn2_disconnect,
+            sol_mvas_fill, sol_mvas_vent, sol_mvas_open, sol_mvas_close,
+            sol_lox_vent, sol_lng_vent,
         )
         sock = self._require_socket()
-        sock.sendall(payload)
+        with self._send_lock:
+            sock.sendall(payload)
 
     def recv_gse_telemetry(self, *, timeout: Optional[float] = None) -> tuple[Sequence, int]:
-        """
-        Block until one full GSE frame (``GSE_DATA_LENGTH`` bytes), verify CRC,
-        return ``(struct_tuple, crc_wire)`` from ``gse_recv_unpack``.
-        """
         sock = self._require_socket()
         prev = sock.gettimeout()
         if timeout is not None:
@@ -165,66 +171,110 @@ class GSETcpBoard:
             sock.settimeout(prev)
         return gse_recv_unpack(raw)
 
-    def recv_gse_telemetry_dict(self, *, timeout: Optional[float] = None) -> Mapping[str, object]:
-        """Same as ``recv_gse_telemetry`` but field names from ``legacy_conn.GSE_FIELD_NAMES``."""
-        fields, _crc = self.recv_gse_telemetry(timeout=timeout)
-        return tuple_as_dict(GSE_FIELD_NAMES, fields)
 
+# ---------------------------------------------------------------------------
+# Command buffer — duck-types as a stream_writer for StorageServer
+# ---------------------------------------------------------------------------
+
+class CommandBuffer:
+    """Thread-safe single-slot buffer.
+
+    ``StorageServer.do_put`` calls ``.write(data)`` from the Flight thread.
+    The telemetry loop calls ``.pop()`` to grab the latest pending command.
+    """
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._pending: Optional[np.ndarray] = None
+
+    def write(self, data: np.ndarray) -> None:
+        with self._lock:
+            self._pending = data.copy()
+
+    def pop(self) -> Optional[np.ndarray]:
+        with self._lock:
+            cmd = self._pending
+            self._pending = None
+            return cmd
+
+
+# ---------------------------------------------------------------------------
+# Telemetry helpers
+# ---------------------------------------------------------------------------
 
 def _gse_telemetry_tuple_to_signal_row(fields: Sequence) -> np.ndarray:
-    """Cast the full GSE decode tuple (bools → 0.0/1.0, ints/floats as-is) to float64."""
     return np.asarray(fields, dtype=np.float64)
 
 
-def gse_tcp_fill_ring_stream(
+# ---------------------------------------------------------------------------
+# Combined task: TCP telemetry reader + Flight command receiver thread
+# ---------------------------------------------------------------------------
+
+def gse_tcp_and_cmd_receiver(
     *,
-    stream,
+    telemetry_stream,
     host: str,
     port: int,
+    cmd_grpc_bind: str,
 ) -> None:
-    """Top-level for spawn: read GSE over TCP, pack ``ROWS_PER_FRAME`` rows of float64 for the ring."""
+    """Owns the board TCP socket.
+
+    * Main loop reads telemetry and packs ring frames.
+    * A daemon thread runs a generic Flight receiver (``StorageServer``) that
+      deposits incoming command frames into a ``CommandBuffer``.
+    * Between telemetry reads the loop polls the buffer and forwards any
+      pending command to the board.
+    """
+    cmd_buf = CommandBuffer()
+
+    cmd_thread = threading.Thread(
+        target=run_generic_receiver,
+        kwargs=dict(
+            grpc_bind=cmd_grpc_bind,
+            stream_writer=cmd_buf,
+            rows_per_frame=CMD_ROWS_PER_FRAME,
+            num_signals=NUM_CMD_SIGNALS,
+        ),
+        daemon=True,
+    )
+    cmd_thread.start()
+    print(f"GSE command Flight receiver listening on {cmd_grpc_bind}")
+
     with GSETcpBoard(host, port) as gse:
         while True:
             frame = np.empty((ROWS_PER_FRAME, NUM_SIGNALS), dtype=np.float64)
             for i in range(ROWS_PER_FRAME):
+                cmd = cmd_buf.pop()
+                if cmd is not None:
+                    bools = [bool(cmd[0, j]) for j in range(NUM_CMD_SIGNALS)]
+                    gse.send_gse_command(*bools)
+
                 fields, _crc = gse.recv_gse_telemetry()
                 frame[i] = _gse_telemetry_tuple_to_signal_row(fields)
-            stream.write(frame)
+            telemetry_stream.write(frame)
 
 
-def gse_flight_send_to_backend(*, stream, flight_address: str) -> None:
-    """Same Flight ``do_put`` path as board1: float64 ``sensor_*`` columns, ``high_speed_test`` descriptor."""
-    while True:
-        try:
-            schema = pa.schema([(name, pa.float64()) for name in GSE_FIELD_NAMES])
-            client = flight.connect(flight_address)
-            descriptor = flight.FlightDescriptor.for_path("high_speed_test")
-            writer, _ = client.do_put(descriptor, schema)
-            written_bytes = 0
-            start_time = time.time()
-            while True:
-                frame = stream.read()
-                if frame is None:
-                    continue
-                arrays = [pa.array(frame[:, i], type=pa.float64()) for i in range(NUM_SIGNALS)]
-                batch = pa.RecordBatch.from_arrays(arrays, schema=schema)
-                writer.write_batch(batch)
-                written_bytes += int(frame.nbytes)
-                if time.time() - start_time > 1.0:
-                    print(f"Written {written_bytes / 1_000_000} MB in the last second (approx)")
-                    start_time = time.time()
-                    written_bytes = 0
-        except Exception as e:
-            print(f"Error sending data: {e}")
-            time.sleep(1)
-
+# ---------------------------------------------------------------------------
+# Pipeline
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     host = os.environ.get("GSE_IP", "127.0.0.1")
     port = int(os.environ.get("GSE_PORT", "10001"))
-    flight_address = os.environ.get("GUI21_FLIGHT", "grpc://localhost:8815")
-    fill_fn = functools.partial(gse_tcp_fill_ring_stream, host=host, port=port)
-    send_fn = functools.partial(gse_flight_send_to_backend, flight_address=flight_address)
+    backend_flight = os.environ.get("GUI21_FLIGHT", "grpc://localhost:8815")
+    cmd_bind = os.environ.get("GSE_CMD_FLIGHT_BIND", "grpc://0.0.0.0:8825")
+
+    tcp_fn = functools.partial(
+        gse_tcp_and_cmd_receiver,
+        host=host,
+        port=port,
+        cmd_grpc_bind=cmd_bind,
+    )
+    send_fn = functools.partial(
+        generic_connector,
+        field_names=list(GSE_FIELD_NAMES),
+        flight_address=backend_flight,
+    )
 
     with pythusa.Pipeline("gse_connector") as pipeline:
         pipeline.add_stream(
@@ -235,12 +285,12 @@ def main() -> None:
             frames=64,
         )
         pipeline.add_task(
-            "gse_tcp_read",
-            fn=fill_fn,
-            writes={"stream": "gse_telemetry"},
+            "gse_tcp_and_cmd",
+            fn=tcp_fn,
+            writes={"telemetry_stream": "gse_telemetry"},
         )
         pipeline.add_task(
-            "flight_send",
+            "flight_send_to_backend",
             fn=send_fn,
             reads={"stream": "gse_telemetry"},
         )
@@ -248,4 +298,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    print(f"GSE connector — telemetry Flight to backend, command Flight receiver")
     main()

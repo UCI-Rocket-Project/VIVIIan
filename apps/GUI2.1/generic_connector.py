@@ -51,6 +51,27 @@ class StorageServer(flight.FlightServerBase):
 
 
 
+def run_generic_receiver(
+    *,
+    grpc_bind: str,
+    stream_writer,
+    rows_per_frame: int,
+    num_signals: int,
+) -> None:
+    """Start a StorageServer on *grpc_bind* and block on serve().
+
+    *stream_writer* is anything with a ``.write(np.ndarray)`` method —
+    a pythusa stream, a CommandBuffer, etc.
+    """
+    server = StorageServer(
+        grpc_bind,
+        stream_writer,
+        rows_per_frame=rows_per_frame,
+        num_signals=num_signals,
+    )
+    server.serve()
+
+
 def generic_connector(*, stream, field_names: list[str], flight_address: str) -> None:
     """Generic connector for any flight address."""
     while True:
