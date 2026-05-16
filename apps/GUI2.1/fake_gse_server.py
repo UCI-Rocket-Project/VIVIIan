@@ -22,11 +22,13 @@ import binascii
 import math
 import os
 import select
+import signal
 import socket
 import struct
 import sys
-from pathlib import Path
+import threading
 import time
+from pathlib import Path
 _gui21 = Path(__file__).resolve().parent
 if str(_gui21) not in sys.path:
     sys.path.insert(0, str(_gui21))
@@ -39,6 +41,14 @@ from legacy_conn import (  # noqa: E402
 )
 
 GSE_CMD_PACKET_LENGTH = struct.calcsize(GSE_CMD_BODY_FORMAT) + 4
+
+# Ctrl+C queues SIGINT; we clear blocking ``accept()`` / tight send loops via this flag (Windows-safe).
+_shutdown = threading.Event()
+
+
+def _request_shutdown(*_args: object) -> None:
+    print("\nfake GSE: stop requested")
+    _shutdown.set()
 
 
 def _pack_gse_telemetry(seq: int, cmd_bools: list[bool]) -> bytes:
@@ -83,41 +93,83 @@ def _serve_one_client(conn: socket.socket, client_addr: object) -> None:
     cmd_bools = [False] * 13
     seq = 0
     print(f"fake GSE: client connected {client_addr}")
-    try:
-        while True:
+    while not _shutdown.is_set():
+        try:
             if not _drain_commands(conn, buf, cmd_bools):
                 print("fake GSE: client closed (read)")
                 return
             frame = _pack_gse_telemetry(seq, cmd_bools)
             if len(frame) != GSE_DATA_LENGTH:
-                raise RuntimeError(f"internal bug: frame len {len(frame)} != {GSE_DATA_LENGTH}")
+                raise RuntimeError(
+                    f"internal bug: frame len {len(frame)} != {GSE_DATA_LENGTH}"
+                )
             conn.sendall(frame)
             seq = (seq + 1) & 0xFFFFFFFF
-    except BrokenPipeError:
-        print("fake GSE: client closed (write)")
-    except ConnectionResetError:
-        print("fake GSE: connection reset")
+        except (BrokenPipeError, ConnectionResetError):
+            print("fake GSE: peer disconnected (write/reset)")
+            return
+        except OSError as e:
+            print(f"fake GSE: socket error on client loop: {e}")
+            return
+        except Exception as e:
+            print(f"fake GSE: unexpected error in telemetry loop ({e}); closing client handler")
+            return
 
 
 def main() -> None:
+    signal.signal(signal.SIGINT, _request_shutdown)
+
     host = os.environ.get("FAKE_GSE_HOST", "0.0.0.0")
     port = int(os.environ.get("FAKE_GSE_PORT", os.environ.get("GSE_PORT", "10001")))
     ls = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    ls.bind((host, port))
-    ls.listen(1)
-    print(f"fake GSE listening on {host}:{port} (telemetry {GSE_DATA_LENGTH} B, cmd {GSE_CMD_PACKET_LENGTH} B)")
-    while True:
-        conn, addr = ls.accept()
+    try:
+        ls.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        ls.bind((host, port))
+        ls.listen(1)
+        ls.settimeout(1.0)
+        print(
+            f"fake GSE listening on {host}:{port} (telemetry {GSE_DATA_LENGTH} B, cmd {GSE_CMD_PACKET_LENGTH} B)"
+        )
+        while not _shutdown.is_set():
+            try:
+                conn, addr = ls.accept()
+                try:
+                    try:
+                        _serve_one_client(conn, addr)
+                    except Exception as e:
+                        print(f"fake GSE: error serving {addr}: {e}")
+                finally:
+                    conn.close()
+                    print("fake GSE: connection closed, waiting for next client")
+            except (TimeoutError, socket.timeout):
+                continue
+            except KeyboardInterrupt:
+                _request_shutdown()
+                break
+            except OSError as e:
+                if _shutdown.is_set():
+                    break
+                print(f"fake GSE: accept failed: {e}; retrying in 0.25s")
+                time.sleep(0.25)
+            except Exception as e:
+                if _shutdown.is_set():
+                    break
+                print(f"fake GSE: listener loop error: {e}; retrying in 0.25s")
+                time.sleep(0.25)
+        print("fake GSE: listener exited")
+    finally:
         try:
-            _serve_one_client(conn, addr)
-        finally:
-            conn.close()
-            print("fake GSE: connection closed, waiting for next client")
+            ls.close()
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":
-    # Quick sanity: wire frame round-trips through ``gse_recv_unpack``.
-    _t = _pack_gse_telemetry(42, [True, False] * 6 + [False])
-    gse_recv_unpack(_t)
-    main()
+    try:
+        # Quick sanity: wire frame round-trips through ``gse_recv_unpack``.
+        _t = _pack_gse_telemetry(42, [True, False] * 6 + [False])
+        gse_recv_unpack(_t)
+        main()
+    except KeyboardInterrupt:
+        _request_shutdown()
+        print("\nfake GSE: stopped")

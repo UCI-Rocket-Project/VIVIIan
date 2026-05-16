@@ -10,7 +10,7 @@ import pyarrow as pa
 import pythusa
 from pyarrow import flight
 from constants import GSE_SIGNAL_LISTS
-from generic_connector import generic_connector, StorageServer
+from generic_connector import generic_stream_connector as generic_connector, StorageServer
 from data_storage import write_from_stream
 from legacy_conn import (
     ECU_FIELD_NAMES,
@@ -86,13 +86,12 @@ def gse_decimate_signals(*, window_size: int, col_names: list[str], instream, ou
 
     while True:
         frame = instream.read()
-        if frame is None:
-            time.sleep(0.001)
-            continue
-
-        subset = frame[:, col_indices]  # (GSE_ROWS_PER_FRAME, k)
-        out = subset.reshape(out_rows, window_size, k).mean(axis=1)  # (out_rows, k)
-        outstream.write(out.astype(np.float64, copy=False))
+        while(frame is not None):
+            subset = frame[:, col_indices]  # (GSE_ROWS_PER_FRAME, k)
+            out = subset.reshape(out_rows, window_size, k).mean(axis=1)  # (out_rows, k)
+            outstream.write(out.astype(np.float64, copy=False))
+            frame = instream.read()
+        time.sleep(0.01)
 
 
 def gse_raw_telemetry_storage_write(*, stream) -> None:
