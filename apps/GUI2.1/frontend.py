@@ -7,12 +7,6 @@
 # avoids hanging gui on commands that don't matter 
 
 
-
-
-
-
-
-
 from __future__ import annotations
 
 import colorsys
