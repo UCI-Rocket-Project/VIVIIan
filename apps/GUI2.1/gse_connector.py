@@ -7,13 +7,19 @@ import socket
 import struct
 import threading
 import time
-from typing import Callable, Final, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Final, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pyarrow as pa
 import pyarrow.flight as flight
 
-from generic_connector import CommandServer, generic_tcp_to_flight_connector  # noqa: E402
+
+_TCP_SESSION_ERRORS = (
+    ConnectionError,
+    BrokenPipeError,
+    ConnectionResetError,
+    OSError,
+)
 
 GSE_DATA_LENGTH: Final[int] = 91  # payload + CRC
 GSE_RECV_FORMAT: Final[str] = "<L???????????????fffffffffffffffff"
@@ -123,7 +129,17 @@ ECHO_FIELD_NAMES: Final[List[str]] = list(GSE_CMD_FIELD_NAMES) + ["connected"]
 NUM_ECHO_SIGNALS: Final[int] = len(ECHO_FIELD_NAMES)
 ECHO_ROWS_PER_FRAME: Final[int] = 1
 ECHO_FLIGHT_DESCRIPTOR_PATH: Final[str] = "gse_command_echo"
+CMD_FLIGHT_DESCRIPTOR_PATH: Final[str] = "gse_commands"
 DEFAULT_ECHO_INTERVAL_S: Final[float] = 0.1
+DEFAULT_CMD_FLIGHT: Final[str] = "grpc://127.0.0.1:8825"
+
+GN2_FILL_CMD_INDEX: Final[int] = GSE_CMD_FIELD_NAMES.index("sol_gn2_fill")
+MVAS_OPEN_CMD_INDEX: Final[int] = GSE_CMD_FIELD_NAMES.index("sol_mvas_open")
+CONNECTED_ECHO_INDEX: Final[int] = len(GSE_CMD_FIELD_NAMES)
+
+# Slots in the frontend ``ui_state`` vector (writable control order).
+UI_SLOT_GN2_FILL: Final[int] = 0
+UI_SLOT_MVAS_OPEN: Final[int] = 1
 
 NUM_SIGNALS: Final[int] = len(GSE_FIELD_NAMES)
 ROWS_PER_FRAME: Final[int] = 1000  # must match backend.py GSE_ROWS_PER_FRAME
@@ -247,27 +263,112 @@ def make_array_to_command_converter(
     return converter
 
 
-class GseCommandServer(CommandServer):
-    """CommandServer wrapper that flips ``echo_state.connected`` to False
-    whenever a Flight do_put fails (which happens when the TCP sendall to the
-    GSE board raises)."""
+class GseCommandServer(flight.FlightServerBase):
+    """Flight command receiver bound once for the process lifetime.
+
+  ``set_tcp_socket`` swaps the live GSE TCP connection across reconnects so we
+    do not restart ``serve()`` (which would block on port reuse / shutdown).
+    """
 
     def __init__(
         self,
         location: str,
-        tcp_connection: socket.socket,
-        converter: Callable[[np.ndarray], bytes],
         echo_state: EchoState,
+        converter: Callable[[np.ndarray], bytes],
     ) -> None:
-        super().__init__(location, tcp_connection, converter)
+        super().__init__(location)
         self._echo_state = echo_state
+        self._converter = converter
+        self._lock = threading.Lock()
+        self._tcp_connection: socket.socket | None = None
+
+    def set_tcp_socket(self, sock: socket.socket | None) -> None:
+        with self._lock:
+            self._tcp_connection = sock
 
     def do_put(self, context, descriptor, reader, writer):  # type: ignore[override]
         try:
-            return super().do_put(context, descriptor, reader, writer)
+            for chunk in reader:
+                record_batch = chunk.data
+                arrays = [
+                    record_batch.column(i).to_numpy(zero_copy_only=False)
+                    for i in range(record_batch.num_columns)
+                ]
+                data = np.column_stack(arrays).astype(np.float64, copy=False)
+                flight_data = self._converter(data)
+                if flight_data is None:
+                    continue
+                with self._lock:
+                    sock = self._tcp_connection
+                if sock is None:
+                    raise ConnectionError("GSE TCP socket not connected")
+                try:
+                    sock.sendall(flight_data)
+                except _TCP_SESSION_ERRORS as exc:
+                    self._echo_state.set_connected(False)
+                    raise ConnectionError(f"GSE command send failed: {exc}") from exc
         except Exception:
             self._echo_state.set_connected(False)
             raise
+
+
+def gse_telemetry_to_flight_connector(
+    rows_per_frame: int,
+    tcp_connection: socket.socket,
+    nbytes: int,
+    struct_format: str,
+    field_names: list[str],
+    flight_address: str,
+    echo_state: EchoState,
+) -> None:
+    """Read GSE telemetry over TCP and forward to Flight.
+
+    Returns when the TCP link is lost (e.g. fake GSE stopped) so ``main()`` can
+    reconnect instead of spinning on a dead socket.
+    """
+    writer: Any = None
+    try:
+        schema = pa.schema([(name, pa.float64()) for name in field_names])
+        client = flight.connect(flight_address)
+        descriptor = flight.FlightDescriptor.for_path("high_speed_test")
+        writer, _ = client.do_put(descriptor, schema)
+        written_bytes = 0
+        start_time = time.time()
+        while True:
+            data_batch = np.empty((rows_per_frame, len(field_names)), dtype=np.float64)
+            for i in range(rows_per_frame):
+                parts: list[bytes] = []
+                remaining = nbytes
+                while remaining > 0:
+                    chunk = tcp_connection.recv(remaining)
+                    if not chunk:
+                        raise ConnectionError("GSE telemetry socket closed")
+                    parts.append(chunk)
+                    remaining -= len(chunk)
+                recv_bytes = b"".join(parts)
+                unpacked_data = struct.unpack(struct_format, recv_bytes[:-4])
+                data_batch[i] = unpacked_data
+            arrays = [
+                pa.array(data_batch[:, col], type=pa.float64())
+                for col in range(len(field_names))
+            ]
+            batch = pa.RecordBatch.from_arrays(arrays, schema=schema)
+            writer.write_batch(batch)
+            written_bytes += int(batch.nbytes)
+            if time.time() - start_time > 1.0:
+                print(
+                    f"GSE telemetry Flight: {written_bytes / 1_000_000:.2f} MB/s (approx)"
+                )
+                start_time = time.time()
+                written_bytes = 0
+    except _TCP_SESSION_ERRORS as exc:
+        print(f"GSE telemetry link lost: {exc}")
+    except Exception as exc:
+        print(f"GSE telemetry unexpected error: {exc}")
+    finally:
+        echo_state.set_connected(False)
+        # Intentionally do not call writer.close() here; it can block when the
+        # backend Flight peer is gone and would stall data_thread.join().
 
 
 def echo_to_flight_connector(
@@ -307,8 +408,147 @@ def echo_to_flight_connector(
 
 
 # ---------------------------------------------------------------------------
+# UI state → GSE command Flight client (used by the frontend pipeline task)
+# ---------------------------------------------------------------------------
+
+
+def ui_snapshot_to_command_row(
+    snapshot: np.ndarray,
+    *,
+    baseline: Sequence[bool] | None = None,
+) -> np.ndarray:
+    """Map the frontend ``ui_state`` vector to a (1, NUM_CMD_SIGNALS) row."""
+    base = (
+        [bool(b) for b in baseline]
+        if baseline is not None
+        else [False] * NUM_CMD_SIGNALS
+    )
+    if len(base) != NUM_CMD_SIGNALS:
+        base = [False] * NUM_CMD_SIGNALS
+    row = [1.0 if b else 0.0 for b in base]
+    flat = np.asarray(snapshot, dtype=np.float64).reshape(-1)
+    if flat.size > UI_SLOT_GN2_FILL:
+        row[GN2_FILL_CMD_INDEX] = 1.0 if flat[UI_SLOT_GN2_FILL] > 0.5 else 0.0
+    if flat.size > UI_SLOT_MVAS_OPEN:
+        row[MVAS_OPEN_CMD_INDEX] = 1.0 if flat[UI_SLOT_MVAS_OPEN] > 0.5 else 0.0
+    return np.asarray([row], dtype=np.float64)
+
+
+class GseCommandFlightClient:
+    """Persistent Flight ``do_put`` client to the connector CommandServer."""
+
+    def __init__(self, flight_address: str = DEFAULT_CMD_FLIGHT) -> None:
+        self._flight_address = flight_address
+        self._schema = pa.schema([(name, pa.float64()) for name in GSE_CMD_FIELD_NAMES])
+        self._descriptor = flight.FlightDescriptor.for_path(CMD_FLIGHT_DESCRIPTOR_PATH)
+        self._client: Any = None
+        self._writer: Any = None
+
+    def close(self) -> None:
+        if self._writer is not None:
+            try:
+                self._writer.close()
+            except Exception:
+                pass
+            self._writer = None
+        self._client = None
+
+    def send_row(self, row: np.ndarray) -> None:
+        batch_row = np.asarray(row, dtype=np.float64).reshape(1, NUM_CMD_SIGNALS)
+        if batch_row.shape != (1, NUM_CMD_SIGNALS):
+            raise ValueError(
+                f"expected command row shape (1, {NUM_CMD_SIGNALS}), got {batch_row.shape}"
+            )
+        if self._writer is None:
+            self._client = flight.connect(self._flight_address)
+            self._writer, _ = self._client.do_put(self._descriptor, self._schema)
+        arrays = [
+            pa.array(batch_row[:, i], type=pa.float64()) for i in range(NUM_CMD_SIGNALS)
+        ]
+        batch = pa.RecordBatch.from_arrays(arrays, schema=self._schema)
+        self._writer.write_batch(batch)
+
+    def send_row_safe(self, row: np.ndarray) -> bool:
+        try:
+            self.send_row(row)
+            return True
+        except Exception as e:
+            print(f"GSE command Flight client error: {e}")
+            self.close()
+            return False
+
+
+def forward_ui_state_to_gse_commands(
+    *,
+    ui_state: Any,
+    command_echo: Any,
+    cmd_flight: str = DEFAULT_CMD_FLIGHT,
+    poll_sleep_s: float = 0.02,
+) -> None:
+    """Pipeline task: read ``frontend_ui_state``, send edge-triggered commands
+    to ``gse_connector`` via Flight when the echo stream reports connected."""
+
+    flight_client = GseCommandFlightClient(cmd_flight)
+    last_snapshot: np.ndarray | None = None
+
+    try:
+        while True:
+            latest_ui: np.ndarray | None = None
+            while True:
+                frame = ui_state.read()
+                if frame is None:
+                    break
+                latest_ui = np.asarray(frame, dtype=np.float64).reshape(-1)
+
+            connected = False
+            baseline: list[bool] | None = None
+            echo_row: np.ndarray | None = None
+            while True:
+                frame = command_echo.read()
+                if frame is None:
+                    break
+                echo_row = np.asarray(frame, dtype=np.float64).reshape(-1)
+            if echo_row is not None and echo_row.size > CONNECTED_ECHO_INDEX:
+                connected = bool(echo_row[CONNECTED_ECHO_INDEX] > 0.5)
+                baseline = [
+                    bool(echo_row[i] > 0.5) for i in range(NUM_CMD_SIGNALS)
+                ]
+
+            if latest_ui is None:
+                time.sleep(poll_sleep_s)
+                continue
+            if not connected:
+                last_snapshot = None
+                time.sleep(poll_sleep_s)
+                continue
+            if last_snapshot is not None and np.array_equal(latest_ui, last_snapshot):
+                time.sleep(poll_sleep_s)
+                continue
+
+            cmd_row = ui_snapshot_to_command_row(latest_ui, baseline=baseline)
+            if flight_client.send_row_safe(cmd_row):
+                last_snapshot = latest_ui.copy()
+            time.sleep(poll_sleep_s)
+    finally:
+        flight_client.close()
+
+
+# ---------------------------------------------------------------------------
 # Pipeline
 # ---------------------------------------------------------------------------
+
+def _close_socket(sock: socket.socket | None) -> None:
+    if sock is None:
+        return
+    try:
+        sock.shutdown(socket.SHUT_RDWR)
+    except OSError:
+        pass
+    try:
+        sock.close()
+    except OSError:
+        pass
+
 
 def main() -> None:
     host = os.environ.get("GSE_IP", "127.0.0.1")
@@ -316,9 +556,9 @@ def main() -> None:
     backend_flight = os.environ.get("GUI21_FLIGHT", "grpc://localhost:8815")
     cmd_bind = os.environ.get("GSE_CMD_FLIGHT_BIND", "grpc://0.0.0.0:8825")
     echo_flight = os.environ.get("GSE_CMD_ECHO_FLIGHT", "grpc://localhost:8820")
+    reconnect_s = float(os.environ.get("GSE_RECONNECT_S", "1.0"))
 
-    # Start the echo Flight client before touching TCP so the frontend gets a
-    # connected=0 heartbeat even while we are still trying to dial the board.
+    # Echo Flight client runs for the process lifetime (survives TCP reconnects).
     echo_state = EchoState()
     echo_thread = threading.Thread(
         target=echo_to_flight_connector,
@@ -327,47 +567,65 @@ def main() -> None:
     )
     echo_thread.start()
 
-    print(f"GSE connector: connecting to {host}:{port}")
-    while True:
-        try:
-            sock = socket.create_connection((host, port), timeout=5.0)
-            sock.settimeout(None)
-            break
-        except (ConnectionError, OSError, socket.timeout) as e:
-            echo_state.set_connected(False)
-            print(f"GSE TCP connect failed ({e}); retrying in 1s")
-            time.sleep(1.0)
-    echo_state.set_connected(True)
-    print(f"GSE connector: TCP connected")
-
     converter = make_array_to_command_converter(echo_state)
-    command_server = GseCommandServer(cmd_bind, sock, converter, echo_state)
-
-    data_thread = threading.Thread(
-        target=generic_tcp_to_flight_connector,
-        args=(ROWS_PER_FRAME, sock, GSE_DATA_LENGTH, GSE_RECV_FORMAT, list(GSE_FIELD_NAMES), backend_flight),
-        daemon=True,
-    )
+    command_server = GseCommandServer(cmd_bind, echo_state, converter)
     command_thread = threading.Thread(target=command_server.serve, daemon=True)
-    data_thread.start()
     command_thread.start()
 
     try:
-        while data_thread.is_alive() or command_thread.is_alive():
-            time.sleep(0.25)
+        while True:
+            sock: socket.socket | None = None
+            data_thread: threading.Thread | None = None
+            try:
+                print(f"GSE connector: connecting to {host}:{port}")
+                while True:
+                    try:
+                        sock = socket.create_connection((host, port), timeout=5.0)
+                        sock.settimeout(None)
+                        break
+                    except (ConnectionError, OSError, socket.timeout) as exc:
+                        echo_state.set_connected(False)
+                        command_server.set_tcp_socket(None)
+                        print(f"GSE TCP connect failed ({exc}); retrying in 1s")
+                        time.sleep(1.0)
+
+                command_server.set_tcp_socket(sock)
+                echo_state.set_connected(True)
+                print("GSE connector: TCP connected")
+
+                data_thread = threading.Thread(
+                    target=gse_telemetry_to_flight_connector,
+                    args=(
+                        ROWS_PER_FRAME,
+                        sock,
+                        GSE_DATA_LENGTH,
+                        GSE_RECV_FORMAT,
+                        list(GSE_FIELD_NAMES),
+                        backend_flight,
+                    ),
+                    kwargs={"echo_state": echo_state},
+                    daemon=True,
+                )
+                data_thread.start()
+                data_thread.join()
+            except KeyboardInterrupt:
+                raise
+            finally:
+                echo_state.set_connected(False)
+                command_server.set_tcp_socket(None)
+                _close_socket(sock)
+                if data_thread is not None and data_thread.is_alive():
+                    data_thread.join(timeout=1.0)
+
+            print(f"GSE connector: disconnected, reconnecting in {reconnect_s:.0f}s...")
+            time.sleep(reconnect_s)
     except KeyboardInterrupt:
         print("\nGSE connector — shutting down")
     finally:
-        echo_state.set_connected(False)
         try:
             command_server.shutdown()
         except Exception:
             pass
-        try:
-            sock.shutdown(socket.SHUT_RDWR)
-        except OSError:
-            pass
-        sock.close()
 
 
 if __name__ == "__main__":

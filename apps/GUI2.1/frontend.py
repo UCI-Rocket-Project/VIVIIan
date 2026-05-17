@@ -35,10 +35,13 @@ from viviian.gui_utils import (
 from backend import StorageServer
 from constants import GSE_SIGNAL_LISTS
 from gse_connector import (
+    CONNECTED_ECHO_INDEX,
     ECHO_FIELD_NAMES,
     ECHO_ROWS_PER_FRAME,
-    GSE_CMD_FIELD_NAMES,
+    GN2_FILL_CMD_INDEX,
+    MVAS_OPEN_CMD_INDEX,
     NUM_ECHO_SIGNALS,
+    forward_ui_state_to_gse_commands,
 )
 
 GSE_DECIMATED_ROWS = 50  # 1000 raw rows // 200 average window
@@ -50,8 +53,6 @@ GSE_VALUE_SIGNALS = GSE_SIGNAL_LISTS[1:]  # everything except packet_time
 COMMAND_ECHO_STREAM = "frontend_gse_command_echo"
 UI_STATE_STREAM = "frontend_ui_state"
 
-GN2_FILL_CMD_INDEX = GSE_CMD_FIELD_NAMES.index("sol_gn2_fill")
-MVAS_OPEN_CMD_INDEX = GSE_CMD_FIELD_NAMES.index("sol_mvas_open")
 CONNECTED_ECHO_INDEX = ECHO_FIELD_NAMES.index("connected")
 
 
@@ -304,9 +305,6 @@ def main() -> None:
                 cache_align=True,
                 frames=256,
             )
-        # Output ring for the writable controls.  Nothing consumes it yet, but
-        # the frontend task requires an output binding whenever any button is
-        # registered, and this is where a future command poller would read.
         pipeline.add_stream(
             UI_STATE_STREAM,
             shape=frontend.output_shape,
@@ -336,6 +334,14 @@ def main() -> None:
             fn=frontend_task,
             reads=frontend.read_bindings(),
             writes=frontend.write_bindings(UI_STATE_STREAM),
+        )
+        pipeline.add_task(
+            "gse_command_forwarder",
+            fn=forward_ui_state_to_gse_commands,
+            reads={
+                "ui_state": UI_STATE_STREAM,
+                "command_echo": COMMAND_ECHO_STREAM,
+            },
         )
         pipeline.run()
 
