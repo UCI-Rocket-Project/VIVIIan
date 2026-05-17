@@ -14,6 +14,7 @@ import functools
 import sys
 import time
 from pathlib import Path
+from typing import Any, Iterable, Mapping, Sequence
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _CORE_SRC = _REPO_ROOT / "packages" / "viviian_core" / "src"
@@ -23,15 +24,35 @@ if str(_CORE_SRC) not in sys.path:
 import numpy as np
 from pythusa import Pipeline
 from viviian.frontend import Frontend, GlfwBackend
-from viviian.gui_utils import GraphSeries, SensorGraph
+from viviian.gui_utils import (
+    GraphSeries,
+    MomentaryButton,
+    SensorGraph,
+    StateButton,
+    ToggleButton,
+)
 
 from backend import StorageServer
 from constants import GSE_SIGNAL_LISTS
+from gse_connector import (
+    ECHO_FIELD_NAMES,
+    ECHO_ROWS_PER_FRAME,
+    GSE_CMD_FIELD_NAMES,
+    NUM_ECHO_SIGNALS,
+)
 
 GSE_DECIMATED_ROWS = 50  # 1000 raw rows // 200 average window
 FRONTEND_FLIGHT_GSE_BIND = "grpc://0.0.0.0:8819"
+FRONTEND_FLIGHT_GSE_CMD_ECHO_BIND = "grpc://0.0.0.0:8820"
 
 GSE_VALUE_SIGNALS = GSE_SIGNAL_LISTS[1:]  # everything except packet_time
+
+COMMAND_ECHO_STREAM = "frontend_gse_command_echo"
+UI_STATE_STREAM = "frontend_ui_state"
+
+GN2_FILL_CMD_INDEX = GSE_CMD_FIELD_NAMES.index("sol_gn2_fill")
+MVAS_OPEN_CMD_INDEX = GSE_CMD_FIELD_NAMES.index("sol_mvas_open")
+CONNECTED_ECHO_INDEX = ECHO_FIELD_NAMES.index("connected")
 
 
 def _signal_colors(n: int) -> list[tuple[float, float, float, float]]:
@@ -77,9 +98,136 @@ def gse_split_to_graph_streams(*, stream, **graph_writers) -> None:
                 writer.write(out)
 
 
-def build_frontend():
+class CommandEchoSync:
+    """Frontend component that consumes the (1, NUM_ECHO_SIGNALS) command-echo
+    stream and uses it to drive GSE button state:
+
+    - while the ``connected`` flag is 0, all wired buttons are forced disabled
+      so the operator cannot push state into a board that isn't listening
+    - on every 0→1 transition, toggle buttons are synced to the device's
+      current command bits so the UI reflects the board after a reconnect
+      without overwriting whatever state the board was holding
+    """
+
+    component_id = "gse_command_echo_sync"
+    state_id: str | None = None
+
+    def __init__(
+        self,
+        *,
+        stream_name: str,
+        toggle_indices: Mapping[int, ToggleButton],
+        momentary_buttons: Sequence[MomentaryButton],
+    ) -> None:
+        self._stream_name = stream_name
+        self._toggle_indices = dict(toggle_indices)
+        self._momentary_buttons = list(momentary_buttons)
+        self._toggle_adapters: dict[int, Any] = {}
+        self._reader: Any = None
+        self._latest_row: np.ndarray | None = None
+        self._prev_connected: bool | None = None
+
+    def attach_adapters(self, adapters: Iterable[Any]) -> None:
+        """Look up the runtime adapter for each wired button so we can also
+        update the writer-snapshot value on sync (otherwise the GUI display
+        would diverge from the output stream until the operator clicks)."""
+        by_id = {getattr(a, "component_id", None): a for a in adapters}
+        for cmd_idx, button in self._toggle_indices.items():
+            adapter = by_id.get(button.button_id)
+            if adapter is None:
+                raise RuntimeError(
+                    f"No frontend adapter for button {button.button_id!r}"
+                )
+            self._toggle_adapters[cmd_idx] = adapter
+
+    def required_streams(self) -> tuple[str, ...]:
+        return (self._stream_name,)
+
+    def bind(self, readers: Mapping[str, Any]) -> None:
+        self._reader = readers[self._stream_name]
+        if hasattr(self._reader, "set_blocking"):
+            self._reader.set_blocking(False)
+
+    def consume(self) -> bool:
+        if self._reader is None:
+            return False
+        latest = None
+        while True:
+            frame = self._reader.read()
+            if frame is None:
+                break
+            latest = frame
+        if latest is None:
+            return False
+        self._latest_row = np.asarray(latest, dtype=np.float64).reshape(-1)
+        return True
+
+    def render(self) -> None:
+        import imgui
+
+        connected = False
+        commands: np.ndarray | None = None
+        if self._latest_row is not None:
+            connected = bool(self._latest_row[CONNECTED_ECHO_INDEX] > 0.5)
+            commands = self._latest_row[:CONNECTED_ECHO_INDEX]
+
+        imgui.text_unformatted(
+            f"GSE link: {'CONNECTED' if connected else 'DISCONNECTED'}"
+        )
+
+        all_buttons: list[StateButton] = list(self._toggle_indices.values()) + list(
+            self._momentary_buttons
+        )
+        for button in all_buttons:
+            button.enabled_by_default = connected
+
+        if connected and not self._prev_connected and commands is not None:
+            for cmd_idx, toggle in self._toggle_indices.items():
+                value = bool(commands[cmd_idx] > 0.5)
+                toggle.state = value
+                adapter = self._toggle_adapters.get(cmd_idx)
+                if adapter is not None:
+                    # Keep the writer snapshot in step with the displayed
+                    # toggle state so the next operator click flips from the
+                    # correct baseline.  Touches the adapter's internal field
+                    # because viviian does not expose a public setter.
+                    adapter._current_value = 1.0 if value else 0.0  # noqa: SLF001
+
+        self._prev_connected = connected
+
+
+def build_frontend() -> tuple[Frontend, CommandEchoSync]:
+    toggle_gn2_fill = ToggleButton(
+        button_id="gse_sol_gn2_fill",
+        label="GN2 Fill",
+        state_id="gse.sol_gn2_fill",
+        state=False,
+        enabled_by_default=False,
+        theme_name="tau_ceti",
+    )
+    momentary_mvas_open = MomentaryButton(
+        button_id="gse_sol_mvas_open",
+        label="MVAS Open",
+        state_id="gse.sol_mvas_open",
+        state=1.0,
+        enabled_by_default=False,
+        theme_name="tau_ceti",
+    )
+
+    sync_component = CommandEchoSync(
+        stream_name=COMMAND_ECHO_STREAM,
+        toggle_indices={GN2_FILL_CMD_INDEX: toggle_gn2_fill},
+        momentary_buttons=(momentary_mvas_open,),
+    )
+
     colors = _signal_colors(len(GSE_VALUE_SIGNALS))
     frontend = Frontend("gui2_1_frontend")
+    # Sync must be registered before the buttons so its consume()/render()
+    # runs first in the frontend task loop and can mutate button state and
+    # ``enabled_by_default`` before the button adapters render this frame.
+    frontend.add(sync_component)
+    frontend.add(toggle_gn2_fill)
+    frontend.add(momentary_mvas_open)
     frontend.add(
         SensorGraph(
             graph_id="gse_graph",
@@ -96,10 +244,12 @@ def build_frontend():
             theme_name="tau_ceti",
             show_series_controls=True,
             window_seconds=20000.0,
-            
         )
     )
-    return frontend
+
+    frontend.compile()
+    sync_component.attach_adapters(frontend._adapters)  # noqa: SLF001
+    return frontend, sync_component
 
 
 def build_frontend_task(frontend: Frontend):
@@ -111,13 +261,19 @@ def build_frontend_task(frontend: Frontend):
 
 
 def main() -> None:
-    frontend = build_frontend()
+    frontend, _sync_component = build_frontend()
     frontend_task = build_frontend_task(frontend)
     gse_flight_fn = functools.partial(
         frontend_run_flight_server,
         grpc_bind=FRONTEND_FLIGHT_GSE_BIND,
         rows_per_frame=GSE_DECIMATED_ROWS,
         num_signals=len(GSE_SIGNAL_LISTS),
+    )
+    echo_flight_fn = functools.partial(
+        frontend_run_flight_server,
+        grpc_bind=FRONTEND_FLIGHT_GSE_CMD_ECHO_BIND,
+        rows_per_frame=ECHO_ROWS_PER_FRAME,
+        num_signals=NUM_ECHO_SIGNALS,
     )
 
     graph_write_bindings = {
@@ -133,6 +289,13 @@ def main() -> None:
             cache_align=True,
             frames=256,
         )
+        pipeline.add_stream(
+            COMMAND_ECHO_STREAM,
+            shape=(ECHO_ROWS_PER_FRAME, NUM_ECHO_SIGNALS),
+            dtype=np.float64,
+            cache_align=True,
+            frames=64,
+        )
         for name in GSE_VALUE_SIGNALS:
             pipeline.add_stream(
                 _graph_stream_name(name),
@@ -141,6 +304,16 @@ def main() -> None:
                 cache_align=True,
                 frames=256,
             )
+        # Output ring for the writable controls.  Nothing consumes it yet, but
+        # the frontend task requires an output binding whenever any button is
+        # registered, and this is where a future command poller would read.
+        pipeline.add_stream(
+            UI_STATE_STREAM,
+            shape=frontend.output_shape,
+            dtype=np.float64,
+            cache_align=False,
+            frames=64,
+        )
 
         pipeline.add_task(
             "frontend_gse_flight_server",
@@ -154,9 +327,15 @@ def main() -> None:
             writes=graph_write_bindings,
         )
         pipeline.add_task(
+            "frontend_gse_command_echo_server",
+            fn=echo_flight_fn,
+            writes={"stream": COMMAND_ECHO_STREAM},
+        )
+        pipeline.add_task(
             "frontend_gui",
             fn=frontend_task,
             reads=frontend.read_bindings(),
+            writes=frontend.write_bindings(UI_STATE_STREAM),
         )
         pipeline.run()
 

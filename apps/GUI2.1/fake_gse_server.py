@@ -61,7 +61,7 @@ def _pack_gse_telemetry(seq: int, cmd_bools: list[bool]) -> bytes:
     floats17 = tuple(10.0 * math.sin(0.002 * seq + i) + 0.5 * i for i in range(17))
     payload = struct.pack(GSE_RECV_FORMAT, packet_time, *bools15, *floats17)
     crc = binascii.crc32(payload) & 0xFFFFFFFF
-    time.sleep(0.0001)
+    #time.sleep(0.0001)
     return payload + struct.pack("<L", crc)
 
 
