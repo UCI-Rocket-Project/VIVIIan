@@ -123,9 +123,44 @@ GSE_CMD_FIELD_NAMES = [
 NUM_CMD_SIGNALS = len(GSE_CMD_FIELD_NAMES)
 CMD_ROWS_PER_FRAME = 1
 
-# Command-echo contract: the 12 commands plus a 0/1 connectivity flag the
-# frontend uses to disable controls and sync button state on reconnect.
-ECHO_FIELD_NAMES: Final[List[str]] = list(GSE_CMD_FIELD_NAMES) + ["connected"]
+SOLENOID_CURRENT_ECHO_NAMES: Final[List[str]] = [
+    "currentGn2Fill",
+    "currentGn2Vent",
+    "currentGn2Disconnect",
+    "currentMvasFill",
+    "currentMvasVent",
+    "currentMvasOpen",
+    "currentMvasClose",
+    "currentLoxVent",
+    "currentLngVent",
+]
+NUM_SOLENOID_CURRENTS: Final[int] = len(SOLENOID_CURRENT_ECHO_NAMES)
+
+_SOLENOID_CURRENT_TELEMETRY_INDICES: Final[tuple[int, ...]] = tuple(
+    GSE_FIELD_NAMES.index(name)
+    for name in [
+        "solenoidCurrentGn2Fill",
+        "solenoidCurrentGn2Vent",
+        "solenoidCurrentGn2Disconnect",
+        "solenoidCurrentMvasFill",
+        "solenoidCurrentMvasVent",
+        "solenoidCurrentMvasOpen",
+        "solenoidCurrentMvasClose",
+        "solenoidCurrentLoxVent",
+        "solenoidCurrentLngVent",
+    ]
+)
+
+_FIRST_SOL_CMD_INDEX: Final[int] = GSE_CMD_FIELD_NAMES.index("sol_gn2_fill")
+CMD_TO_CURRENT_SLOT: Final[dict[int, int]] = {
+    _FIRST_SOL_CMD_INDEX + i: i for i in range(NUM_SOLENOID_CURRENTS)
+}
+CURRENT_ECHO_OFFSET: Final[int] = NUM_CMD_SIGNALS
+
+# Command-echo contract: 12 command bools + 9 solenoid currents + connected flag.
+ECHO_FIELD_NAMES: Final[List[str]] = (
+    list(GSE_CMD_FIELD_NAMES) + list(SOLENOID_CURRENT_ECHO_NAMES) + ["connected"]
+)
 NUM_ECHO_SIGNALS: Final[int] = len(ECHO_FIELD_NAMES)
 ECHO_ROWS_PER_FRAME: Final[int] = 1
 ECHO_FLIGHT_DESCRIPTOR_PATH: Final[str] = "gse_command_echo"
@@ -135,7 +170,7 @@ DEFAULT_CMD_FLIGHT: Final[str] = "grpc://127.0.0.1:8825"
 
 GN2_FILL_CMD_INDEX: Final[int] = GSE_CMD_FIELD_NAMES.index("sol_gn2_fill")
 MVAS_OPEN_CMD_INDEX: Final[int] = GSE_CMD_FIELD_NAMES.index("sol_mvas_open")
-CONNECTED_ECHO_INDEX: Final[int] = len(GSE_CMD_FIELD_NAMES)
+CONNECTED_ECHO_INDEX: Final[int] = NUM_CMD_SIGNALS + NUM_SOLENOID_CURRENTS
 
 # Slots in the frontend ``ui_state`` vector (writable control order).
 UI_SLOT_GN2_FILL: Final[int] = 0
@@ -222,12 +257,13 @@ def array_to_command_converter(array: np.ndarray) -> bytes:
 
 
 class EchoState:
-    """Thread-safe shared state holding the latest 12 commands and a connected
-    flag, used by the echo Flight client to push status to the frontend."""
+    """Thread-safe shared state holding the latest 12 commands, 9 solenoid
+    currents, and a connected flag, pushed to the frontend via Flight echo."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._commands: List[bool] = [False] * NUM_CMD_SIGNALS
+        self._currents: List[float] = [0.0] * NUM_SOLENOID_CURRENTS
         self._connected: bool = False
 
     def update_commands(self, commands: Sequence[bool]) -> None:
@@ -238,15 +274,33 @@ class EchoState:
         with self._lock:
             self._commands = [bool(c) for c in commands]
 
+    def update_currents(self, currents: Sequence[float]) -> None:
+        with self._lock:
+            self._currents = [float(c) for c in currents[:NUM_SOLENOID_CURRENTS]]
+
     def set_connected(self, value: bool) -> None:
         with self._lock:
             self._connected = bool(value)
 
+    def sync_from_telemetry(self, telemetry_fields: Sequence) -> None:
+        """Seed commands and currents from a device telemetry frame so the
+        echo reflects the device's actual state on reconnect."""
+        with self._lock:
+            self._commands = [
+                bool(telemetry_fields[i + 1]) for i in range(NUM_CMD_SIGNALS)
+            ]
+            self._currents = [
+                float(telemetry_fields[idx])
+                for idx in _SOLENOID_CURRENT_TELEMETRY_INDICES
+            ]
+
     def snapshot_row(self) -> np.ndarray:
         with self._lock:
-            row = [1.0 if c else 0.0 for c in self._commands] + [
-                1.0 if self._connected else 0.0
-            ]
+            row = (
+                [1.0 if c else 0.0 for c in self._commands]
+                + list(self._currents)
+                + [1.0 if self._connected else 0.0]
+            )
         return np.asarray([row], dtype=np.float64)
 
 
@@ -348,6 +402,10 @@ def gse_telemetry_to_flight_connector(
                 recv_bytes = b"".join(parts)
                 unpacked_data = struct.unpack(struct_format, recv_bytes[:-4])
                 data_batch[i] = unpacked_data
+            echo_state.update_currents([
+                float(data_batch[-1, idx])
+                for idx in _SOLENOID_CURRENT_TELEMETRY_INDICES
+            ])
             arrays = [
                 pa.array(data_batch[:, col], type=pa.float64())
                 for col in range(len(field_names))
@@ -590,8 +648,11 @@ def main() -> None:
                         time.sleep(1.0)
 
                 command_server.set_tcp_socket(sock)
+
+                first_fields, _ = recv_gse_telemetry(sock, timeout=5.0)
+                echo_state.sync_from_telemetry(first_fields)
                 echo_state.set_connected(True)
-                print("GSE connector: TCP connected")
+                print("GSE connector: TCP connected (synced from device state)")
 
                 data_thread = threading.Thread(
                     target=gse_telemetry_to_flight_connector,

@@ -18,6 +18,15 @@ from legacy_conn import (
     GSE_FIELD_NAMES,
     LOAD_CELL_FIELD_NAMES,
 )
+from nidaq_gse import (
+    NIDAQ_AVERAGE_OVER,
+    NIDAQ_CHANNEL_NAMES,
+    NIDAQ_FIELD_NAMES,
+    NIDAQ_FLIGHT_BIND,
+    NIDAQ_NUM_SIGNALS,
+    NIDAQ_ROWS_PER_FRAME,
+)
+
 
 GSE_ROWS_PER_FRAME = 1000
 ECU_ROWS_PER_FRAME = 1000
@@ -31,17 +40,14 @@ GSE_FLIGHT_BIND = "grpc://0.0.0.0:8815"
 ECU_FLIGHT_BIND = "grpc://0.0.0.0:8816"
 EXTR_ECU_FLIGHT_BIND = "grpc://0.0.0.0:8817"
 LOAD_CELL_FLIGHT_BIND = "grpc://0.0.0.0:8818"
-
-
 FRONTEND_FLIGHT_GSE_BIND = "grpc://0.0.0.0:8819"
 FRONTEND_FLIGHT_ECU_BIND = "grpc://0.0.0.0:8820"
 FRONTEND_FLIGHT_EXTR_ECU_BIND = "grpc://0.0.0.0:8821"
 FRONTEND_FLIGHT_LOAD_CELL_BIND = "grpc://0.0.0.0:8822"
 FRONTEND_FLIGHT_GSE_CONNECT = "grpc://127.0.0.1:8819"
-
+FRONTEND_FLIGHT_NIDAQ_CONNECT = "grpc://127.0.0.1:8826"
 
 GSE_AVERAGE_OVER = 20
-
 def backend_run_flight_server(
     *,
     stream,
@@ -93,6 +99,25 @@ def gse_decimate_signals(*, window_size: int, col_names: list[str], instream, ou
             frame = instream.read()
         time.sleep(0.01)
 
+def nidaq_decimate_signals(*, window_size: int, col_names: list[str], instream, outstream) -> None:
+    col_indices = [NIDAQ_FIELD_NAMES.index(name) for name in col_names]
+    k = len(col_indices)
+    if NIDAQ_ROWS_PER_FRAME % window_size != 0:
+        raise ValueError(
+            f"window_size must divide NIDAQ_ROWS_PER_FRAME ({NIDAQ_ROWS_PER_FRAME}), got {window_size}"
+        )
+    out_rows = NIDAQ_ROWS_PER_FRAME // window_size
+    while True:
+        frame = instream.read()
+        while(frame is not None):
+            subset = frame[:, col_indices]  # (NIDAQ_ROWS_PER_FRAME, k)
+            out = subset.reshape(out_rows, window_size, k).mean(axis=1)  # (out_rows, k)
+            outstream.write(out.astype(np.float64, copy=False))
+            frame = instream.read()
+        time.sleep(0.01)
+
+
+
 
 def gse_raw_telemetry_storage_write(*, stream) -> None:
     column_names = list(GSE_FIELD_NAMES)
@@ -112,6 +137,11 @@ def ecu_raw_telemetry_storage_write(*, stream) -> None:
     path = Path(__file__).resolve().parent / "data" / "ecu_raw_telemetry_data"
     write_from_stream(stream, path, column_names, column_types)
 
+def nidaq_raw_telemetry_storage_write(*, stream) -> None:
+    column_names = list(NIDAQ_CHANNEL_NAMES.values())
+    column_types = [pa.float64() for _ in range(NIDAQ_NUM_SIGNALS)]
+    path = Path(__file__).resolve().parent / "data" / "nidaq_raw_telemetry_data"
+    write_from_stream(stream, path, column_names, column_types)
 
 def extr_ecu_raw_telemetry_storage_write(*, stream) -> None:
     column_names = list(EXTR_ECU_FIELD_NAMES)
@@ -146,6 +176,22 @@ def main() -> None:
         generic_connector,
         field_names=GSE_SIGNAL_LISTS,
         flight_address=FRONTEND_FLIGHT_GSE_CONNECT,
+    )
+    nidaq_flight_fn = functools.partial(
+        backend_run_flight_server,
+        grpc_bind=NIDAQ_FLIGHT_BIND,
+        rows_per_frame=NIDAQ_ROWS_PER_FRAME,
+        num_signals=NIDAQ_NUM_SIGNALS,
+    )
+    nidaq_decimate_fn = functools.partial(
+        nidaq_decimate_signals,
+        window_size=NIDAQ_AVERAGE_OVER,
+        col_names=list(NIDAQ_FIELD_NAMES),
+    )
+    frontend_nidaq_generic_connector_fn = functools.partial(
+        generic_connector,
+        field_names=list(NIDAQ_FIELD_NAMES),
+        flight_address=FRONTEND_FLIGHT_NIDAQ_CONNECT,
     )
     ecu_flight_fn = functools.partial(
         backend_run_flight_server,
@@ -182,6 +228,20 @@ def main() -> None:
             frames=256
         )
         pipeline.add_stream(
+            "nidaq_received_data",
+            shape=(NIDAQ_ROWS_PER_FRAME, NIDAQ_NUM_SIGNALS),
+            dtype=np.float64,
+            cache_align=True,
+            frames=64,
+        )
+        pipeline.add_stream(
+            "nidaq_decimated_signals",
+            shape=(NIDAQ_ROWS_PER_FRAME // NIDAQ_AVERAGE_OVER, len(NIDAQ_FIELD_NAMES)),
+            dtype=np.float64,
+            cache_align=True,
+            frames=256,
+        )
+        pipeline.add_stream(
             "ecu_received_data",
             shape=(ECU_ROWS_PER_FRAME, ECU_NUM_SIGNALS),
             dtype=np.float64,
@@ -212,6 +272,22 @@ def main() -> None:
             fn=gse_decimate_fn,
             reads={"instream": "gse_received_data"},
             writes={"outstream": "gse_decimated_signals"},
+        )
+        pipeline.add_task(
+            "nidaq_flight_server",
+            fn=nidaq_flight_fn,
+            writes={"stream": "nidaq_received_data"},
+        )
+        pipeline.add_task(
+            "nidaq_decimate_signals",
+            fn=nidaq_decimate_fn,
+            reads={"instream": "nidaq_received_data"},
+            writes={"outstream": "nidaq_decimated_signals"},
+        )
+        pipeline.add_task(
+            "nidaq_storage_sink",
+            fn=backend_storage_sink,
+            reads={"stream": "nidaq_received_data"},
         )
         pipeline.add_task(
             "ecu_flight_server",
@@ -280,6 +356,11 @@ def main() -> None:
             "frontend_gse_generic_connector",
             fn=frontend_gse_generic_connector_fn,
             reads={"stream": "gse_decimated_signals"},
+        )
+        pipeline.add_task(
+            "frontend_nidaq_generic_connector",
+            fn=frontend_nidaq_generic_connector_fn,
+            reads={"stream": "nidaq_decimated_signals"},
         )
 
         pipeline.run()
