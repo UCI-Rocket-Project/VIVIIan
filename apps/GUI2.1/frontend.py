@@ -57,6 +57,8 @@ GSE_VALUE_SIGNALS = GSE_SIGNAL_LISTS[1:]  # everything except packet_time
 
 COMMAND_ECHO_STREAM = "frontend_gse_command_echo"
 UI_STATE_STREAM = "frontend_ui_state"
+# Keep this in sync with the UI_SLOT_* constants in gse_connector.py.
+UI_OUTPUT_ORDER = ("gse.sol_gn2_fill", "gse.sol_mvas_open")
 
 CONNECTED_ECHO_INDEX = ECHO_FIELD_NAMES.index("connected")
 
@@ -314,7 +316,7 @@ def build_frontend() -> tuple[Frontend, CommandEchoSync]:
 
     gse_colors = _signal_colors(len(GSE_VALUE_SIGNALS))
     nidaq_colors = _signal_colors(len(NIDAQ_FIELD_NAMES))
-    frontend = Frontend("gui2_1_frontend")
+    frontend = Frontend("gui2_1_frontend", output_order=UI_OUTPUT_ORDER)
     # Sync must be registered before the buttons so its consume()/render()
     # runs first in the frontend task loop and can mutate button state and
     # ``enabled_by_default`` before the button adapters render this frame.

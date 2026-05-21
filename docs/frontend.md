@@ -66,7 +66,7 @@ class RecordingWriter:
         return True
 
 
-frontend = Frontend("desk")
+frontend = Frontend("desk", output_order=("desk.arm",))
 frontend.add(
     AnalogNeedleGauge(
         gauge_id="pressure",
@@ -102,10 +102,14 @@ task(
 
 ## `Frontend`
 
-### `Frontend(name="frontend")`
+### `Frontend(name="frontend", *, output_order=None)`
 
 `name` must be a non-empty string.
 It becomes the default task name and window title.
+
+`output_order` is required when the frontend has writable controls. It is a
+sequence of state ID strings, and each string must identify exactly one writable
+control by `state_id`.
 
 ### `frontend.add(component)`
 
@@ -129,7 +133,11 @@ During compilation, the runtime:
 - adapts each component into a frontend adapter
 - validates unique component IDs
 - collects `required_reads`
-- derives `output_slots`
+- derives `output_slots` from the explicit `output_order`
+
+If the frontend contains writable controls, `Frontend(...)` must be constructed
+with `output_order`. Each entry must match exactly one writable component by
+`state_id`.
 
 ### `frontend.required_reads`
 
@@ -148,6 +156,7 @@ Examples:
 ### `frontend.output_slots`
 
 Tuple of `OutputSlotSpec`, one per writable component.
+The tuple order follows the `output_order` passed to `Frontend(...)`.
 
 Each slot includes:
 

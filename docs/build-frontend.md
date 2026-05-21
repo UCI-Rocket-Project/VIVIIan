@@ -67,7 +67,7 @@ class RecordingWriter:
         return True
 
 
-frontend = Frontend("demo_frontend")
+frontend = Frontend("demo_frontend", output_order=("desk.arm",))
 frontend.add(
     SensorGraph(
         "signal_graph",
@@ -163,10 +163,16 @@ String-valued writable state is rejected at compile time.
 
 ### 3) Understand the Output Snapshot
 
-The snapshot order is the order in which writable components were added.
+The snapshot order is the explicit `output_order` passed to `Frontend(...)`.
+If a frontend has writable controls, every writable control must appear exactly
+once in that list. Each entry must be the control's `state_id`.
 Use `frontend.output_slots` to map indices back to semantic control IDs.
 
 ```python
+frontend = Frontend(
+    "operator_panel",
+    output_order=("desk.arm", "desk.pulse"),
+)
 frontend.compile()
 for slot in frontend.output_slots:
     print(slot.index, slot.component_id, slot.state_id, slot.initial_value)
@@ -265,6 +271,7 @@ That split is worth keeping in your own apps:
 The frontend errors users usually hit first are:
 
 - duplicate component IDs
+- missing or incomplete `output_order` for writable controls
 - missing reader bindings at task call time
 - missing output binding when writable controls exist
 - trying to mutate the frontend after it has been compiled
@@ -273,9 +280,10 @@ The frontend errors users usually hit first are:
 Design against them directly:
 
 1. keep component IDs unique and human-readable
-2. compile early in tests
-3. inspect `required_reads`, `output_shape`, and `output_slots`
-4. keep custom writable state numeric
+2. keep `output_order` explicit and in downstream command order
+3. compile early in tests
+4. inspect `required_reads`, `output_shape`, and `output_slots`
+5. keep custom writable state numeric
 
 ## What To Read Next
 

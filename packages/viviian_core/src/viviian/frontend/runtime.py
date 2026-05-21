@@ -19,11 +19,22 @@ class OutputSlotSpec:
 
 
 class Frontend:
-    def __init__(self, name: str = "frontend") -> None:
+    def __init__(
+        self,
+        name: str = "frontend",
+        *,
+        output_order: Sequence[str] | None = None,
+    ) -> None:
         resolved_name = str(name).strip()
         if not resolved_name:
             raise ValueError("Frontend name must be non-empty.")
+        resolved_output_order: tuple[str, ...] | None = None
+        if output_order is not None:
+            resolved_output_order = tuple(str(item).strip() for item in output_order)
+            if any(not item for item in resolved_output_order):
+                raise ValueError("output_order entries must be non-empty strings.")
         self.name = resolved_name
+        self._output_order = resolved_output_order
         self._components: list[Any] = []
         self._compiled = False
         self._closed = False
@@ -52,7 +63,7 @@ class Frontend:
         self._validate_unique_component_ids(adapters)
         self._adapters = adapters
         self._required_reads = self._collect_required_reads(adapters)
-        self._output_slots = self._collect_output_slots(adapters)
+        self._output_slots = self._collect_output_slots(adapters, self._output_order)
         self._compiled = True
         return self
 
@@ -153,12 +164,82 @@ class Frontend:
         return tuple(ordered)
 
     @staticmethod
-    def _collect_output_slots(adapters: Sequence[BaseComponentAdapter]) -> tuple[OutputSlotSpec, ...]:
+    def _collect_output_slots(
+        adapters: Sequence[BaseComponentAdapter],
+        output_order: Sequence[str] | None,
+    ) -> tuple[OutputSlotSpec, ...]:
+        writable = tuple(adapter for adapter in adapters if adapter.is_writable)
+        if not writable:
+            if output_order:
+                ids = ", ".join(repr(item) for item in output_order)
+                raise ValueError(f"output_order references no writable controls: {ids}.")
+            return ()
+        if output_order is None:
+            ids = ", ".join(
+                f"{adapter.component_id}:{adapter.state_id}"
+                for adapter in writable
+            )
+            raise ValueError(
+                "Frontend with writable controls requires output_order. "
+                "List each writable control by state_id. "
+                f"Writable controls: {ids}."
+            )
+
+        missing_state_ids = [
+            adapter.component_id
+            for adapter in writable
+            if adapter.state_id is None or not adapter.state_id.strip()
+        ]
+        if missing_state_ids:
+            names = ", ".join(missing_state_ids)
+            raise ValueError(
+                "Writable controls require state_id to participate in output_order: "
+                f"{names}."
+            )
+
+        duplicate_ids = sorted(
+            {item for item in output_order if output_order.count(item) > 1}
+        )
+        if duplicate_ids:
+            ids = ", ".join(repr(item) for item in duplicate_ids)
+            raise ValueError(f"output_order entries must be unique. Duplicates: {ids}.")
+
+        ordered_adapters: list[BaseComponentAdapter] = []
+        for output_id in output_order:
+            matches = [adapter for adapter in writable if output_id == adapter.state_id]
+            if not matches:
+                raise ValueError(
+                    f"output_order entry {output_id!r} does not match a writable "
+                    "state_id."
+                )
+            if len(matches) > 1:
+                names = ", ".join(adapter.component_id for adapter in matches)
+                raise ValueError(f"output_order entry {output_id!r} is ambiguous: {names}.")
+            ordered_adapters.append(matches[0])
+
+        selected_ids: set[str] = set()
+        repeated_components: set[str] = set()
+        for adapter in ordered_adapters:
+            if adapter.component_id in selected_ids:
+                repeated_components.add(adapter.component_id)
+            selected_ids.add(adapter.component_id)
+        if repeated_components:
+            names = ", ".join(sorted(repeated_components))
+            raise ValueError(
+                f"output_order selects writable controls more than once: {names}."
+            )
+
+        missing = [
+            adapter.component_id
+            for adapter in writable
+            if adapter.component_id not in selected_ids
+        ]
+        if missing:
+            names = ", ".join(missing)
+            raise ValueError(f"output_order is missing writable controls: {names}.")
+
         slots: list[OutputSlotSpec] = []
-        slot_index = 0
-        for adapter in adapters:
-            if not adapter.is_writable:
-                continue
+        for slot_index, adapter in enumerate(ordered_adapters):
             slots.append(
                 OutputSlotSpec(
                     index=slot_index,
@@ -167,7 +248,6 @@ class Frontend:
                     initial_value=float(adapter.initial_output_value),
                 )
             )
-            slot_index += 1
         return tuple(slots)
 
 
@@ -283,12 +363,15 @@ class FrontendTask:
 
     def _snapshot_vector(self) -> np.ndarray:
         snapshot = np.empty(len(self.output_slots), dtype=np.float64)
-        slot_index = 0
-        for adapter in self.adapters:
-            if not adapter.is_writable:
-                continue
-            snapshot[slot_index] = adapter.snapshot_value()
-            slot_index += 1
+        adapters_by_component_id = {
+            adapter.component_id: adapter
+            for adapter in self.adapters
+            if adapter.is_writable
+        }
+        for slot in self.output_slots:
+            snapshot[slot.index] = adapters_by_component_id[
+                slot.component_id
+            ].snapshot_value()
         return snapshot
 
     def _try_write_snapshot(self, writer: Any) -> bool:

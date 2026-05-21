@@ -104,7 +104,7 @@ class FrontendCompileTests(unittest.TestCase):
         )
 
     def test_compile_collects_required_reads_and_output_slots(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.pulse", "desk.arm"))
         frontend.add(self.make_graph(stream_name="signal_stream"))
         frontend.add(
             AnalogNeedleGauge(
@@ -138,7 +138,7 @@ class FrontendCompileTests(unittest.TestCase):
         self.assertEqual(frontend.output_shape, (2,))
         self.assertEqual(
             tuple(slot.component_id for slot in frontend.output_slots),
-            ("arm_toggle", "pulse_button"),
+            ("pulse_button", "arm_toggle"),
         )
         self.assertEqual(
             tuple(slot.initial_value for slot in frontend.output_slots),
@@ -146,7 +146,7 @@ class FrontendCompileTests(unittest.TestCase):
         )
 
     def test_compile_rejects_duplicate_component_ids(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.arm", "desk.hold"))
         frontend.add(
             ToggleButton(
                 button_id="shared_id",
@@ -168,7 +168,7 @@ class FrontendCompileTests(unittest.TestCase):
             frontend.compile()
 
     def test_compile_rejects_string_button_state_for_float64_output(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.pulse",))
         frontend.add(
             MomentaryButton(
                 button_id="bad_pulse",
@@ -181,8 +181,58 @@ class FrontendCompileTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "bool, int, or float"):
             frontend.compile()
 
-    def test_add_rejects_mutation_after_compile(self) -> None:
+    def test_compile_requires_explicit_output_order_for_writable_controls(self) -> None:
         frontend = Frontend("desk")
+        frontend.add(
+            ToggleButton(
+                button_id="arm_toggle",
+                label="Arm",
+                state_id="desk.arm",
+                state=False,
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "requires output_order"):
+            frontend.compile()
+
+    def test_compile_rejects_output_order_that_omits_writable_control(self) -> None:
+        frontend = Frontend("desk", output_order=("desk.arm",))
+        frontend.add(
+            ToggleButton(
+                button_id="arm_toggle",
+                label="Arm",
+                state_id="desk.arm",
+                state=False,
+            )
+        )
+        frontend.add(
+            MomentaryButton(
+                button_id="pulse_button",
+                label="Pulse",
+                state_id="desk.pulse",
+                state=1.0,
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "missing writable controls"):
+            frontend.compile()
+
+    def test_compile_rejects_button_id_in_output_order(self) -> None:
+        frontend = Frontend("desk", output_order=("arm_toggle",))
+        frontend.add(
+            ToggleButton(
+                button_id="arm_toggle",
+                label="Arm",
+                state_id="desk.arm",
+                state=False,
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "state_id"):
+            frontend.compile()
+
+    def test_add_rejects_mutation_after_compile(self) -> None:
+        frontend = Frontend("desk", output_order=("desk.arm",))
         frontend.add(
             ToggleButton(
                 button_id="arm_toggle",
@@ -204,7 +254,7 @@ class FrontendCompileTests(unittest.TestCase):
             )
 
     def test_output_ring_size_scales_with_output_slots(self) -> None:
-        frontend = Frontend("sz")
+        frontend = Frontend("sz", output_order=("s2", "s"))
         frontend.add(ToggleButton(button_id="b", label="B", state_id="s", state=False))
         frontend.add(MomentaryButton(button_id="m", label="M", state_id="s2", state=1.0))
         # 2 slots × 8 bytes = 16 bytes/frame; max(4096, 16 × 9 + 4096) = 4240
@@ -374,7 +424,7 @@ class FrontendRuntimeTests(unittest.TestCase):
         self.assertEqual(gauge.target_value, 75.0)
 
     def test_initial_snapshot_emits_current_control_state(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.arm",))
         frontend.add(
             ToggleButton(
                 button_id="arm_toggle",
@@ -391,8 +441,37 @@ class FrontendRuntimeTests(unittest.TestCase):
         self.assertEqual(len(writer.writes), 1)
         np.testing.assert_allclose(writer.writes[0], np.array([0.0], dtype=np.float64))
 
+    def test_snapshot_uses_explicit_output_order(self) -> None:
+        frontend = Frontend("desk", output_order=("desk.hold", "desk.arm"))
+        frontend.add(
+            ToggleButton(
+                button_id="arm_toggle",
+                label="Arm",
+                state_id="desk.arm",
+                state=False,
+            )
+        )
+        frontend.add(
+            ToggleButton(
+                button_id="hold_toggle",
+                label="Hold",
+                state_id="desk.hold",
+                state=True,
+            )
+        )
+        task = frontend.build_task(backend=HeadlessBackend(max_frames=1))
+        writer = RecordingWriter(shape=frontend.output_shape)
+
+        task(output=writer)
+
+        self.assertEqual(len(writer.writes), 1)
+        np.testing.assert_allclose(
+            writer.writes[0],
+            np.array([1.0, 0.0], dtype=np.float64),
+        )
+
     def test_toggle_latches_and_emits_new_snapshot(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.arm",))
         frontend.add(
             ToggleButton(
                 button_id="arm_toggle",
@@ -413,7 +492,7 @@ class FrontendRuntimeTests(unittest.TestCase):
         np.testing.assert_allclose(writer.writes[1], np.array([1.0], dtype=np.float64))
 
     def test_momentary_button_emits_pulse_then_reset(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.pulse",))
         frontend.add(
             MomentaryButton(
                 button_id="pulse_button",
@@ -435,7 +514,7 @@ class FrontendRuntimeTests(unittest.TestCase):
         np.testing.assert_allclose(writer.writes[2], np.array([0.0], dtype=np.float64))
 
     def test_writer_retries_latest_snapshot_without_blocking(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.arm",))
         frontend.add(
             ToggleButton(
                 button_id="arm_toggle",
@@ -571,7 +650,7 @@ class FrontendPipelineIntegrationTests(unittest.TestCase):
         )
 
     def test_frontend_task_runs_inside_pipeline(self) -> None:
-        frontend = Frontend("desk")
+        frontend = Frontend("desk", output_order=("desk.arm",))
         frontend.add(
             SensorGraph(
                 "signal_graph",

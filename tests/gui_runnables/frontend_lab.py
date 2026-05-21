@@ -138,7 +138,10 @@ def _close_ring(ring: SharedRingBuffer, *, unlink: bool) -> None:
 
 
 def build_frontend() -> Frontend:
-    frontend = Frontend("frontend_lab")
+    frontend = Frontend(
+        "frontend_lab",
+        output_order=("desk.arm", "desk.pulse"),
+    )
     frontend.add(
         SensorGraph(
             "signal_graph",
