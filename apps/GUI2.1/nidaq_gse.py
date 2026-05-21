@@ -11,7 +11,6 @@ from functools import partial
 
 
 DEVICE = "Dev1"
-CHANNEL = f"{DEVICE}/ai0"
 NUM_CHANNELS = 16
 RATE = 250000 // NUM_CHANNELS
 NIDAQ_ROWS_PER_FRAME = 1000
@@ -24,7 +23,7 @@ NIDAQ_FLIGHT_CONNECT = "grpc://127.0.0.1:8825"
 
 
 NIDAQ_CHANNEL_NAMES = {
-    "ai0": "ai0",
+    "ai0": "SOMETHINGCOOL AND NEW",
     "ai1": "ai1",
     "ai2": "ai2",
     "ai3": "ai3",

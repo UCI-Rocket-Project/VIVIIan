@@ -53,8 +53,7 @@ class StorageServer(flight.FlightServerBase):
 
 
 class CommandServer (flight.FlightServerBase):
-    """Flight receiver: each do_put stream is turned into NumPy frames on the pythusa ring."""
-
+    """Flight server that takes in the flight data and then sends over tcp"""
     def __init__(
         self,
         location: str,

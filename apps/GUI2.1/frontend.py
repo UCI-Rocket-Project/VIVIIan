@@ -11,15 +11,9 @@ from __future__ import annotations
 
 import colorsys
 import functools
-import sys
 import time
-from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_CORE_SRC = _REPO_ROOT / "packages" / "viviian_core" / "src"
-if str(_CORE_SRC) not in sys.path:
-    sys.path.insert(0, str(_CORE_SRC))
 
 import numpy as np
 from pythusa import Pipeline
