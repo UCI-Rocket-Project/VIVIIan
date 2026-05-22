@@ -9,20 +9,19 @@ from generic_connector import generic_stream_connector
 from functools import partial
 
 
-
+# --- Constants for NIDAQ Connector ---
 DEVICE = "Dev1"
-NUM_CHANNELS = 16
-RATE = 250000 // NUM_CHANNELS
-NIDAQ_ROWS_PER_FRAME = 1000
-NIDAQ_NUM_SIGNALS = NUM_CHANNELS
+NUM_FIELDS = 16
+RATE = 250000 // NUM_FIELDS
+NIDAQ_NUM_SIGNALS = NUM_FIELDS
 NIDAQ_AVERAGE_OVER = 1000
-NIDAQ_FLIGHT_BIND = "grpc://0.0.0.0:8825"
-NIDAQ_FLIGHT_CONNECT = "grpc://127.0.0.1:8825"
 
+# --- Constants for NIDAQ Backend ---
+NIDAQ_FLIGHT_BIND = "grpc://127.0.0.1:8825"
+NIDAQ_ROWS_PER_FRAME = 1000
 
-
-
-NIDAQ_CHANNEL_NAMES = {
+# --- Packet DEFINITIONS ---
+NIDAQ_FIELD_NAME_MAP = {
     "ai0": "SOMETHINGCOOL AND NEW",
     "ai1": "ai1",
     "ai2": "ai2",
@@ -42,8 +41,8 @@ NIDAQ_CHANNEL_NAMES = {
 }
 
 
-NIDAQ_CHANNELS = tuple(NIDAQ_CHANNEL_NAMES.keys())
-NIDAQ_FIELD_NAMES = tuple(NIDAQ_CHANNEL_NAMES.values())
+NIDAQ_FIELDS = tuple(NIDAQ_FIELD_NAME_MAP.keys())
+NIDAQ_FIELD_NAMES = tuple(NIDAQ_FIELD_NAME_MAP.values())
 
 
 
@@ -52,11 +51,11 @@ NIDAQ_FIELD_NAMES = tuple(NIDAQ_CHANNEL_NAMES.values())
 
 def read_nidaq_data(*, outstream) -> None:
     with nidaqmx.Task() as task:
-        # Add all channels first
-        for channel_key, channel_label in NIDAQ_CHANNEL_NAMES.items():
+        # Add all fields first.
+        for field_key, field_label in NIDAQ_FIELD_NAME_MAP.items():
             task.ai_channels.add_ai_voltage_chan(
-                physical_channel=f"{DEVICE}/{channel_key}",
-                name_to_assign_to_channel=channel_label,
+                physical_channel=f"{DEVICE}/{field_key}",
+                name_to_assign_to_channel=field_label,
                 terminal_config=TerminalConfiguration.RSE,
                 min_val=-10,
                 max_val=10,
@@ -73,7 +72,7 @@ def read_nidaq_data(*, outstream) -> None:
         while True:
             data = task.read(number_of_samples_per_channel=NIDAQ_ROWS_PER_FRAME)
 
-            # Shape: (NUM_CHANNELS, CHUNK) -> (CHUNK, NUM_CHANNELS)
+            # Shape: (NUM_FIELDS, CHUNK) -> (CHUNK, NUM_FIELDS)
             samples_by_time = np.asarray(data, dtype=np.float64).T
             outstream.write(samples_by_time)
 
@@ -89,9 +88,9 @@ def main():
         nidaq_flight_fn = partial(
             generic_stream_connector,
             field_names=list(NIDAQ_FIELD_NAMES),
-            flight_address=NIDAQ_FLIGHT_CONNECT,
+            flight_address=NIDAQ_FLIGHT_BIND,
         )
-        pipeline.add_stream("nidaq_data", shape=(NIDAQ_ROWS_PER_FRAME, NUM_CHANNELS), dtype=np.float64)
+        pipeline.add_stream("nidaq_data", shape=(NIDAQ_ROWS_PER_FRAME, NUM_FIELDS), dtype=np.float64)
         pipeline.add_task("nidaq_task", fn=read_nidaq_data, writes={"outstream": "nidaq_data"})
         pipeline.add_task("nidaq_flight_server", fn=nidaq_flight_fn, reads={"stream": "nidaq_data"})
         pipeline.run()

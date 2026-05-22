@@ -1,21 +1,13 @@
-#some stuff to implement 
-# buttons: 
-# they update state all the tiem, then you have a small function on a timer, reads through the state, 
-# learns how to find toggls or state buttons, triggers events 
-# resets at the end, sleeps a little then wakes up and does it again 
-# good because we control how often commands get set, can be fast enough for anything practical 
-# avoids hanging gui on commands that don't matter 
-
-
 from __future__ import annotations
 
 import colorsys
 import functools
 import time
-from typing import Any, Iterable, Mapping, Sequence
-
+from typing import Any, Iterable, Mapping
 
 import numpy as np
+import pyarrow as pa
+import pyarrow.flight as flight
 from pythusa import Pipeline
 from viviian.frontend import Frontend, GlfwBackend
 from viviian.gui_utils import (
@@ -26,57 +18,86 @@ from viviian.gui_utils import (
     ToggleButton,
 )
 
-from backend import StorageServer
-from constants import GSE_SIGNAL_LISTS
-from gse_connector import (
-    CMD_TO_CURRENT_SLOT,
-    CONNECTED_ECHO_INDEX,
-    CURRENT_ECHO_OFFSET,
-    ECHO_FIELD_NAMES,
-    ECHO_ROWS_PER_FRAME,
-    GN2_FILL_CMD_INDEX,
-    MVAS_OPEN_CMD_INDEX,
-    NUM_CMD_SIGNALS,
-    NUM_ECHO_SIGNALS,
-    forward_ui_state_to_gse_commands,
+from generic_connector import StorageServer
+from gse21connector import (
+    GSE2V1_COMMAND_FIELD_NAMES,
+    GSE2V1_ECHO_FIELD_NAMES,
+    GSE2V1_FIELD_NAMES,
+    GSE2V1_NUM_COMMAND_SIGNALS,
+    GSE2V1_NUM_ECHO_SIGNALS,
+    GSE2V1_NUM_SIGNALS,
+    GSE2V1_ROWS_PER_FRAME,
+    GSE2V1_STATE_FIELD_NAMES,
 )
 from nidaq_gse import (
     NIDAQ_AVERAGE_OVER,
-    NIDAQ_CHANNEL_NAMES,
     NIDAQ_FIELD_NAMES,
     NIDAQ_NUM_SIGNALS,
     NIDAQ_ROWS_PER_FRAME,
     RATE as NIDAQ_RATE,
 )
 
-GSE_DECIMATED_ROWS = 50  # 1000 raw rows // 200 average window
-FRONTEND_FLIGHT_GSE_BIND = "grpc://0.0.0.0:8819"
-FRONTEND_FLIGHT_GSE_CMD_ECHO_BIND = "grpc://0.0.0.0:8820"
+
+FRONTEND_FLIGHT_GSE2V1_BIND = "grpc://0.0.0.0:8819"
+FRONTEND_FLIGHT_GSE2V1_CMD_ECHO_BIND = "grpc://0.0.0.0:8820"
 FRONTEND_FLIGHT_NIDAQ_BIND = "grpc://0.0.0.0:8826"
-GSE_VALUE_SIGNALS = GSE_SIGNAL_LISTS[1:]  # everything except packet_time
+GSE2V1_CMD_FLIGHT_CONNECT = "grpc://127.0.0.1:8827"
 
-COMMAND_ECHO_STREAM = "frontend_gse_command_echo"
-UI_STATE_STREAM = "frontend_ui_state"
-# Keep this in sync with the UI_SLOT_* constants in gse_connector.py.
-UI_OUTPUT_ORDER = ("gse.sol_gn2_fill", "gse.sol_mvas_open")
+COMMAND_ECHO_STREAM = "frontend_gse2v1_command_echo"
+UI_STATE_STREAM = "frontend_gse2v1_ui_state"
+UI_OUTPUT_ORDER = tuple(f"gse2v1.{name}" for name in GSE2V1_COMMAND_FIELD_NAMES)
 
-CONNECTED_ECHO_INDEX = ECHO_FIELD_NAMES.index("connected")
+CONNECTED_ECHO_INDEX = GSE2V1_ECHO_FIELD_NAMES.index("connected")
+COMMAND_ECHO_OFFSET = 1
+GSE2V1_TELEMETRY_STREAM = "frontend_gse2v1_data"
+GSE2V1_STATE_FIELD_INDICES = {
+    name: GSE2V1_FIELD_NAMES.index(name)
+    for name in GSE2V1_STATE_FIELD_NAMES
+    if name in GSE2V1_FIELD_NAMES
+}
+GSE2V1_COMMAND_STATE_FIELDS = {
+    "igniter0Fire": "igniter0Continuity",
+    "igniter1Fire": "igniter1Continuity",
+    "solenoidState0": "solenoidCurrent0",
+    "solenoidState1": "solenoidCurrent1",
+    "solenoidState2": "solenoidCurrent2",
+    "solenoidState3": "solenoidCurrent3",
+    "solenoidState4": "solenoidCurrent4",
+    "solenoidState5": "solenoidCurrent5",
+    "solenoidState6": "solenoidCurrent6",
+    "solenoidState7": "solenoidCurrent7",
+    "solenoidState8": "solenoidCurrent8",
+    "solenoidState9": "solenoidCurrent9",
+    "solenoidState10": "solenoidCurrent10",
+    "solenoidState11": "solenoidCurrent11",
+}
+GSE2V1_COMMAND_STATE_FIELD_INDICES = {
+    command_index: GSE2V1_STATE_FIELD_INDICES[state_field]
+    for command_index, command_name in enumerate(GSE2V1_COMMAND_FIELD_NAMES)
+    if (state_field := GSE2V1_COMMAND_STATE_FIELDS.get(command_name))
+    in GSE2V1_STATE_FIELD_INDICES
+}
 
 
 def _signal_colors(n: int) -> list[tuple[float, float, float, float]]:
     colors = []
     for i in range(n):
-        r, g, b = colorsys.hsv_to_rgb(i / n, 0.75, 0.92)
+        r, g, b = colorsys.hsv_to_rgb(i / max(1, n), 0.75, 0.92)
         colors.append((r, g, b, 1.0))
     return colors
 
 
-def _graph_stream_name(signal: str) -> str:
-    return f"gse_graph_{signal}"
+def _label_from_field(name: str) -> str:
+    label = []
+    for char in name:
+        if label and char.isupper() and label[-1] != " ":
+            label.append(" ")
+        label.append(char)
+    return "".join(label).replace("State", "State ").strip().title()
 
 
-def _nidaq_graph_stream_name(channel: str) -> str:
-    return f"nidaq_graph_{channel}"
+def _nidaq_graph_stream_name(field_name: str) -> str:
+    return f"nidaq_graph_{field_name}"
 
 
 def frontend_run_flight_server(
@@ -94,8 +115,8 @@ def frontend_run_flight_server(
     )
     server.serve()
 
+
 def nidaq_split_to_graph_streams(*, stream, **graph_writers) -> None:
-    """Split (rows, signals) telemetry into per-signal (2, rows) graph streams."""
     seconds_per_sample = NIDAQ_AVERAGE_OVER / NIDAQ_RATE
     sample_offset = 0
     while True:
@@ -112,99 +133,101 @@ def nidaq_split_to_graph_streams(*, stream, **graph_writers) -> None:
                 out = np.vstack((x_values, frame[:, i])).astype(np.float64, copy=False)
                 writer.write(out)
 
-def gse_split_to_graph_streams(*, stream, **graph_writers) -> None:
-    """Split (rows, signals) telemetry into per-signal (2, rows) graph streams."""
-    while True:
-        frame = stream.read()
-        if frame is None:
-            time.sleep(0.001)
-            continue
-        x_values = frame[:, 0]
-        for i, name in enumerate(GSE_VALUE_SIGNALS):
-            writer = graph_writers.get(f"gw_{i}")
-            if writer is not None:
-                out = np.vstack((x_values, frame[:, i + 1])).astype(np.float64, copy=False)
-                writer.write(out)
+
+class StateValueMixin:
+    telemetry_field_name: str | None = None
+    telemetry_value: float | None = None
+
+    def set_telemetry_value(self, value: float | None) -> None:
+        self.telemetry_value = value
+
+    def _meta_text(self, *, enabled: bool) -> str:
+        base = super()._meta_text(enabled=enabled)
+        if self.telemetry_field_name is None:
+            return base
+        value_text = "--" if self.telemetry_value is None else f"{self.telemetry_value:.3g}"
+        return f"{self.telemetry_field_name}: {value_text} | {base}"
+
+
+class StateValueToggleButton(StateValueMixin, ToggleButton):
+    pass
+
+
+class StateValueMomentaryButton(StateValueMixin, MomentaryButton):
+    pass
 
 
 class CommandEchoSync:
-    """Frontend component that consumes the (1, NUM_ECHO_SIGNALS) command-echo
-    stream and uses it to drive GSE button state:
-
-    - while the ``connected`` flag is 0, all wired buttons are forced disabled
-      so the operator cannot push state into a board that isn't listening
-    - on every 0→1 transition, toggle buttons are synced to the device's
-      current command bits so the UI reflects the board after a reconnect
-      without overwriting whatever state the board was holding
-    - solenoid current values are rendered as indicator widgets next to each
-      wired button so the operator can see whether current is actually flowing
-    """
-
-    component_id = "gse_command_echo_sync"
+    component_id = "gse2v1_command_echo_sync"
     state_id: str | None = None
 
     def __init__(
         self,
         *,
-        stream_name: str,
+        echo_stream_name: str,
+        telemetry_stream_name: str,
         toggle_indices: Mapping[int, ToggleButton],
         momentary_indices: Mapping[int, MomentaryButton],
+        state_value_buttons: Mapping[int, StateValueMixin],
     ) -> None:
-        self._stream_name = stream_name
+        self._echo_stream_name = echo_stream_name
+        self._telemetry_stream_name = telemetry_stream_name
         self._toggle_indices = dict(toggle_indices)
         self._momentary_indices = dict(momentary_indices)
+        self._state_value_buttons = dict(state_value_buttons)
         self._toggle_adapters: dict[int, Any] = {}
-        self._reader: Any = None
-        self._latest_row: np.ndarray | None = None
+        self._echo_reader: Any = None
+        self._telemetry_reader: Any = None
+        self._latest_echo_row: np.ndarray | None = None
+        self._latest_telemetry_row: np.ndarray | None = None
         self._prev_connected: bool | None = None
 
     def attach_adapters(self, adapters: Iterable[Any]) -> None:
-        """Look up the runtime adapter for each wired button so we can also
-        update the writer-snapshot value on sync (otherwise the GUI display
-        would diverge from the output stream until the operator clicks)."""
         by_id = {getattr(a, "component_id", None): a for a in adapters}
         for cmd_idx, button in self._toggle_indices.items():
             adapter = by_id.get(button.button_id)
             if adapter is None:
-                raise RuntimeError(
-                    f"No frontend adapter for button {button.button_id!r}"
-                )
+                raise RuntimeError(f"No frontend adapter for button {button.button_id!r}")
             self._toggle_adapters[cmd_idx] = adapter
 
     def required_streams(self) -> tuple[str, ...]:
-        return (self._stream_name,)
+        return (self._echo_stream_name, self._telemetry_stream_name)
 
     def bind(self, readers: Mapping[str, Any]) -> None:
-        self._reader = readers[self._stream_name]
-        if hasattr(self._reader, "set_blocking"):
-            self._reader.set_blocking(False)
+        self._echo_reader = readers[self._echo_stream_name]
+        self._telemetry_reader = readers[self._telemetry_stream_name]
+        for reader in (self._echo_reader, self._telemetry_reader):
+            if hasattr(reader, "set_blocking"):
+                reader.set_blocking(False)
 
     def consume(self) -> bool:
-        if self._reader is None:
+        if self._echo_reader is None or self._telemetry_reader is None:
             return False
-        latest = None
+        changed = False
         while True:
-            frame = self._reader.read()
+            frame = self._echo_reader.read()
             if frame is None:
                 break
-            latest = frame
-        if latest is None:
-            return False
-        self._latest_row = np.asarray(latest, dtype=np.float64).reshape(-1)
-        return True
+            self._latest_echo_row = np.asarray(frame, dtype=np.float64).reshape(-1)
+            changed = True
+        while True:
+            frame = self._telemetry_reader.read()
+            if frame is None:
+                break
+            self._latest_telemetry_row = np.asarray(frame, dtype=np.float64)
+            changed = True
+        return changed
 
     def render(self) -> None:
         import imgui
-        from viviian.gui_utils import theme
-        from viviian.gui_utils.chrome import available_width, rgba_u32, xy
 
         connected = False
-        row = self._latest_row
-        if row is not None:
+        row = self._latest_echo_row
+        if row is not None and row.size > CONNECTED_ECHO_INDEX:
             connected = bool(row[CONNECTED_ECHO_INDEX] > 0.5)
 
         imgui.text_unformatted(
-            f"GSE link: {'CONNECTED' if connected else 'DISCONNECTED'}"
+            f"GSE2.1 link: {'CONNECTED' if connected else 'DISCONNECTED'}"
         )
 
         all_buttons: list[StateButton] = (
@@ -214,32 +237,22 @@ class CommandEchoSync:
         for button in all_buttons:
             button.enabled_by_default = connected
 
-        all_wired: list[tuple[int, StateButton]] = (
-            list(self._toggle_indices.items())
-            + list(self._momentary_indices.items())
-        )
-        if all_wired:
-            total_w = available_width(imgui, fallback=400.0)
-            n = len(all_wired)
-            spacing = 6.0
-            indicator_w = (total_w - spacing * max(0, n - 1)) / n
-            for i, (cmd_idx, button) in enumerate(all_wired):
-                current = 0.0
-                slot = CMD_TO_CURRENT_SLOT.get(cmd_idx)
-                if slot is not None and row is not None:
-                    echo_idx = CURRENT_ECHO_OFFSET + slot
-                    if echo_idx < row.size:
-                        current = float(row[echo_idx])
-                self._render_current_indicator(
-                    imgui, button.label, current, cmd_idx, indicator_w,
-                    theme=theme, rgba_u32=rgba_u32, xy=xy,
-                )
-                if i < n - 1:
-                    imgui.same_line()
+        telemetry_row = self._latest_telemetry_row
+        if telemetry_row is not None:
+            latest_values = np.asarray(telemetry_row, dtype=np.float64).reshape(-1)
+            for cmd_idx, button in self._state_value_buttons.items():
+                field_index = GSE2V1_COMMAND_STATE_FIELD_INDICES.get(cmd_idx)
+                value = None
+                if field_index is not None and field_index < latest_values.size:
+                    value = float(latest_values[field_index])
+                button.set_telemetry_value(value)
 
         if connected and not self._prev_connected and row is not None:
             for cmd_idx, toggle in self._toggle_indices.items():
-                value = bool(row[cmd_idx] > 0.5)
+                echo_idx = COMMAND_ECHO_OFFSET + cmd_idx
+                if echo_idx >= row.size:
+                    continue
+                value = bool(row[echo_idx] > 0.5)
                 toggle.state = value
                 adapter = self._toggle_adapters.get(cmd_idx)
                 if adapter is not None:
@@ -247,100 +260,146 @@ class CommandEchoSync:
 
         self._prev_connected = connected
 
-    @staticmethod
-    def _render_current_indicator(
-        imgui: Any,
-        label: str,
-        current: float,
-        cmd_idx: int,
-        width: float,
-        *,
-        theme: Any,
-        rgba_u32: Any,
-        xy: Any,
-    ) -> None:
-        height = 28.0
-        flowing = abs(current) > 0.1
 
-        imgui.invisible_button(f"##current_{cmd_idx}", width, height)
-        x0, y0 = xy(imgui.get_item_rect_min())
-        x1, y1 = xy(imgui.get_item_rect_max())
-        draw_list = imgui.get_window_draw_list()
+class Gse2v1CommandFlightClient:
+    def __init__(self, flight_address: str = GSE2V1_CMD_FLIGHT_CONNECT) -> None:
+        self._flight_address = flight_address
+        self._schema = pa.schema(
+            [(name, pa.float64()) for name in GSE2V1_COMMAND_FIELD_NAMES]
+        )
+        self._descriptor = flight.FlightDescriptor.for_path("gse2v1_commands")
+        self._client: Any = None
+        self._writer: Any = None
 
-        draw_list.add_rect_filled(
-            x0, y0, x1, y1, rgba_u32(imgui, theme.PANEL_BG_2),
-        )
-        draw_list.add_rect(
-            x0, y0, x1, y1, rgba_u32(imgui, theme.PANEL_BORDER),
-        )
+    def close(self) -> None:
+        if self._writer is not None:
+            try:
+                self._writer.close()
+            except Exception:
+                pass
+            self._writer = None
+        self._client = None
 
-        led_w = theme.BUTTON_LED_TAB_PX
-        led_color = theme.ACID if flowing else theme.INACTIVE_SEG
-        draw_list.add_rect_filled(
-            x0, y0, x0 + led_w, y1, rgba_u32(imgui, led_color),
-        )
+    def send_row(self, row: np.ndarray) -> None:
+        batch_row = np.asarray(row, dtype=np.float64).reshape(1, GSE2V1_NUM_COMMAND_SIGNALS)
+        if batch_row.shape != (1, GSE2V1_NUM_COMMAND_SIGNALS):
+            raise ValueError(
+                f"expected command row shape (1, {GSE2V1_NUM_COMMAND_SIGNALS}), got {batch_row.shape}"
+            )
+        if self._writer is None:
+            self._client = flight.connect(self._flight_address)
+            self._writer, _ = self._client.do_put(self._descriptor, self._schema)
+        arrays = [
+            pa.array(batch_row[:, i], type=pa.float64())
+            for i in range(GSE2V1_NUM_COMMAND_SIGNALS)
+        ]
+        batch = pa.RecordBatch.from_arrays(arrays, schema=self._schema)
+        self._writer.write_batch(batch)
 
-        text_color = theme.ACID if flowing else theme.INK_3
-        text_x = x0 + led_w + 8.0
-        text_y = y0 + (height - 12.0) * 0.5
-        draw_list.add_text(
-            text_x, text_y,
-            rgba_u32(imgui, text_color),
-            f"{label.upper()}  {current:.2f} A",
-        )
+    def send_row_safe(self, row: np.ndarray) -> bool:
+        try:
+            self.send_row(row)
+            return True
+        except Exception as e:
+            print(f"GSE2.1 command Flight client error: {e}")
+            self.close()
+            return False
+
+
+def forward_ui_state_to_gse2v1_commands(
+    *,
+    ui_state: Any,
+    command_echo: Any,
+    cmd_flight: str = GSE2V1_CMD_FLIGHT_CONNECT,
+    poll_sleep_s: float = 0.02,
+) -> None:
+    flight_client = Gse2v1CommandFlightClient(cmd_flight)
+    last_snapshot: np.ndarray | None = None
+    connected = False
+
+    try:
+        while True:
+            latest_ui: np.ndarray | None = None
+            while True:
+                frame = ui_state.read()
+                if frame is None:
+                    break
+                latest_ui = np.asarray(frame, dtype=np.float64).reshape(-1)
+
+            while True:
+                frame = command_echo.read()
+                if frame is None:
+                    break
+                echo_row = np.asarray(frame, dtype=np.float64).reshape(-1)
+                if echo_row.size > CONNECTED_ECHO_INDEX:
+                    connected = bool(echo_row[CONNECTED_ECHO_INDEX] > 0.5)
+
+            if latest_ui is None:
+                time.sleep(poll_sleep_s)
+                continue
+            if not connected:
+                last_snapshot = None
+                time.sleep(poll_sleep_s)
+                continue
+            if last_snapshot is not None and np.array_equal(latest_ui, last_snapshot):
+                time.sleep(poll_sleep_s)
+                continue
+
+            if flight_client.send_row_safe(latest_ui):
+                last_snapshot = latest_ui.copy()
+            time.sleep(poll_sleep_s)
+    finally:
+        flight_client.close()
 
 
 def build_frontend() -> tuple[Frontend, CommandEchoSync]:
-    toggle_gn2_fill = ToggleButton(
-        button_id="gse_sol_gn2_fill",
-        label="GN2 Fill",
-        state_id="gse.sol_gn2_fill",
-        state=False,
-        enabled_by_default=False,
-        theme_name="tau_ceti",
-    )
-    momentary_mvas_open = MomentaryButton(
-        button_id="gse_sol_mvas_open",
-        label="MVAS Open",
-        state_id="gse.sol_mvas_open",
-        state=1.0,
-        enabled_by_default=False,
-        theme_name="tau_ceti",
-    )
+    toggle_indices: dict[int, StateValueToggleButton] = {}
+    momentary_indices: dict[int, StateValueMomentaryButton] = {}
+    state_value_buttons: dict[int, StateValueMixin] = {}
+    command_buttons: list[StateButton] = []
+
+    for i, name in enumerate(GSE2V1_COMMAND_FIELD_NAMES):
+        state_id = f"gse2v1.{name}"
+        label = _label_from_field(name)
+        state_field_name = GSE2V1_COMMAND_STATE_FIELDS.get(name)
+        if name.startswith("solenoidState"):
+            button = StateValueToggleButton(
+                button_id=f"gse2v1_{name}",
+                label=label,
+                state_id=state_id,
+                state=False,
+                enabled_by_default=False,
+                theme_name="tau_ceti",
+            )
+            toggle_indices[i] = button
+        else:
+            button = StateValueMomentaryButton(
+                button_id=f"gse2v1_{name}",
+                label=label,
+                state_id=state_id,
+                state=1.0,
+                enabled_by_default=False,
+                theme_name="tau_ceti",
+            )
+            momentary_indices[i] = button
+        if state_field_name is not None:
+            button.telemetry_field_name = state_field_name
+            state_value_buttons[i] = button
+        command_buttons.append(button)
 
     sync_component = CommandEchoSync(
-        stream_name=COMMAND_ECHO_STREAM,
-        toggle_indices={GN2_FILL_CMD_INDEX: toggle_gn2_fill},
-        momentary_indices={MVAS_OPEN_CMD_INDEX: momentary_mvas_open},
+        echo_stream_name=COMMAND_ECHO_STREAM,
+        telemetry_stream_name=GSE2V1_TELEMETRY_STREAM,
+        toggle_indices=toggle_indices,
+        momentary_indices=momentary_indices,
+        state_value_buttons=state_value_buttons,
     )
 
-    gse_colors = _signal_colors(len(GSE_VALUE_SIGNALS))
     nidaq_colors = _signal_colors(len(NIDAQ_FIELD_NAMES))
     frontend = Frontend("gui2_1_frontend", output_order=UI_OUTPUT_ORDER)
-    # Sync must be registered before the buttons so its consume()/render()
-    # runs first in the frontend task loop and can mutate button state and
-    # ``enabled_by_default`` before the button adapters render this frame.
     frontend.add(sync_component)
-    frontend.add(toggle_gn2_fill)
-    frontend.add(momentary_mvas_open)
-    frontend.add(
-        SensorGraph(
-            graph_id="gse_graph",
-            title="GSE Telemetry",
-            series=tuple(
-                GraphSeries(
-                    series_id=f"gse_{name}",
-                    label=name,
-                    stream_name=_graph_stream_name(name),
-                    color_rgba=gse_colors[i],
-                )
-                for i, name in enumerate(GSE_VALUE_SIGNALS)
-            ),
-            theme_name="tau_ceti",
-            show_series_controls=True,
-            window_seconds=20000.0,
-        )
-    )
+    for button in command_buttons:
+        frontend.add(button)
     frontend.add(
         SensorGraph(
             graph_id="nidaq_graph",
@@ -357,7 +416,7 @@ def build_frontend() -> tuple[Frontend, CommandEchoSync]:
             theme_name="tau_ceti",
             show_series_controls=True,
             window_seconds=2.0,
-            plot_height=400
+            plot_height=400,
         )
     )
     frontend.compile()
@@ -376,29 +435,25 @@ def build_frontend_task(frontend: Frontend):
 def main() -> None:
     frontend, _sync_component = build_frontend()
     frontend_task = build_frontend_task(frontend)
-    gse_flight_fn = functools.partial(
+    gse2v1_flight_fn = functools.partial(
         frontend_run_flight_server,
-        grpc_bind=FRONTEND_FLIGHT_GSE_BIND,
-        rows_per_frame=GSE_DECIMATED_ROWS,
-        num_signals=len(GSE_SIGNAL_LISTS),
+        grpc_bind=FRONTEND_FLIGHT_GSE2V1_BIND,
+        rows_per_frame=GSE2V1_ROWS_PER_FRAME,
+        num_signals=GSE2V1_NUM_SIGNALS,
     )
     echo_flight_fn = functools.partial(
         frontend_run_flight_server,
-        grpc_bind=FRONTEND_FLIGHT_GSE_CMD_ECHO_BIND,
-        rows_per_frame=ECHO_ROWS_PER_FRAME,
-        num_signals=NUM_ECHO_SIGNALS,
+        grpc_bind=FRONTEND_FLIGHT_GSE2V1_CMD_ECHO_BIND,
+        rows_per_frame=1,
+        num_signals=GSE2V1_NUM_ECHO_SIGNALS,
     )
-
-    graph_write_bindings = {
-        f"gw_{i}": _graph_stream_name(name)
-        for i, name in enumerate(GSE_VALUE_SIGNALS)
-    }
     nidaq_flight_fn = functools.partial(
         frontend_run_flight_server,
         grpc_bind=FRONTEND_FLIGHT_NIDAQ_BIND,
         rows_per_frame=NIDAQ_ROWS_PER_FRAME // NIDAQ_AVERAGE_OVER,
-        num_signals=len(NIDAQ_CHANNEL_NAMES),
+        num_signals=NIDAQ_NUM_SIGNALS,
     )
+
     nidaq_graph_write_bindings = {
         f"nidaq_graph_{name}": _nidaq_graph_stream_name(name)
         for name in NIDAQ_FIELD_NAMES
@@ -406,22 +461,22 @@ def main() -> None:
 
     with Pipeline("frontend") as pipeline:
         pipeline.add_stream(
-            "frontend_gse_decimated_data",
-            shape=(GSE_DECIMATED_ROWS, len(GSE_SIGNAL_LISTS)),
+            GSE2V1_TELEMETRY_STREAM,
+            shape=(GSE2V1_ROWS_PER_FRAME, GSE2V1_NUM_SIGNALS),
             dtype=np.float64,
             cache_align=True,
             frames=256,
         )
         pipeline.add_stream(
             COMMAND_ECHO_STREAM,
-            shape=(ECHO_ROWS_PER_FRAME, NUM_ECHO_SIGNALS),
+            shape=(1, GSE2V1_NUM_ECHO_SIGNALS),
             dtype=np.float64,
             cache_align=True,
             frames=64,
         )
         pipeline.add_stream(
             "frontend_nidaq_decimated_data",
-            shape=(NIDAQ_ROWS_PER_FRAME // NIDAQ_AVERAGE_OVER, len(NIDAQ_CHANNEL_NAMES)),
+            shape=(NIDAQ_ROWS_PER_FRAME // NIDAQ_AVERAGE_OVER, NIDAQ_NUM_SIGNALS),
             dtype=np.float64,
             cache_align=True,
             frames=2560,
@@ -430,14 +485,6 @@ def main() -> None:
             pipeline.add_stream(
                 _nidaq_graph_stream_name(name),
                 shape=(2, NIDAQ_ROWS_PER_FRAME // NIDAQ_AVERAGE_OVER),
-                dtype=np.float64,
-                cache_align=True,
-                frames=256,
-            )
-        for name in GSE_VALUE_SIGNALS:
-            pipeline.add_stream(
-                _graph_stream_name(name),
-                shape=(2, GSE_DECIMATED_ROWS),
                 dtype=np.float64,
                 cache_align=True,
                 frames=256,
@@ -451,18 +498,12 @@ def main() -> None:
         )
 
         pipeline.add_task(
-            "frontend_gse_flight_server",
-            fn=gse_flight_fn,
-            writes={"stream": "frontend_gse_decimated_data"},
+            "frontend_gse2v1_flight_server",
+            fn=gse2v1_flight_fn,
+            writes={"stream": GSE2V1_TELEMETRY_STREAM},
         )
         pipeline.add_task(
-            "gse_split_to_graph_streams",
-            fn=gse_split_to_graph_streams,
-            reads={"stream": "frontend_gse_decimated_data"},
-            writes=graph_write_bindings,
-        )
-        pipeline.add_task(
-            "frontend_gse_command_echo_server",
+            "frontend_gse2v1_command_echo_server",
             fn=echo_flight_fn,
             writes={"stream": COMMAND_ECHO_STREAM},
         )
@@ -473,8 +514,8 @@ def main() -> None:
             writes=frontend.write_bindings(UI_STATE_STREAM),
         )
         pipeline.add_task(
-            "gse_command_forwarder",
-            fn=forward_ui_state_to_gse_commands,
+            "gse2v1_command_forwarder",
+            fn=forward_ui_state_to_gse2v1_commands,
             reads={
                 "ui_state": UI_STATE_STREAM,
                 "command_echo": COMMAND_ECHO_STREAM,
