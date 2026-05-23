@@ -22,7 +22,7 @@ NIDAQ_ROWS_PER_FRAME = 1000
 
 # --- Packet DEFINITIONS ---
 NIDAQ_FIELD_NAME_MAP = {
-    "ai0": "SOMETHINGCOOL AND NEW",
+    "ai0": "SN",
     "ai1": "ai1",
     "ai2": "ai2",
     "ai3": "ai3",

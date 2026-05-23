@@ -181,6 +181,7 @@ class CommandEchoSync:
         self._latest_echo_row: np.ndarray | None = None
         self._latest_telemetry_row: np.ndarray | None = None
         self._prev_connected: bool | None = None
+        self._prev_echo_key: tuple | None = None
 
     def attach_adapters(self, adapters: Iterable[Any]) -> None:
         by_id = {getattr(a, "component_id", None): a for a in adapters}
@@ -246,6 +247,22 @@ class CommandEchoSync:
                 if field_index is not None and field_index < latest_values.size:
                     value = float(latest_values[field_index])
                 button.set_telemetry_value(value)
+
+        if connected != self._prev_connected:
+            print(f"[FRONTEND] GSE2.1 link: {'CONNECTED' if connected else 'DISCONNECTED'}")
+
+        if row is not None:
+            echo_key = tuple(
+                bool(row[COMMAND_ECHO_OFFSET + i] > 0.5)
+                for i in range(GSE2V1_NUM_COMMAND_SIGNALS)
+                if COMMAND_ECHO_OFFSET + i < row.size
+            )
+            if echo_key != self._prev_echo_key:
+                state_str = ", ".join(
+                    f"{name}={v}" for name, v in zip(GSE2V1_COMMAND_FIELD_NAMES, echo_key)
+                )
+                print(f"[FRONTEND ECHO] {state_str}")
+                self._prev_echo_key = echo_key
 
         if connected and not self._prev_connected and row is not None:
             for cmd_idx, toggle in self._toggle_indices.items():
@@ -346,6 +363,12 @@ def forward_ui_state_to_gse2v1_commands(
                 continue
 
             if flight_client.send_row_safe(latest_ui):
+                cmd_str = ", ".join(
+                    f"{name}={bool(latest_ui[i] > 0.5)}"
+                    for i, name in enumerate(GSE2V1_COMMAND_FIELD_NAMES)
+                    if i < latest_ui.size
+                )
+                print(f"[FRONTEND CMD] {cmd_str}")
                 last_snapshot = latest_ui.copy()
             time.sleep(poll_sleep_s)
     finally:
