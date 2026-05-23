@@ -17,6 +17,7 @@ from viviian.gui_utils import (
     StateButton,
     ToggleButton,
 )
+from viviian.gui_utils.chrome import draw_status_chip
 
 from generic_connector import StorageServer
 from gse21connector import (
@@ -220,7 +221,7 @@ class CommandEchoSync:
         return changed
 
     def render(self) -> None:
-        import imgui
+        import imgui        
 
         connected = False
         row = self._latest_echo_row
@@ -373,6 +374,23 @@ def forward_ui_state_to_gse2v1_commands(
             time.sleep(poll_sleep_s)
     finally:
         flight_client.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def build_frontend() -> tuple[Frontend, CommandEchoSync]:

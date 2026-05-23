@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import time
 from pathlib import Path
-
+from datetime import datetime
 import pyarrow as pa
 import numpy as np
 import pythusa
@@ -28,7 +28,8 @@ NIDAQ_FLIGHT_BIND = "grpc://0.0.0.0:8825"
 
 FRONTEND_FLIGHT_GSE2V1_CONNECT = "grpc://127.0.0.1:8819"
 FRONTEND_FLIGHT_NIDAQ_CONNECT = "grpc://127.0.0.1:8826"
-DATA_DIR = Path(__file__).resolve().parent / "data"
+
+DATA_DIR = Path(__file__).resolve().parent / "data" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def backend_run_flight_server(
@@ -178,6 +179,8 @@ def main() -> None:
             reads={"stream": "nidaq_decimated_signals"},
         )
         pipeline.run()
+        print(f"Data directory: {DATA_DIR}")
+        print("GOT PASSED THE MAIN FUNC")
 
 
 if __name__ == "__main__":

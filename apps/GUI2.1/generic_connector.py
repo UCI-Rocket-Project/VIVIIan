@@ -11,6 +11,55 @@ import numpy as np
 import pyarrow as pa
 
 
+
+class PrintServer(flight.FlightServerBase):
+    """ Flight server that prints the data to the console and keeps a copy in the latest dictionary variable """
+    def __init__(self, address: str, name: str, fields: tuple[str, ...]) -> None:
+        super().__init__(address)
+        self.name = name
+        self.fields = fields
+        self.latest: dict[str, float] | None = None
+
+    def do_put(self, context, descriptor, reader, writer):
+        for chunk in reader:
+            batch = chunk.data
+            data = np.column_stack(
+                [
+                    batch.column(i).to_numpy(zero_copy_only=False)
+                    for i in range(batch.num_columns)
+                ]
+            )
+            for row in data:
+                self.latest = {
+                    field: value
+                    for field, value in zip(self.fields, row, strict=False)
+                }
+                print(self.name, self.latest)
+
+
+class LatestServer(flight.FlightServerBase):
+    """ Flight server that keeps a copy in the latest dictionary variable """
+    def __init__(self, address: str, name: str, fields: tuple[str, ...]) -> None:
+        super().__init__(address)
+        self.name = name
+        self.fields = fields
+        self.latest: dict[str, float] | None = None
+
+    def do_put(self, context, descriptor, reader, writer):
+        for chunk in reader:
+            batch = chunk.data
+            data = np.column_stack(
+                [
+                    batch.column(i).to_numpy(zero_copy_only=False)
+                    for i in range(batch.num_columns)
+                ]
+            )
+            for row in data:
+                self.latest = {
+                    field: value
+                    for field, value in zip(self.fields, row, strict=False)
+                }
+
 class StorageServer(flight.FlightServerBase):
     """Flight receiver: each do_put stream is turned into NumPy frames on the pythusa ring."""
 
