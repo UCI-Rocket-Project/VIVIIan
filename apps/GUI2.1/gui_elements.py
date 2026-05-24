@@ -3,11 +3,31 @@ from __future__ import annotations
 from generic_connector import LatestServer
 from collections import deque
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 import numpy as np
 
 
 RGBA = tuple[float, float, float, float]
+
+COLOR_BLACK: RGBA = (0.0, 0.0, 0.0, 1.0)
+COLOR_WHITE: RGBA = (1.0, 1.0, 1.0, 1.0)
+
+APP_BACKGROUND_COLOR: RGBA = (0.1, 0.1, 0.1, 1.0)
+
+BUTTON_BACKGROUND_COLOR: RGBA = (0.18, 0.18, 0.20, 1.0)
+BUTTON_HOVER_COLOR: RGBA = (0.24, 0.24, 0.27, 1.0)
+BUTTON_ACTIVE_COLOR: RGBA = (0.12, 0.34, 0.16, 1.0)
+BUTTON_DISABLED_COLOR: RGBA = (0.11, 0.11, 0.12, 1.0)
+BUTTON_BORDER_COLOR: RGBA = COLOR_BLACK
+BUTTON_TEXT_COLOR: RGBA = COLOR_WHITE
+BUTTON_DISABLED_TEXT_COLOR: RGBA = (0.45, 0.45, 0.48, 1.0)
+
+BUTTON_STATUS_DEFAULT_COLOR: RGBA = (0.12, 0.55, 0.18, 1.0)
+BUTTON_STATUS_OFF_COLOR: RGBA = (0.18, 0.18, 0.18, 1.0)
+BUTTON_STATUS_ON_COLOR: RGBA = (0.0, 0.7, 0.15, 1.0)
+BUTTON_STATUS_TEXT_COLOR: RGBA = COLOR_WHITE
+BUTTON_STATUS_DISABLED_COLOR: RGBA = (0.08, 0.08, 0.09, 1.0)
+BUTTON_STATUS_DISABLED_TEXT_COLOR: RGBA = (0.38, 0.38, 0.40, 1.0)
 
 
 @dataclass
@@ -17,38 +37,51 @@ class Button:
     state: bool = False
     width: float = 180.0
     height: float = 42.0
-    color: RGBA = (0.18, 0.18, 0.20, 1.0)
-    hover_color: RGBA = (0.24, 0.24, 0.27, 1.0)
-    active_color: RGBA = (0.12, 0.34, 0.16, 1.0)
-    text_color: RGBA = (1.0, 1.0, 1.0, 1.0)
+    color: RGBA = BUTTON_BACKGROUND_COLOR
+    hover_color: RGBA = BUTTON_HOVER_COLOR
+    active_color: RGBA = BUTTON_ACTIVE_COLOR
+    disabled_color: RGBA = BUTTON_DISABLED_COLOR
+    text_color: RGBA = BUTTON_TEXT_COLOR
+    disabled_text_color: RGBA = BUTTON_DISABLED_TEXT_COLOR
     status_text: str | None = None
-    status_color: RGBA = (0.12, 0.55, 0.18, 1.0)
-    status_text_color: RGBA = (1.0, 1.0, 1.0, 1.0)
+    status_color: RGBA = BUTTON_STATUS_DEFAULT_COLOR
+    status_text_color: RGBA = BUTTON_STATUS_TEXT_COLOR
+    disabled_status_color: RGBA = BUTTON_STATUS_DISABLED_COLOR
+    disabled_status_text_color: RGBA = BUTTON_STATUS_DISABLED_TEXT_COLOR
     status_width: float = 56.0
     toggle_on_click: bool = False
+    enabled: Any = True
     on_click: Callable[[Button], None] | None = None
 
     def render(self, imgui) -> bool:
+        enabled = self.is_enabled()
         pressed = imgui.invisible_button(f"##{self.button_id}", self.width, self.height)
-        if pressed and self.toggle_on_click:
-            self.state = not self.state
-        if pressed and self.on_click is not None:
-            self.on_click(self)
+        accepted = pressed and enabled
+        if accepted:
+            if self.toggle_on_click:
+                self.state = not self.state
+            if self.on_click is not None:
+                self.on_click(self)
 
         x0, y0 = _xy(imgui.get_item_rect_min())
         x1, y1 = _xy(imgui.get_item_rect_max())
         status_x0 = max(x0, x1 - self.status_width)
         draw_list = imgui.get_window_draw_list()
 
-        body_color = self.color
-        if imgui.is_item_active():
+        body_color = self.disabled_color if not enabled else self.color
+        if enabled and imgui.is_item_active():
             body_color = self.active_color
-        elif imgui.is_item_hovered():
+        elif enabled and imgui.is_item_hovered():
             body_color = self.hover_color
+        text_color = self.text_color if enabled else self.disabled_text_color
+        status_color = self.status_color if enabled else self.disabled_status_color
+        status_text_color = (
+            self.status_text_color if enabled else self.disabled_status_text_color
+        )
 
         draw_list.add_rect_filled(x0, y0, status_x0, y1, _rgba(imgui, body_color))
-        draw_list.add_rect_filled(status_x0, y0, x1, y1, _rgba(imgui, self.status_color))
-        draw_list.add_rect(x0, y0, x1, y1, _rgba(imgui, (0.0, 0.0, 0.0, 1.0)))
+        draw_list.add_rect_filled(status_x0, y0, x1, y1, _rgba(imgui, status_color))
+        draw_list.add_rect(x0, y0, x1, y1, _rgba(imgui, BUTTON_BORDER_COLOR))
 
         _draw_centered_text(
             imgui,
@@ -58,7 +91,7 @@ class Button:
             y0,
             status_x0,
             y1,
-            self.text_color,
+            text_color,
         )
         _draw_centered_text(
             imgui,
@@ -68,9 +101,14 @@ class Button:
             y0,
             x1,
             y1,
-            self.status_text_color,
+            status_text_color,
         )
-        return pressed
+        return accepted
+
+    def is_enabled(self) -> bool:
+        if callable(self.enabled):
+            return bool(self.enabled())
+        return bool(self.enabled)
 
     def set_text(self, text: str) -> None:
         self.text = text
@@ -98,6 +136,9 @@ class Button:
 
     def set_status_color(self, color: RGBA) -> None:
         self.status_color = color
+
+    def set_enabled(self, enabled: Any) -> None:
+        self.enabled = enabled
 
 
 def _xy(pos) -> tuple[float, float]:
@@ -185,6 +226,3 @@ class NidaqGraph:
                 scale_max=scale_max,
                 graph_size=(0.0, 45.0),
             )
-
-
-

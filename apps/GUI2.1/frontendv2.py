@@ -13,7 +13,19 @@ from gse21connector import (
 )
 from nidaq_gse import NIDAQ_FIELD_NAMES
 from generic_connector import LatestServer
-from gui_elements import Button, draw_table, NidaqGraph
+from gui_elements import (
+    APP_BACKGROUND_COLOR,
+    BUTTON_STATUS_OFF_COLOR,
+    BUTTON_STATUS_ON_COLOR,
+    Button,
+    NidaqGraph,
+    draw_table,
+)
+
+
+BUTTON_STATES = {} #dictionary of all button states
+COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 
+
 
 
 class GseCommandClient:
@@ -34,6 +46,34 @@ class GseCommandClient:
         self.writer.write_batch(batch)
 
 
+
+
+def make_gse_command_button(client: GseCommandClient, GSE2V1_COMMAND_FIELD_NAME: str, display_name: str, gate_on: callable, gate_off: callable) -> Button:
+    button_index = GSE2V1_COMMAND_FIELD_NAMES.index(GSE2V1_COMMAND_FIELD_NAME)
+    button = Button(
+        f"{display_name}",
+        GSE2V1_COMMAND_FIELD_NAME,
+        width=260.0,
+        toggle_on_click=True,
+        status_color=BUTTON_STATUS_OFF_COLOR,
+    )
+
+    def send(button: Button, index: int = button_index) -> None:
+        client.row[index] = 1.0 if button.state else 0.0
+        button.set_status_color(
+            BUTTON_STATUS_ON_COLOR if button.state else BUTTON_STATUS_OFF_COLOR
+        )
+        client.send()
+    button.on_click = send
+    return button
+
+
+
+
+
+
+
+
 def make_command_buttons(client: GseCommandClient) -> tuple[Button, ...]:
     buttons = []
     for index, name in enumerate(GSE2V1_COMMAND_FIELD_NAMES):
@@ -42,13 +82,13 @@ def make_command_buttons(client: GseCommandClient) -> tuple[Button, ...]:
             name,
             width=260.0,
             toggle_on_click=True,
-            status_color=(0.18, 0.18, 0.18, 1.0),
+            status_color=BUTTON_STATUS_OFF_COLOR,
         )
 
         def send(button: Button, index: int = index) -> None:
             client.row[index] = 1.0 if button.state else 0.0
             button.set_status_color(
-                (0.0, 0.7, 0.15, 1.0) if button.state else (0.18, 0.18, 0.18, 1.0)
+                BUTTON_STATUS_ON_COLOR if button.state else BUTTON_STATUS_OFF_COLOR
             )
             client.send()
 
@@ -121,7 +161,7 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         imgui.pop_style_var(2)
 
         imgui.render()
-        gl.glClearColor(0.1, 0.1, 0.1, 1.0)
+        gl.glClearColor(*APP_BACKGROUND_COLOR)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         renderer.render(imgui.get_draw_data())
         glfw.swap_buffers(window)
