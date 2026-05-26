@@ -2,101 +2,22 @@ from __future__ import annotations
 
 import threading
 
-import pyarrow as pa
-import pyarrow.flight as flight
-
 from gse21connector import (
-    GSE2V1_COMMAND_FIELD_NAMES,
     GSE2V1_ECHO_FIELD_NAMES,
     GSE2V1_FIELD_NAMES,
-    GSE2V1_NUM_COMMAND_SIGNALS,
 )
 from nidaq_gse import NIDAQ_FIELD_NAMES
 from generic_connector import LatestServer
 from gui_elements import (
     APP_BACKGROUND_COLOR,
-    BUTTON_STATUS_OFF_COLOR,
-    BUTTON_STATUS_ON_COLOR,
     Button,
     NidaqGraph,
     draw_table,
 )
-
+from gui_gse2v1 import GseCommandClient, make_gse2v1_command_buttons
 
 BUTTON_STATES = {} #dictionary of all button states
 COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 
-
-
-
-class GseCommandClient:
-    def __init__(self) -> None:
-        self.row = [0.0] * GSE2V1_NUM_COMMAND_SIGNALS
-        self.schema = pa.schema([(name, pa.float64()) for name in GSE2V1_COMMAND_FIELD_NAMES])
-        self.descriptor = flight.FlightDescriptor.for_path("gse2v1_commands")
-        self.writer = None
-
-    def send(self) -> None:
-        if self.writer is None:
-            client = flight.connect("grpc://127.0.0.1:8827")
-            self.writer, _ = client.do_put(self.descriptor, self.schema)
-        batch = pa.RecordBatch.from_arrays(
-            [pa.array([value], type=pa.float64()) for value in self.row],
-            schema=self.schema,
-        )
-        self.writer.write_batch(batch)
-
-
-
-
-def make_gse_command_button(client: GseCommandClient, GSE2V1_COMMAND_FIELD_NAME: str, display_name: str, gate_on: callable, gate_off: callable) -> Button:
-    button_index = GSE2V1_COMMAND_FIELD_NAMES.index(GSE2V1_COMMAND_FIELD_NAME)
-    button = Button(
-        f"{display_name}",
-        GSE2V1_COMMAND_FIELD_NAME,
-        width=260.0,
-        toggle_on_click=True,
-        status_color=BUTTON_STATUS_OFF_COLOR,
-    )
-
-    def send(button: Button, index: int = button_index) -> None:
-        client.row[index] = 1.0 if button.state else 0.0
-        button.set_status_color(
-            BUTTON_STATUS_ON_COLOR if button.state else BUTTON_STATUS_OFF_COLOR
-        )
-        client.send()
-    button.on_click = send
-    return button
-
-
-
-
-
-
-
-
-def make_command_buttons(client: GseCommandClient) -> tuple[Button, ...]:
-    buttons = []
-    for index, name in enumerate(GSE2V1_COMMAND_FIELD_NAMES):
-        button = Button(
-            f"cmd_{name}",
-            name,
-            width=260.0,
-            toggle_on_click=True,
-            status_color=BUTTON_STATUS_OFF_COLOR,
-        )
-
-        def send(button: Button, index: int = index) -> None:
-            client.row[index] = 1.0 if button.state else 0.0
-            button.set_status_color(
-                BUTTON_STATUS_ON_COLOR if button.state else BUTTON_STATUS_OFF_COLOR
-            )
-            client.send()
-
-        button.on_click = send
-        buttons.append(button)
-    return tuple(buttons)
-
-
 def draw_command_buttons(imgui, buttons: tuple[Button, ...]) -> None:
     imgui.text_unformatted("commands")
     imgui.columns(3, "command_buttons", border=False)
@@ -126,7 +47,7 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     imgui.create_context()
     renderer = GlfwRenderer(window)
     nidaq_graph = NidaqGraph(next(server for server in servers if server.name == "nidaq"))
-    command_buttons = make_command_buttons(GseCommandClient())
+    command_buttons = make_gse2v1_command_buttons(GseCommandClient())
 
     while not glfw.window_should_close(window):
         glfw.poll_events()

@@ -5,6 +5,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Any, Callable
 import numpy as np
+import time
 
 
 RGBA = tuple[float, float, float, float]
@@ -17,6 +18,7 @@ APP_BACKGROUND_COLOR: RGBA = (0.1, 0.1, 0.1, 1.0)
 BUTTON_BACKGROUND_COLOR: RGBA = (0.18, 0.18, 0.20, 1.0)
 BUTTON_HOVER_COLOR: RGBA = (0.24, 0.24, 0.27, 1.0)
 BUTTON_ACTIVE_COLOR: RGBA = (0.12, 0.34, 0.16, 1.0)
+BUTTON_STATE_ON_COLOR: RGBA = (0.0, 0.55, 0.15, 1.0)
 BUTTON_DISABLED_COLOR: RGBA = (0.11, 0.11, 0.12, 1.0)
 BUTTON_BORDER_COLOR: RGBA = COLOR_BLACK
 BUTTON_TEXT_COLOR: RGBA = COLOR_WHITE
@@ -40,6 +42,7 @@ class Button:
     color: RGBA = BUTTON_BACKGROUND_COLOR
     hover_color: RGBA = BUTTON_HOVER_COLOR
     active_color: RGBA = BUTTON_ACTIVE_COLOR
+    state_on_color: RGBA = BUTTON_STATE_ON_COLOR
     disabled_color: RGBA = BUTTON_DISABLED_COLOR
     text_color: RGBA = BUTTON_TEXT_COLOR
     disabled_text_color: RGBA = BUTTON_DISABLED_TEXT_COLOR
@@ -52,13 +55,26 @@ class Button:
     toggle_on_click: bool = False
     enabled: Any = True
     on_click: Callable[[Button], None] | None = None
+    momentary_seconds: float | None = None
+    momentary_until: float | None = None
 
     def render(self, imgui) -> bool:
         enabled = self.is_enabled()
         pressed = imgui.invisible_button(f"##{self.button_id}", self.width, self.height)
+        if self.momentary_until is not None and self.momentary_until < time.monotonic():
+            was_on = self.state
+            self.momentary_until = None
+            self.state = False
+            if was_on and self.on_click is not None:
+                self.on_click(self)
+
+
         accepted = pressed and enabled
         if accepted:
-            if self.toggle_on_click:
+            if self.momentary_seconds is not None:
+                self.state = True
+                self.momentary_until = time.monotonic() + self.momentary_seconds
+            elif self.toggle_on_click:
                 self.state = not self.state
             if self.on_click is not None:
                 self.on_click(self)
@@ -68,11 +84,16 @@ class Button:
         status_x0 = max(x0, x1 - self.status_width)
         draw_list = imgui.get_window_draw_list()
 
-        body_color = self.disabled_color if not enabled else self.color
-        if enabled and imgui.is_item_active():
+        if self.state:
+            body_color = self.state_on_color
+        elif not enabled:
+            body_color = self.disabled_color
+        elif imgui.is_item_active():
             body_color = self.active_color
-        elif enabled and imgui.is_item_hovered():
+        elif imgui.is_item_hovered():
             body_color = self.hover_color
+        else:
+            body_color = self.color
         text_color = self.text_color if enabled else self.disabled_text_color
         status_color = self.status_color if enabled else self.disabled_status_color
         status_text_color = (
