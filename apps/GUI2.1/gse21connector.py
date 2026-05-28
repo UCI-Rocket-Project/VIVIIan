@@ -14,6 +14,7 @@ from generic_connector import CommandServer
 
 # --- Constants for GSE2V1 Connector ---
 GSE2V1_IP = "127.0.0.1"
+#GSE2V1_IP = "10.0.0.217"
 GSE2V1_PORT = 10001
 GSE2V1_RECONNECT_S = 0.5
 

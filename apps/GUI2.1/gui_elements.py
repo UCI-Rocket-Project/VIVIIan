@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 import numpy as np
 import time
-
+from imgui_bundle import imgui, implot
 
 RGBA = tuple[float, float, float, float]
 
@@ -23,7 +23,7 @@ BUTTON_DISABLED_COLOR: RGBA = (0.11, 0.11, 0.12, 1.0)
 BUTTON_BORDER_COLOR: RGBA = COLOR_BLACK
 BUTTON_TEXT_COLOR: RGBA = COLOR_WHITE
 BUTTON_DISABLED_TEXT_COLOR: RGBA = (0.45, 0.45, 0.48, 1.0)
-
+BUTTON_STATE_MISMATCH_COLOR: RGBA = (0.85, 0.35, 0.0, 1.0)
 BUTTON_STATUS_DEFAULT_COLOR: RGBA = (0.12, 0.55, 0.18, 1.0)
 BUTTON_STATUS_OFF_COLOR: RGBA = (0.18, 0.18, 0.18, 1.0)
 BUTTON_STATUS_ON_COLOR: RGBA = (0.0, 0.7, 0.15, 1.0)
@@ -46,7 +46,8 @@ class Button:
     disabled_color: RGBA = BUTTON_DISABLED_COLOR
     text_color: RGBA = BUTTON_TEXT_COLOR
     disabled_text_color: RGBA = BUTTON_DISABLED_TEXT_COLOR
-    status_text: str | None = None
+    status_text: callable[[Button], str] | None = None
+    internal_status_value: callable[[Button], int | str] | None = None
     status_color: RGBA = BUTTON_STATUS_DEFAULT_COLOR
     status_text_color: RGBA = BUTTON_STATUS_TEXT_COLOR
     disabled_status_color: RGBA = BUTTON_STATUS_DISABLED_COLOR
@@ -58,9 +59,9 @@ class Button:
     momentary_seconds: float | None = None
     momentary_until: float | None = None
 
-    def render(self, imgui) -> bool:
+    def render(self, imgui, status_text: int | str | None = None) -> bool:
         enabled = self.is_enabled()
-        pressed = imgui.invisible_button(f"##{self.button_id}", self.width, self.height)
+        pressed = imgui.invisible_button(f"##{self.button_id}", imgui.ImVec2(self.width, self.height))
         if self.momentary_until is not None and self.momentary_until < time.monotonic():
             was_on = self.state
             self.momentary_until = None
@@ -95,14 +96,26 @@ class Button:
         else:
             body_color = self.color
         text_color = self.text_color if enabled else self.disabled_text_color
-        status_color = self.status_color if enabled else self.disabled_status_color
+        status_color = self.status_color if bool(self.internal_status_value())==self.state else BUTTON_STATE_MISMATCH_COLOR
         status_text_color = (
             self.status_text_color if enabled else self.disabled_status_text_color
         )
 
-        draw_list.add_rect_filled(x0, y0, status_x0, y1, _rgba(imgui, body_color))
-        draw_list.add_rect_filled(status_x0, y0, x1, y1, _rgba(imgui, status_color))
-        draw_list.add_rect(x0, y0, x1, y1, _rgba(imgui, BUTTON_BORDER_COLOR))
+        draw_list.add_rect_filled(
+            imgui.ImVec2(x0, y0),
+            imgui.ImVec2(status_x0, y1),
+            _rgba(imgui, body_color),
+        )
+        draw_list.add_rect_filled(
+            imgui.ImVec2(status_x0, y0),
+            imgui.ImVec2(x1, y1),
+            _rgba(imgui, status_color),
+        )
+        draw_list.add_rect(
+            imgui.ImVec2(x0, y0),
+            imgui.ImVec2(x1, y1),
+            _rgba(imgui, BUTTON_BORDER_COLOR),
+        )
 
         _draw_centered_text(
             imgui,
@@ -117,7 +130,7 @@ class Button:
         _draw_centered_text(
             imgui,
             draw_list,
-            self.status_text if self.status_text is not None else ("1" if self.state else "0"),
+            self.status_text() ,
             status_x0,
             y0,
             x1,
@@ -169,7 +182,7 @@ def _xy(pos) -> tuple[float, float]:
 
 
 def _rgba(imgui, color: RGBA) -> int:
-    return imgui.get_color_u32_rgba(*color)
+    return imgui.get_color_u32(imgui.ImVec4(*color))
 
 
 def _draw_centered_text(
@@ -184,8 +197,10 @@ def _draw_centered_text(
 ) -> None:
     text_w, text_h = _xy(imgui.calc_text_size(text))
     draw_list.add_text(
-        x0 + max(4.0, (x1 - x0 - text_w) * 0.5),
-        y0 + max(2.0, (y1 - y0 - text_h) * 0.5),
+        imgui.ImVec2(
+            x0 + max(4.0, (x1 - x0 - text_w) * 0.5),
+            y0 + max(2.0, (y1 - y0 - text_h) * 0.5),
+        ),
         _rgba(imgui, color),
         text,
     )
@@ -201,7 +216,7 @@ def draw_table(imgui, server: LatestServer) -> None:
         imgui.text_disabled("waiting")
         return
 
-    imgui.columns(2, f"{server.name}_table", border=True)
+    imgui.columns(2, f"{server.name}_table", borders=True)
     for field in server.fields:
         imgui.text_unformatted(field)
         imgui.next_column()
@@ -214,36 +229,46 @@ class NidaqGraph:
     def __init__(self, server: LatestServer, max_points: int = 150) -> None:
         self.server = server
         self.max_points = max_points
+
         self.history: deque[list[float]] = deque(maxlen=max_points)
+        self.times: deque[float] = deque(maxlen=max_points)
+
         self._last_seen: dict[str, float] | None = None
 
     def update(self) -> None:
         latest = self.server.latest
         if latest is None or latest is self._last_seen:
             return
+
         self._last_seen = latest
+
+        self.times.append(time.monotonic())
         self.history.append([float(latest[field]) for field in self.server.fields])
 
     def draw(self, imgui) -> None:
         self.update()
         imgui.text_unformatted("nidaq graph")
+
         if len(self.history) < 2:
             imgui.text_disabled("waiting")
             return
 
-        data = np.asarray(list(self.history), dtype=np.float32)
-        scale_min = float(data.min())
-        scale_max = float(data.max())
-        if scale_min == scale_max:
-            scale_min -= 1.0
-            scale_max += 1.0
+        now = time.monotonic()
 
-        for i, field in enumerate(self.server.fields):
-            values = np.ascontiguousarray(data[:, i], dtype=np.float32)
-            imgui.plot_lines(
-                field,
-                values,
-                scale_min=scale_min,
-                scale_max=scale_max,
-                graph_size=(0.0, 45.0),
-            )
+        # x-axis is seconds from current time:
+        # newest data is near 0, older data is negative
+        xs = np.ascontiguousarray(
+            [t - now for t in self.times],
+            dtype=np.float64,
+        )
+
+        data = np.asarray(list(self.history), dtype=np.float64)
+
+        if implot.begin_plot("nidaq graph plot", size=imgui.ImVec2(600.0, 0.0)):
+            implot.setup_axes("seconds ago", "value")
+
+            for i, field in enumerate(self.server.fields):
+                ys = np.ascontiguousarray(data[:, i], dtype=np.float64)
+                implot.plot_line(field, xs, ys)
+
+            implot.end_plot()
