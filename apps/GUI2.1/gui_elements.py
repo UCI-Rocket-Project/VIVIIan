@@ -225,8 +225,13 @@ def draw_table(imgui, server: LatestServer) -> None:
     imgui.columns(1)
 
 
+
+
+
 class NidaqGraph:
-    def __init__(self, server: LatestServer, max_points: int = 150) -> None:
+    WINDOW_SECONDS = 300.0
+
+    def __init__(self, server: LatestServer, max_points: int = 30000) -> None:
         self.server = server
         self.max_points = max_points
 
@@ -234,6 +239,7 @@ class NidaqGraph:
         self.times: deque[float] = deque(maxlen=max_points)
 
         self._last_seen: dict[str, float] | None = None
+        self._reset_view: bool = True
 
     def update(self) -> None:
         latest = self.server.latest
@@ -242,12 +248,51 @@ class NidaqGraph:
 
         self._last_seen = latest
 
-        self.times.append(time.monotonic())
+        now = time.monotonic()
+
+        self.times.append(now)
         self.history.append([float(latest[field]) for field in self.server.fields])
+
+        # Keep only the last 300 seconds of data
+        cutoff = now - self.WINDOW_SECONDS
+        while self.times and self.times[0] < cutoff:
+            self.times.popleft()
+            self.history.popleft()
+
+    def _get_width(self, imgui) -> float:
+        available = imgui.get_content_region_avail()
+
+        if isinstance(available, tuple):
+            return float(available[0])
+
+        return float(available.x)
+
+    def _cond_always(self, imgui):
+        if hasattr(imgui, "Cond_"):
+            return imgui.Cond_.always
+
+        return imgui.ALWAYS
+
+    def _axis_x1(self):
+        if hasattr(implot, "ImAxis_"):
+            return implot.ImAxis_.x1
+
+        return implot.ImAxis_X1
+
+    def _axis_y1(self):
+        if hasattr(implot, "ImAxis_"):
+            return implot.ImAxis_.y1
+
+        return implot.ImAxis_Y1
 
     def draw(self, imgui) -> None:
         self.update()
+
         imgui.text_unformatted("nidaq graph")
+        imgui.same_line()
+
+        if imgui.button("Reset View"):
+            self._reset_view = True
 
         if len(self.history) < 2:
             imgui.text_disabled("waiting")
@@ -255,17 +300,63 @@ class NidaqGraph:
 
         now = time.monotonic()
 
-        # x-axis is seconds from current time:
-        # newest data is near 0, older data is negative
+        times_list = list(self.times)
+        history_list = list(self.history)
+
+        # x-axis:
+        # -300 = oldest visible edge on the LEFT
+        # 0 = now/latest value on the RIGHT
         xs = np.ascontiguousarray(
-            [t - now for t in self.times],
+            [t - now for t in times_list],
             dtype=np.float64,
         )
 
-        data = np.asarray(list(self.history), dtype=np.float64)
+        data = np.asarray(history_list, dtype=np.float64)
 
-        if implot.begin_plot("nidaq graph plot", size=imgui.ImVec2(600.0, 0.0)):
-            implot.setup_axes("seconds ago", "value")
+        scale_min = float(data.min())
+        scale_max = float(data.max())
+
+        if scale_min == scale_max:
+            scale_min -= 1.0
+            scale_max += 1.0
+        else:
+            padding = (scale_max - scale_min) * 0.10
+            scale_min -= padding
+            scale_max += padding
+
+        width = self._get_width(imgui)
+        height = 900
+
+        cond_always = self._cond_always(imgui)
+
+        if self._reset_view:
+            implot.set_next_axes_limits(
+                -self.WINDOW_SECONDS,
+                0.0,
+                scale_min,
+                scale_max,
+                cond_always,
+            )
+            self._reset_view = False
+
+        if implot.begin_plot(
+            "nidaq graph plot",
+            size=imgui.ImVec2(width, height),
+        ):
+            implot.setup_axes("seconds from now", "value")
+
+            implot.setup_axis_limits_constraints(
+                self._axis_x1(),
+                -self.WINDOW_SECONDS,
+                0.0,
+            )
+
+            implot.setup_axis_limits(
+                self._axis_y1(),
+                scale_min,
+                scale_max,
+                cond_always,
+            )
 
             for i, field in enumerate(self.server.fields):
                 ys = np.ascontiguousarray(data[:, i], dtype=np.float64)

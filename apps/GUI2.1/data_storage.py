@@ -2,10 +2,19 @@ import time
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-def write_from_stream(stream, path, column_names, column_types, file_size: int = 1024 * 1024 * 10):
+
+def write_from_stream(
+    stream,
+    path,
+    column_names,
+    column_types,
+    file_size: int = 1024 * 1024 * 10,
+    rollover_seconds: float | None = None,
+):
     """
     Reads data from a stream and writes it to rolling Parquet files.
-    A new file is created in the specified path once the current file exceeds `file_size`.
+    A new file is created in the specified path once the current file exceeds `file_size`
+    or has been open longer than `rollover_seconds`.
     """
     
     # 1. Ensure the destination folder exists (assuming 'path' is a pathlib.Path object)
@@ -18,12 +27,19 @@ def write_from_stream(stream, path, column_names, column_types, file_size: int =
     while True: 
         file_path = path / f"part-{time.time_ns()}.parquet"
         bytes_written = 0
+        rollover_at = (
+            time.monotonic() + rollover_seconds
+            if rollover_seconds is not None
+            else None
+        )
         try:
         # Open the writer for the new file
             with pq.ParquetWriter(file_path, schema) as writer:
                 
                 # Inner loop: Keeps writing to the CURRENT file until it gets too big
                 while bytes_written < file_size:
+                    if rollover_at is not None and time.monotonic() >= rollover_at:
+                        break
                     
                     frame = stream.read() # Expected to return a list/tuple of numpy arrays or 2D array
                     

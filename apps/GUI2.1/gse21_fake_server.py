@@ -120,13 +120,13 @@ def _serve_one_client(conn: socket.socket, addr: object, state: _SimState) -> No
     print(f"fake GSE2V1: client connected {addr}")
     while not _shutdown:
         try:
-            t0 = time.monotonic()
+            t0 = time.time()
             if not _drain_commands(conn, buf, state):
                 print("fake GSE2V1: client closed")
                 return
             conn.sendall(_pack_telemetry(seq, state))
             seq = (seq + 1) & 0xFFFFFFFF
-            elapsed = time.monotonic() - t0
+            elapsed = time.time() - t0
             sleep_s = dt - elapsed
             if sleep_s > 0:
                 time.sleep(sleep_s)

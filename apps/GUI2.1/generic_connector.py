@@ -44,6 +44,8 @@ class LatestServer(flight.FlightServerBase):
         self.name = name
         self.fields = fields
         self.latest: dict[str, float] | None = None
+        self.latest_update_time: float | None = None
+        self.latest_generation = 0
 
     def do_put(self, context, descriptor, reader, writer):
         for chunk in reader:
@@ -59,6 +61,17 @@ class LatestServer(flight.FlightServerBase):
                     field: value
                     for field, value in zip(self.fields, row, strict=False)
                 }
+                self.latest_update_time = time.monotonic()
+                self.latest_generation += 1
+
+    def latest_age(self) -> float | None:
+        if self.latest_update_time is None:
+            return None
+        return time.monotonic() - self.latest_update_time
+
+    def is_fresh(self, timeout_seconds: float) -> bool:
+        age = self.latest_age()
+        return age is not None and age <= timeout_seconds
 
 class StorageServer(flight.FlightServerBase):
     """Flight receiver: each do_put stream is turned into NumPy frames on the pythusa ring."""
@@ -76,6 +89,7 @@ class StorageServer(flight.FlightServerBase):
         self._write_lock = threading.Lock()
         self._rows_per_frame = rows_per_frame
         self._num_signals = num_signals
+        self._last_storage_time: float | None = None
 
     def do_put(self, context, descriptor, reader, writer):
         print("Test stand started streaming (Flight do_put)...")
@@ -91,6 +105,7 @@ class StorageServer(flight.FlightServerBase):
                 raise ValueError(
                     f"Expected frame shape {(self._rows_per_frame, self._num_signals)}, got {data.shape}"
                 )
+            data = self._add_storage_timestamps(data)
             with self._write_lock:
                 self._stream.write(data)
             received_bytes += int(data.nbytes)
@@ -98,6 +113,16 @@ class StorageServer(flight.FlightServerBase):
                 print(f"Flight ingest: {received_bytes / 1_000_000:.2f} MB in the last second (approx)")
                 start_time = time.time()
                 received_bytes = 0
+
+    def _add_storage_timestamps(self, data: np.ndarray) -> np.ndarray:
+        now = time.time()
+        rows = data.shape[0]
+        if self._last_storage_time is None or rows <= 1:
+            timestamps = np.full(rows, now, dtype=np.float64)
+        else:
+            timestamps = np.linspace(self._last_storage_time, now, rows + 1, dtype=np.float64)[1:]
+        self._last_storage_time = now
+        return np.column_stack((data, timestamps))
 
 
 
@@ -236,6 +261,7 @@ def generic_stream_connector(*, stream, field_names: list[str], flight_address: 
             while True:
                 frame = stream.read()
                 if frame is None:
+                    time.sleep(0.001)
                     continue
                 arrays = [pa.array(frame[:, i], type=pa.float64()) for i in range(len(field_names))]
                 batch = pa.RecordBatch.from_arrays(arrays, schema=schema)

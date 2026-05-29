@@ -223,13 +223,13 @@ class _ReconnectFlightWriter:
 
     def _mark_disconnected(self) -> None:
         self.close()
-        self._next_connect_at = time.monotonic() + self._reconnect_s
+        self._next_connect_at = time.time() + self._reconnect_s
 
     def _connect_if_needed(self) -> bool:
         if self._writer is not None:
             return True
 
-        now = time.monotonic()
+        now = time.time()
         if now < self._next_connect_at:
             return False
 
@@ -472,7 +472,7 @@ def _close_socket(sock: socket.socket | None) -> None:
 
 def _shutdown_command_server(command_server: CommandServer, command_thread: threading.Thread) -> None:
     try:
-        command_server.shutdown(deadline=time.monotonic() + 1.0)
+        command_server.shutdown(deadline=time.time() + 1.0)
     except Exception:
         pass
     command_thread.join(timeout=1.0)

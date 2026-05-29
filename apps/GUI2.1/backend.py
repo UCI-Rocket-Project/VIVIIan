@@ -25,11 +25,15 @@ from nidaq_gse import (
     NIDAQ_ROWS_PER_FRAME,
 )
 NIDAQ_FLIGHT_BIND = "grpc://0.0.0.0:8825"
+NIDAQ_VOLTAGE_SCALE = 399.4583344984201
 
 FRONTEND_FLIGHT_GSE2V1_CONNECT = "grpc://127.0.0.1:8819"
 FRONTEND_FLIGHT_NIDAQ_CONNECT = "grpc://127.0.0.1:8826"
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+STORAGE_TIMESTAMP_FIELD = "storageTimestamp"
+GSE2V1_STORAGE_FIELD_NAMES = (*GSE2V1_FIELD_NAMES, STORAGE_TIMESTAMP_FIELD)
+NIDAQ_STORAGE_FIELD_NAMES = (*NIDAQ_FIELD_NAMES, STORAGE_TIMESTAMP_FIELD)
 
 
 def backend_run_flight_server(
@@ -67,7 +71,7 @@ def nidaq_decimate_signals(
         frame = instream.read()
         while frame is not None:
             subset = frame[:, col_indices]
-            out = subset.reshape(out_rows, window_size, k).mean(axis=1)
+            out = subset.reshape(out_rows, window_size, k).mean(axis=1) * NIDAQ_VOLTAGE_SCALE
             outstream.write(out.astype(np.float64, copy=False))
             frame = instream.read()
         time.sleep(0.01)
@@ -77,8 +81,9 @@ def gse2v1_raw_telemetry_storage_write(*, stream) -> None:
     write_from_stream(
         stream,
         DATA_DIR / "gse2v1_raw_telemetry_data",
-        list(GSE2V1_FIELD_NAMES),
-        [pa.float64() for _ in range(GSE2V1_NUM_SIGNALS)],
+        list(GSE2V1_STORAGE_FIELD_NAMES),
+        [pa.float64() for _ in range(GSE2V1_NUM_SIGNALS + 1)],
+        rollover_seconds=5.0,
     )
 
 
@@ -86,8 +91,8 @@ def nidaq_raw_telemetry_storage_write(*, stream) -> None:
     write_from_stream(
         stream,
         DATA_DIR / "nidaq_raw_telemetry_data",
-        list(NIDAQ_FIELD_NAMES),
-        [pa.float64() for _ in range(NIDAQ_NUM_SIGNALS)],
+        list(NIDAQ_STORAGE_FIELD_NAMES),
+        [pa.float64() for _ in range(NIDAQ_NUM_SIGNALS + 1)],
     )
 
 
@@ -123,14 +128,14 @@ def main() -> None:
     with pythusa.Pipeline("backend") as pipeline:
         pipeline.add_stream(
             "gse2v1_received_data",
-            shape=(GSE2V1_ROWS_PER_FRAME, GSE2V1_NUM_SIGNALS),
+            shape=(GSE2V1_ROWS_PER_FRAME, GSE2V1_NUM_SIGNALS + 1),
             dtype=np.float64,
             cache_align=True,
             frames=64,
         )
         pipeline.add_stream(
             "nidaq_received_data",
-            shape=(NIDAQ_ROWS_PER_FRAME, NIDAQ_NUM_SIGNALS),
+            shape=(NIDAQ_ROWS_PER_FRAME, NIDAQ_NUM_SIGNALS + 1),
             dtype=np.float64,
             cache_align=True,
             frames=64,

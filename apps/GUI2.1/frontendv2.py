@@ -14,7 +14,11 @@ from gui_elements import (
     NidaqGraph,
     draw_table,
 )
-from gui_gse2v1 import GseCommandClient, make_gse2v1_command_buttons
+from gui_gse2v1 import (
+    GseCommandClient,
+    make_gse2v1_command_buttons,
+    sync_gse2v1_command_buttons_from_echo,
+)
 
 BUTTON_STATES = {} #dictionary of all button states
 COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 
@@ -49,8 +53,10 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     renderer = GlfwRenderer(window)
     
     gse_command_client = GseCommandClient()
+    gse_server = next(server for server in servers if server.name == "gse")
+    echo_server = next(server for server in servers if server.name == "echo")
     nidaq_graph = NidaqGraph(next(server for server in servers if server.name == "nidaq"))
-    command_buttons = make_gse2v1_command_buttons(gse_command_client, next(server for server in servers if server.name == "gse"))
+    command_buttons = make_gse2v1_command_buttons(gse_command_client, gse_server)
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -74,12 +80,15 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         )
         imgui.text_unformatted(f"FPS: {imgui.get_io().framerate:.1f}")
         imgui.separator()
+        sync_gse2v1_command_buttons_from_echo(gse_command_client, echo_server)
         draw_command_buttons(imgui, command_buttons)
         imgui.separator()
-        for server in servers:
-            draw_table(imgui, server)
+        for server in servers: 
             if server.name == "nidaq":
                 nidaq_graph.draw(imgui)
+                imgui.separator()
+        for server in servers:
+            draw_table(imgui, server)
             imgui.separator()
         imgui.end()
         imgui.pop_style_var(2)
