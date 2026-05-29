@@ -13,13 +13,7 @@ from generic_connector import LatestServer
 BUTTON_WIDTH = 260.0
 IGNITER_MOMENTARY_SECONDS = 1.0
 ABORT_BUTTON_ID = "abort"
-VENT_BUTTON_IDS = (
-    "sol_gn2_vent",
-    "copv_vent",
-    "vent",
-    "lng_vent",
-    "lox_vent",
-)
+
 
 class GseCommandClient:
     def __init__(self) -> None:
@@ -49,6 +43,7 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "command_field": "solenoidState0",
         "status_field": "solenoidInternalState0",
         "status_value": "solenoidCurrent0",
+
         "enabled": abort_is_inactive,
     },
     "sol_gn2_fill_2": {
@@ -100,25 +95,32 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "status_value": "solenoidCurrent7",
         "enabled": abort_is_inactive,
     },
-    "vent": {
-        "display_name": "Vent",
+    "tank_vent": {
+        "display_name": "Tank Vent",
         "command_field": "solenoidState8",
         "status_field": "solenoidInternalState8",
         "status_value": "solenoidCurrent8",
         "enabled": abort_is_inactive,
     },
-    "lng_vent": {
-        "display_name": "LNG Vent",
-        "command_field": "solenoidState9",
-        "status_field": "solenoidInternalState9",
-        "status_value": "solenoidCurrent9",
+    "mvas_open": {
+        "display_name": "Mvas Vent",
+        "command_field": ["solenoidState9", "solenoidState10"],
+        "status_field": ["solenoidInternalState9", "solenoidInternalState10"],
+        "status_value": ["solenoidCurrent9", "solenoidCurrent10"],
         "enabled": abort_is_inactive,
     },
-    "lox_vent": {
-        "display_name": "LOX Vent",
-        "command_field": "solenoidState10",
-        "status_field": "solenoidInternalState10",
-        "status_value": "solenoidCurrent10",
+    "mvas_close": {
+        "display_name": "Mvas Open",
+        "command_field": "solenoidState11",
+        "status_field": "solenoidInternalState11",
+        "status_value": "solenoidCurrent11",
+        "enabled": abort_is_inactive,
+    },
+    "mvas_close": {
+        "display_name": "Mvas Close",
+        "command_field": "solenoidState11",
+        "status_field": "solenoidInternalState11",
+        "status_value": "solenoidCurrent11",
         "enabled": abort_is_inactive,
     },
     "igniter_0": {
@@ -198,6 +200,25 @@ def _handle_button_click(
 
     client.send()
 
+ABORT_BUTTON_STATES = {
+    "sol_gn2_fill_1": False,
+    "sol_gn2_fill_2": False,
+    "sol_gn2_fill_3": False,
+    "sol_gn2_fill_4": False,
+    "sol_gn2_vent": False,
+    "tank_vent": True,
+    "copv_vent": True,
+    "pv1": False,
+    "pv2": True,
+    "vent": True,
+    "mvas_open": False,
+    "mvas_close": True,
+    "igniter_0": False,
+    "igniter_1": False,
+    "alarm": True,
+}
+
+
 
 def _apply_abort(client: GseCommandClient) -> None:
     for button_id, config in GSE2V1_COMMAND_BUTTONS.items():
@@ -206,7 +227,8 @@ def _apply_abort(client: GseCommandClient) -> None:
         button = config.get("button")
         if not isinstance(button, Button):
             continue
-        button.set_state(button_id in VENT_BUTTON_IDS)
+        if button_id in ABORT_BUTTON_STATES:
+            button.set_state(ABORT_BUTTON_STATES[button_id])
         _sync_button_status(button)
         _sync_button_to_client_row(client, button_id)
 
