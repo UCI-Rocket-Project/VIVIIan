@@ -55,7 +55,18 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     gse_command_client = GseCommandClient()
     gse_server = next(server for server in servers if server.name == "gse")
     echo_server = next(server for server in servers if server.name == "echo")
-    nidaq_graph = NidaqGraph(next(server for server in servers if server.name == "nidaq"))
+    nidaq_server = next(server for server in servers if server.name == "nidaq")
+    nidaq_graph_general = NidaqGraph(
+        nidaq_server,
+        title="nidaq graph",
+        graph_id="nidaq_graph_general",
+    )
+    nidaq_graph_load_cells = NidaqGraph(
+        nidaq_server,
+        field_names=["LoadCell_1", "LoadCell_2", "LoadCell_3", "LoadCell_4"],
+        title="load cell graph",
+        graph_id="nidaq_graph_load_cells",
+    )
     command_buttons = make_gse2v1_command_buttons(gse_command_client, gse_server)
 
     while not glfw.window_should_close(window):
@@ -85,8 +96,9 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         imgui.separator()
         for server in servers: 
             if server.name == "nidaq":
-                nidaq_graph.draw(imgui)
+                nidaq_graph_general.draw(imgui)
                 imgui.separator()
+                nidaq_graph_load_cells.draw(imgui)
         for server in servers:
             draw_table(imgui, server)
             imgui.separator()

@@ -231,15 +231,29 @@ def draw_table(imgui, server: LatestServer) -> None:
 class NidaqGraph:
     WINDOW_SECONDS = 300.0
 
-    def __init__(self, server: LatestServer, max_points: int = 30000) -> None:
+    def __init__(
+        self,
+        server: LatestServer,
+        field_names: list[str] | None = None,
+        max_points: int = 30000,
+        title: str = "nidaq graph",
+        graph_id: str | None = None,
+    ) -> None:
         self.server = server
         self.max_points = max_points
+        self.title = title
+        self.graph_id = graph_id or title
+
 
         self.history: deque[list[float]] = deque(maxlen=max_points)
         self.times: deque[float] = deque(maxlen=max_points)
 
         self._last_seen: dict[str, float] | None = None
         self._reset_view: bool = True
+        if field_names == None: 
+            self.fields = self.server.fields
+        else: 
+            self.fields = field_names
 
     def update(self) -> None:
         latest = self.server.latest
@@ -251,7 +265,8 @@ class NidaqGraph:
         now = time.monotonic()
 
         self.times.append(now)
-        self.history.append([float(latest[field]) for field in self.server.fields])
+
+        self.history.append([float(latest[field]) for field in self.fields])
 
         # Keep only the last 300 seconds of data
         cutoff = now - self.WINDOW_SECONDS
@@ -286,9 +301,10 @@ class NidaqGraph:
         return implot.ImAxis_Y1
 
     def draw(self, imgui) -> None:
+        imgui.push_id(self.graph_id)
         self.update()
 
-        imgui.text_unformatted("nidaq graph")
+        imgui.text_unformatted(self.title)
         imgui.same_line()
 
         if imgui.button("Reset View"):
@@ -296,6 +312,7 @@ class NidaqGraph:
 
         if len(self.history) < 2:
             imgui.text_disabled("waiting")
+            imgui.pop_id()
             return
 
         now = time.monotonic()
@@ -340,7 +357,7 @@ class NidaqGraph:
             self._reset_view = False
 
         if implot.begin_plot(
-            "nidaq graph plot",
+            f"{self.title} plot##{self.graph_id}",
             size=imgui.ImVec2(width, height),
         ):
             implot.setup_axes("seconds from now", "value")
@@ -358,8 +375,9 @@ class NidaqGraph:
                 cond_always,
             )
 
-            for i, field in enumerate(self.server.fields):
+            for i, field in enumerate(self.fields):
                 ys = np.ascontiguousarray(data[:, i], dtype=np.float64)
                 implot.plot_line(field, xs, ys)
 
             implot.end_plot()
+        imgui.pop_id()

@@ -30,7 +30,7 @@ NIDAQ_VOLTAGE_SCALE = 399.4583344984201
 FRONTEND_FLIGHT_GSE2V1_CONNECT = "grpc://127.0.0.1:8819"
 FRONTEND_FLIGHT_NIDAQ_CONNECT = "grpc://127.0.0.1:8826"
 
-DATA_DIR = Path(__file__).resolve().parent / "data" / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+DATA_DIR = Path(__file__).resolve().parent / "data" / datetime.now().strftime("%Y-%m-%d_%H-%M")
 STORAGE_TIMESTAMP_FIELD = "storageTimestamp"
 GSE2V1_STORAGE_FIELD_NAMES = (*GSE2V1_FIELD_NAMES, STORAGE_TIMESTAMP_FIELD)
 NIDAQ_STORAGE_FIELD_NAMES = (*NIDAQ_FIELD_NAMES, STORAGE_TIMESTAMP_FIELD)

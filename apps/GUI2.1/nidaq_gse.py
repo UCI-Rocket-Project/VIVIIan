@@ -27,9 +27,9 @@ NIDAQ_FIELD_NAME_MAP = {
     "ai1": "ai1",
     "ai2": "ai2",
     "ai3": "ai3",
-    "ai4": "ai4",
+    "ai4": "LoadCell_1",
     "ai5": "ai5",
-    "ai6": "ai6",
+    "ai6": "LoadCell_2",
     "ai7": "ai7",
     "ai8": "ai8",
     "ai9": "ai9",
@@ -37,8 +37,8 @@ NIDAQ_FIELD_NAME_MAP = {
     "ai11": "ai11",
     "ai12": "ai12",
     "ai13": "ai13",
-    "ai14": "ai14",
-    "ai15": "ai15",
+    "ai14": "LoadCell_3",
+    "ai15": "LoadCell_4",
 }
 
 
