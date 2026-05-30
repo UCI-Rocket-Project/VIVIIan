@@ -13,8 +13,10 @@ from gui_elements import (
     Button,
     NidaqGraph,
     draw_table,
+    valve_state,
 )
 from gui_gse2v1 import (
+    GSE2V1_COMMAND_BUTTONS,
     GseCommandClient,
     make_gse2v1_command_buttons,
     sync_gse2v1_command_buttons_from_echo,
@@ -22,18 +24,57 @@ from gui_gse2v1 import (
 
 BUTTON_STATES = {} #dictionary of all button states
 COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 
-def draw_command_buttons(imgui, buttons: tuple[Button, ...]) -> None:
+def make_valve_states(gse_server: LatestServer) -> dict[str, valve_state]:
+    return {
+        button_id: valve_state(
+            server=gse_server,
+            field=config["status_field"],
+            label=config["display_name"],
+            invert=button_id in ("pv2", "tank_vent"),
+        )
+        for button_id, config in GSE2V1_COMMAND_BUTTONS.items()
+        if config.get("status_field") is not None
+    }
+
+
+def draw_command_buttons(
+    imgui,
+    buttons: tuple[Button, ...],
+    valve_states: dict[str, valve_state],
+) -> None:
     imgui.text_unformatted("commands")
     imgui.columns(3, "command_buttons", borders=False)
     for button in buttons:
         button.render(imgui)
+        state_display = valve_states.get(button.button_id)
+        if state_display is not None:
+            imgui.same_line()
+            state_display.render(imgui)
         imgui.next_column()
     imgui.columns(1)
 
+PT_SCALES = {
+    # "ai0": (402.45048,0), # this is wrong
+    # "ai1": (1,0),
+    "LNGTANK": (402.45048,-0.471844),
+    "VENT": (402.45048,0),
+    "COPV": (24471.303,5.4077),
+    # "ai7": (1,0),
+    "LOXING": (402.45048,0),
+    "LNGING": (402.45048,0),
+    # "ai10": (1,0),
+    "LOXTANK": (399.579,3.581),
+    "LOXPOT": (402.45048,0),
+    "LNGPOT": (402.45048,0),
+}
 
 
-
-
+LOAD_CELL_SCALES = {
+    "LoadCell_1": (1,0),
+    "LoadCell_2": (1,0),
+    "LoadCell_3": (1,0),
+    "LoadCell_4": (1,0),
+}
 
 
 
@@ -56,18 +97,22 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     gse_server = next(server for server in servers if server.name == "gse")
     echo_server = next(server for server in servers if server.name == "echo")
     nidaq_server = next(server for server in servers if server.name == "nidaq")
+    
     nidaq_graph_general = NidaqGraph(
         nidaq_server,
         title="nidaq graph",
         graph_id="nidaq_graph_general",
+        field_names=PT_SCALES,
     )
+
     nidaq_graph_load_cells = NidaqGraph(
         nidaq_server,
-        field_names=["LoadCell_1", "LoadCell_2", "LoadCell_3", "LoadCell_4"],
+        field_names=LOAD_CELL_SCALES,
         title="load cell graph",
         graph_id="nidaq_graph_load_cells",
     )
     command_buttons = make_gse2v1_command_buttons(gse_command_client, gse_server)
+    valve_states = make_valve_states(gse_server)
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -92,7 +137,7 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         imgui.text_unformatted(f"FPS: {imgui.get_io().framerate:.1f}")
         imgui.separator()
         sync_gse2v1_command_buttons_from_echo(gse_command_client, echo_server)
-        draw_command_buttons(imgui, command_buttons)
+        draw_command_buttons(imgui, command_buttons, valve_states)
         imgui.separator()
         for server in servers: 
             if server.name == "nidaq":

@@ -6,11 +6,10 @@ from pathlib import Path
 
 DATA_ROOT = Path(__file__).resolve().parent / "data"
 DATASETS = {
-    "gse": "gse2v1_raw_telemetry_data",
+    # "gse": "gse2v1_raw_telemetry_data",
     "nidaq": "nidaq_raw_telemetry_data",
 }
 DEFAULT_X_COLUMN = "storageTimestamp"
-NIDAQ_VOLTAGE_SCALE = 399.4583344984201
 SKIP_DEFAULT_COLUMNS = {"magicHeader", "timestamp", "storageTimestamp", "crc"}
 
 
@@ -46,8 +45,46 @@ def find_latest_common_session(data_root: Path, dataset_names: list[str]) -> Pat
         raise FileNotFoundError(f"No data sessions containing all requested datasets: {names}")
     return max(sessions, key=lambda path: path.stat().st_mtime)
 
+# PT_SCALES = {
+#     # "ai0": (402.45048,0), # this is wrong
+#     # "ai1": (1,0),
+#     "LNGTANK": (402.45048,-0.471844),
+#     "VENT": (402.45048,0),
+#     "COPV": (24471.303,5.4077),
+#     # "ai7": (1,0),
+#     "LOXING": (402.45048,0),
+#     "LNGING": (402.45048,0),
+#     # "ai10": (1,0),
+#     "LOXTANK": (399.579,3.581),
+#     "LOXPOT": (402.45048,0),
+#     "LNGPOT": (402.45048,0),
+# }
+PT_SCALES = {}
+ROLLING_AVERAGE_SAMPLES = {
+    "COPV": 200,
+    "LNGING": 200, 
+    "LOXING": 200,
+    "LOXTANK": 200, 
+    "LNGTANK": 200
+}
 
-def read_dataset(session_dir: Path, dataset_name: str) -> pa.Table:
+
+def columns_to_read(column_names: list[str], dataset_name: str, x_name: str) -> list[str]:
+    if dataset_name != "nidaq":
+        return list(column_names)
+
+    x_columns = {DEFAULT_X_COLUMN, "timestamp"}
+    if x_name != "index":
+        x_columns.add(x_name)
+
+    return [
+        column
+        for column in column_names
+        # if column in PT_SCALES or column in x_columns
+    ]
+
+
+def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     import pyarrow as pa
     import pyarrow.parquet as pq
 
@@ -58,10 +95,18 @@ def read_dataset(session_dir: Path, dataset_name: str) -> pa.Table:
 
     tables = []
     skipped: list[tuple[Path, str]] = []
+    total_files = len(files)
     for index, file in enumerate(files, start=1):
+        if index < total_files - 200 or index > total_files - 50:
+            continue
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
-            tables.append(pq.read_table(file))
+            column_names = pq.read_schema(file).names
+            selected_columns = columns_to_read(column_names, dataset_name, x_name)
+            if not selected_columns:
+                skipped.append((file, "No PT_SCALES columns found"))
+                continue
+            tables.append(pq.read_table(file, columns=selected_columns))
         except (pa.lib.ArrowInvalid, OSError, EOFError) as exc:
             skipped.append((file, str(exc)))
     print()
@@ -90,6 +135,13 @@ def numeric_columns(table) -> list[str]:
     return columns
 
 
+def plottable_columns(table, dataset_name: str) -> list[str]:
+    columns = numeric_columns(table)
+    if dataset_name == "nidaq":
+        return [column for column in columns if column not in SKIP_DEFAULT_COLUMNS]
+    return [column for column in columns if is_default_signal(dataset_name, column)]
+
+
 def split_csv(value: str | None) -> list[str]:
     if not value:
         return []
@@ -101,7 +153,7 @@ def signal_matches(pattern: str, dataset_name: str, column: str) -> bool:
 
 
 def parse_columns(value: str | None, disabled_value: str | None, table, dataset_name: str) -> list[str]:
-    available = numeric_columns(table)
+    available = plottable_columns(table, dataset_name)
     requested = split_csv(value)
     disabled = split_csv(disabled_value)
     if value:
@@ -119,7 +171,7 @@ def parse_columns(value: str | None, disabled_value: str | None, table, dataset_
         if missing:
             raise ValueError(f"Columns not found for {dataset_name}: {', '.join(missing)}")
     else:
-        columns = [column for column in available if is_default_signal(dataset_name, column)]
+        columns = available
 
     return [
         column
@@ -134,10 +186,29 @@ def column_as_float(table, name: str):
     return np.asarray(table[name].combine_chunks().to_numpy(zero_copy_only=False), dtype=float)
 
 
+def rolling_average(values, window_samples: int):
+    import numpy as np
+
+    if window_samples <= 1 or values.size == 0:
+        return values
+
+    window_samples = min(window_samples, values.size)
+    cumsum = np.cumsum(values, dtype=float)
+    totals = cumsum.copy()
+    totals[window_samples:] = cumsum[window_samples:] - cumsum[:-window_samples]
+    counts = np.minimum(np.arange(1, values.size + 1, dtype=float), float(window_samples))
+    return totals / counts
+
+
 def signal_as_float(table, dataset_name: str, name: str):
     values = column_as_float(table, name)
-    if dataset_name == "nidaq" and name not in SKIP_DEFAULT_COLUMNS:
-        return values * NIDAQ_VOLTAGE_SCALE
+    if dataset_name == "nidaq" and name in PT_SCALES:
+        scale, offset = PT_SCALES[name]
+        values = values * scale + offset
+        window_samples = ROLLING_AVERAGE_SAMPLES.get(name)
+        if window_samples is not None:
+            values = rolling_average(values, window_samples)
+        return values
     return values
 
 
@@ -186,7 +257,7 @@ def plot_dataset(
 ) -> None:
     import matplotlib.pyplot as plt
 
-    table = read_dataset(session_dir, dataset_name)
+    table = read_dataset(session_dir, dataset_name, x_name)
     columns = parse_columns(columns_arg, disabled_arg, table, dataset_name)
     if not columns:
         raise ValueError("No numeric columns selected to plot")
@@ -234,7 +305,7 @@ def plot_combined_datasets(
     plotted = 0
 
     for dataset_name in dataset_names:
-        table = read_dataset(session_dir, dataset_name)
+        table = read_dataset(session_dir, dataset_name, x_name)
         columns = parse_columns(columns_arg, disabled_arg, table, dataset_name)
         if not columns:
             continue

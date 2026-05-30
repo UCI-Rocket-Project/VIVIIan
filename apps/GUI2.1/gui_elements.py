@@ -175,6 +175,99 @@ class Button:
         self.enabled = enabled
 
 
+@dataclass
+class valve_state:
+    server: LatestServer
+    field: str | list[str]
+    label: str = "Valve"
+    invert: bool = False
+    width: float = 126.0
+    height: float = 42.0
+    on_text: str = "N/A"
+    off_text: str = "N/A"
+    unknown_text: str = "UNKNOWN"
+    on_color: RGBA = BUTTON_STATUS_ON_COLOR
+    off_color: RGBA = BUTTON_STATUS_OFF_COLOR
+    unknown_color: RGBA = BUTTON_STATE_MISMATCH_COLOR
+    text_color: RGBA = BUTTON_TEXT_COLOR
+
+    def render(self, imgui) -> None:
+        state = self._read_latest_state()
+        if state is not None and self.invert:
+            state = not state
+
+        if state is True:
+            color = self.on_color
+            status_text = self.on_text
+        elif state is False:
+            color = self.off_color
+            status_text = self.off_text
+        else:
+            color = self.unknown_color
+            status_text = self.unknown_text
+
+        imgui.invisible_button(
+            f"##valve_state_{self.server.name}_{self.field}",
+            imgui.ImVec2(self.width, self.height),
+        )
+        x0, y0 = _xy(imgui.get_item_rect_min())
+        x1, y1 = _xy(imgui.get_item_rect_max())
+        draw_list = imgui.get_window_draw_list()
+
+        draw_list.add_rect_filled(
+            imgui.ImVec2(x0, y0),
+            imgui.ImVec2(x1, y1),
+            _rgba(imgui, color),
+        )
+        draw_list.add_rect(
+            imgui.ImVec2(x0, y0),
+            imgui.ImVec2(x1, y1),
+            _rgba(imgui, BUTTON_BORDER_COLOR),
+        )
+        _draw_centered_text(
+            imgui,
+            draw_list,
+            f"{self.label}: {status_text}",
+            x0,
+            y0,
+            x1,
+            y1,
+            self.text_color,
+        )
+
+    def _read_latest_state(self) -> bool | None:
+        latest = self.server.latest
+        if latest is None:
+            return None
+
+        fields = (self.field,) if isinstance(self.field, str) else tuple(self.field)
+        states = []
+        for field in fields:
+            if field not in latest:
+                return None
+            state = self._read_state(latest.get(field))
+            if state is None:
+                return None
+            states.append(state)
+
+        return all(states) if states else None
+
+    def _read_state(self, value: Any) -> bool | None:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value != 0
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in ("1", "true", "open", "opened", "on"):
+                return True
+            if normalized in ("0", "false", "closed", "close", "off"):
+                return False
+        return None
+
+
 def _xy(pos) -> tuple[float, float]:
     if isinstance(pos, tuple):
         return float(pos[0]), float(pos[1])
@@ -205,10 +298,6 @@ def _draw_centered_text(
         text,
     )
 
-
-
-
-
 def draw_table(imgui, server: LatestServer) -> None:
     imgui.text_unformatted(server.name)
     latest = server.latest
@@ -229,12 +318,13 @@ def draw_table(imgui, server: LatestServer) -> None:
 
 
 class NidaqGraph:
-    WINDOW_SECONDS = 300.0
+    WINDOW_SECONDS = 180.0
+    REGRESSION_SAMPLE_POINTS = 100
 
     def __init__(
         self,
         server: LatestServer,
-        field_names: list[str] | None = None,
+        field_names: dict[str, tuple[float, float]] | None = None,
         max_points: int = 30000,
         title: str = "nidaq graph",
         graph_id: str | None = None,
@@ -250,10 +340,18 @@ class NidaqGraph:
 
         self._last_seen: dict[str, float] | None = None
         self._reset_view: bool = True
+        self._scroll_enabled: bool = False
         if field_names == None: 
-            self.fields = self.server.fields
+            self.fields = list(self.server.fields)
+            self.scales = [(1,0)]*len(self.fields)
         else: 
-            self.fields = field_names
+            self.fields = list(field_names.keys())
+            self.scales = list(field_names.values())
+        self._regression_started_at: float | None = None
+        self._regression_values_per_min: list[float] = [float("nan")] * len(self.fields)
+
+
+
 
     def update(self) -> None:
         latest = self.server.latest
@@ -266,7 +364,7 @@ class NidaqGraph:
 
         self.times.append(now)
 
-        self.history.append([float(latest[field]) for field in self.fields])
+        self.history.append([(float(latest[field]))*scale[0] for field, scale in zip(self.fields, self.scales)   ])
 
         # Keep only the last 300 seconds of data
         cutoff = now - self.WINDOW_SECONDS
@@ -300,6 +398,72 @@ class NidaqGraph:
 
         return implot.ImAxis_Y1
 
+    def _plot_no_inputs_flag(self):
+        if hasattr(implot, "Flags_"):
+            return implot.Flags_.no_inputs
+
+        return implot.ImPlotFlags_NoInputs
+
+    def _clear_regression_values(self) -> None:
+        self._regression_started_at = None
+        self._regression_values_per_min = [float("nan")] * len(self.fields)
+
+    def _update_regression_timer(
+        self,
+        now: float,
+        times_list: list[float],
+        history_list: list[list[float]],
+    ) -> None:
+        if self._regression_started_at is None:
+            return
+        if now - self._regression_started_at < self.WINDOW_SECONDS:
+            return
+
+        self._regression_values_per_min = self._calculate_regression_per_min(
+            times_list,
+            history_list,
+        )
+        self._regression_started_at = None
+
+    def _calculate_regression_per_min(
+        self,
+        times_list: list[float],
+        history_list: list[list[float]],
+    ) -> list[float]:
+        if len(history_list) < 2:
+            return [float("nan")] * len(self.fields)
+
+        sample_count = min(self.REGRESSION_SAMPLE_POINTS, len(history_list))
+        step = max(1, len(history_list) // sample_count)
+        sample_times = times_list[-step * sample_count::step]
+        sample_history = history_list[-step * sample_count::step]
+
+        if len(sample_history) > self.REGRESSION_SAMPLE_POINTS:
+            sample_times = sample_times[-self.REGRESSION_SAMPLE_POINTS:]
+            sample_history = sample_history[-self.REGRESSION_SAMPLE_POINTS:]
+        if len(sample_history) < 2:
+            return [float("nan")] * len(self.fields)
+
+        x = np.asarray(sample_times, dtype=np.float64)
+        x = (x - x[0]) / 60.0
+        x = x - x.mean()
+        denominator = float(np.dot(x, x))
+        if denominator == 0.0:
+            return [float("nan")] * len(self.fields)
+
+        y = np.asarray(sample_history, dtype=np.float64)
+        slopes = []
+        for i in range(len(self.fields)):
+            values = y[:, i]
+            centered_values = values - values.mean()
+            slopes.append(float(np.dot(x, centered_values) / denominator))
+        return slopes
+
+    def _format_regression_value(self, value: float) -> str:
+        if np.isnan(value):
+            return "NAN"
+        return f"{value:.2f}/min"
+
     def draw(self, imgui) -> None:
         imgui.push_id(self.graph_id)
         self.update()
@@ -310,6 +474,10 @@ class NidaqGraph:
         if imgui.button("Reset View"):
             self._reset_view = True
 
+        imgui.same_line()
+        if imgui.button("Scroll: On" if self._scroll_enabled else "Scroll: Off"):
+            self._scroll_enabled = not self._scroll_enabled
+
         if len(self.history) < 2:
             imgui.text_disabled("waiting")
             imgui.pop_id()
@@ -319,6 +487,7 @@ class NidaqGraph:
 
         times_list = list(self.times)
         history_list = list(self.history)
+        self._update_regression_timer(now, times_list, history_list)
 
         # x-axis:
         # -300 = oldest visible edge on the LEFT
@@ -329,6 +498,7 @@ class NidaqGraph:
         )
 
         data = np.asarray(history_list, dtype=np.float64)
+        latest_values = data[-1]
 
         scale_min = float(data.min())
         scale_max = float(data.max())
@@ -342,7 +512,9 @@ class NidaqGraph:
             scale_max += padding
 
         width = self._get_width(imgui)
-        height = 900
+        height = 600
+        value_panel_width = 220.0
+        plot_width = max(200.0, width - value_panel_width)
 
         cond_always = self._cond_always(imgui)
 
@@ -356,9 +528,12 @@ class NidaqGraph:
             )
             self._reset_view = False
 
+        plot_flags = 0 if self._scroll_enabled else self._plot_no_inputs_flag()
+
         if implot.begin_plot(
             f"{self.title} plot##{self.graph_id}",
-            size=imgui.ImVec2(width, height),
+            size=imgui.ImVec2(plot_width, height),
+            flags=plot_flags,
         ):
             implot.setup_axes("seconds from now", "value")
 
@@ -380,4 +555,31 @@ class NidaqGraph:
                 implot.plot_line(field, xs, ys)
 
             implot.end_plot()
+
+        imgui.same_line()
+        imgui.begin_group()
+        imgui.text_unformatted("Latest")
+        for field, value in zip(self.fields, latest_values):
+            imgui.text_unformatted(f"{field}: {value:.2f}")
+
+        imgui.separator()
+        if imgui.button("Start 3m avg"):
+            self._regression_started_at = now
+            self._regression_values_per_min = [float("nan")] * len(self.fields)
+        imgui.same_line()
+        if imgui.button("Clear"):
+            self._clear_regression_values()
+        if self._regression_started_at is not None:
+            remaining = max(0.0, self.WINDOW_SECONDS - (now - self._regression_started_at))
+            imgui.text_unformatted(f"Timer: {remaining:.0f}s")
+        imgui.text_unformatted("Avg change/min")
+        for field, value in zip(self.fields, self._regression_values_per_min):
+            imgui.text_unformatted(f"{field}: {self._format_regression_value(value)}")
+
+        imgui.separator()
+        imgui.text_unformatted("3 min change")
+        for i, (field, value) in enumerate(zip(self.fields, latest_values)):
+            oldest_value = data[0, i]
+            imgui.text_unformatted(f"{field}: {value - oldest_value:.2f}")
+        imgui.end_group()
         imgui.pop_id()
