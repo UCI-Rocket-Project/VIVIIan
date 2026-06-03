@@ -9,12 +9,6 @@ from generic_connector import generic_stream_connector
 from functools import partial
 
 
-# --- Constants for NIDAQ Connector ---
-DEVICE = "Dev1"
-NUM_FIELDS = 16
-RATE = 250000 // NUM_FIELDS
-NIDAQ_NUM_SIGNALS = NUM_FIELDS
-NIDAQ_AVERAGE_OVER = 1000
 
 # --- Constants for NIDAQ Backend ---
 NIDAQ_FLIGHT_BIND = "grpc://127.0.0.1:8825"
@@ -22,31 +16,29 @@ NIDAQ_FLIGHT_BIND = "grpc://127.0.0.1:8825"
 NIDAQ_ROWS_PER_FRAME = 1000
 
 # --- Packet DEFINITIONS ---
-NIDAQ_FIELD_NAME_MAP = {
-    "ai0": "ai0",
-    "ai1": "ai1",
-    "ai2": "LNGTANK",
-    "ai3": "VENT",
-    "ai4": "LoadCell_1",
-    "ai5": "COPV",
-    "ai6": "LoadCell_2",
-    "ai7": "ai7",
-    "ai8": "LOXING",
-    "ai9": "LNGING",
-    "ai10": "ai10",
-    "ai11": "LOXTANK",
-    "ai12": "LOXPOT",
-    "ai13": "LNGPOT",
-    "ai14": "LoadCell_3",
-    "ai15": "LoadCell_4",
+NIDAQ_FIELD_NAME_MAP = { 
+    "ai1": "VENT",# "PT0",
+    "ai0": "LOXTANK",# "PT1",
+    "ai8": "COPV",
+    "ai9": "LNGTANK",# "PT3",
+    "ai2": "LNGPOT",# "PT4",
+    "ai10": "LOXPOT",# "PT5",
+    "ai11": "LOXING",# "PT6",
+    "ai3": "LNGING",# "PT7",
+    "ai12": "PT10",# "PT10",
+    "ai7": "Thrust",# "LC0"
 }
 
 
 NIDAQ_FIELDS = tuple(NIDAQ_FIELD_NAME_MAP.keys())
 NIDAQ_FIELD_NAMES = tuple(NIDAQ_FIELD_NAME_MAP.values())
 
-
-
+# --- Constants for NIDAQ Connector ---
+DEVICE = "Dev1"
+NUM_FIELDS = len(NIDAQ_FIELD_NAMES)
+RATE = 250000 // NUM_FIELDS
+NIDAQ_NUM_SIGNALS = NUM_FIELDS
+NIDAQ_AVERAGE_OVER = 1000
 
 
 
@@ -66,7 +58,7 @@ def read_nidaq_data(*, outstream) -> None:
         task.timing.cfg_samp_clk_timing(
             rate=RATE,
             sample_mode=AcquisitionType.CONTINUOUS,
-            samps_per_chan=NIDAQ_ROWS_PER_FRAME,
+            samps_per_chan=NIDAQ_ROWS_PER_FRAME * 20,
         )
 
         task.start()

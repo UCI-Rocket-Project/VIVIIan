@@ -12,6 +12,7 @@ from gui_elements import (
     APP_BACKGROUND_COLOR,
     Button,
     NidaqGraph,
+    MVAS_STATE,
     draw_table,
     valve_state,
 )
@@ -57,24 +58,21 @@ PT_SCALES = {
     # "ai0": (402.45048,0), # this is wrong
     # "ai1": (1,0),
     "LNGTANK": (402.45048,-0.471844),
+    "LOXTANK": (402.45048,-0.471844),
+    
     "VENT": (402.45048,0),
-    "COPV": (24471.303,5.4077),
+    "COPV": (1255.98144,0),#(24471.303,5.4077),
     # "ai7": (1,0),
     "LOXING": (402.45048,0),
     "LNGING": (402.45048,0),
     # "ai10": (1,0),
-    "LOXTANK": (399.579,3.581),
     "LOXPOT": (402.45048,0),
     "LNGPOT": (402.45048,0),
+    "PT10": (1,0),
+    "Thrust": (1,0),
 }
 
 
-LOAD_CELL_SCALES = {
-    "LoadCell_1": (1,0),
-    "LoadCell_2": (1,0),
-    "LoadCell_3": (1,0),
-    "LoadCell_4": (1,0),
-}
 
 
 
@@ -105,14 +103,13 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         field_names=PT_SCALES,
     )
 
-    nidaq_graph_load_cells = NidaqGraph(
-        nidaq_server,
-        field_names=LOAD_CELL_SCALES,
-        title="load cell graph",
-        graph_id="nidaq_graph_load_cells",
-    )
+  
     command_buttons = make_gse2v1_command_buttons(gse_command_client, gse_server)
     valve_states = make_valve_states(gse_server)
+    mvas_state = MVAS_STATE(
+        server=nidaq_server,
+        label="MVAS",
+    )
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -139,11 +136,12 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         sync_gse2v1_command_buttons_from_echo(gse_command_client, echo_server)
         draw_command_buttons(imgui, command_buttons, valve_states)
         imgui.separator()
+        mvas_state.render(imgui)
+        imgui.separator()
         for server in servers: 
             if server.name == "nidaq":
                 nidaq_graph_general.draw(imgui)
                 imgui.separator()
-                nidaq_graph_load_cells.draw(imgui)
         for server in servers:
             draw_table(imgui, server)
             imgui.separator()

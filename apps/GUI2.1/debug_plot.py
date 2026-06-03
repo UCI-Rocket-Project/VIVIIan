@@ -110,7 +110,7 @@ def main() -> None:
     parser.add_argument("--disable", "--hide", default=None, help="Comma-separated trace numbers to hide.")
     parser.add_argument("--avg", type=int, default=200, help="Samples averaged into each plotted point.")
     parser.add_argument("--from-end", type=int, default=200, help="Start this many files before the end.")
-    parser.add_argument("--to-end", type=int, default=50, help="Stop this many files before the end.")
+    parser.add_argument("--to-end", type=int, default=2, help="Stop this many files before the end.")
     parser.add_argument("--output", type=Path, default=None, help="PNG path. If omitted, opens a plot window.")
     args = parser.parse_args()
 

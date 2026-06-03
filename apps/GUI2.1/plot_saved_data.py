@@ -45,28 +45,80 @@ def find_latest_common_session(data_root: Path, dataset_names: list[str]) -> Pat
         raise FileNotFoundError(f"No data sessions containing all requested datasets: {names}")
     return max(sessions, key=lambda path: path.stat().st_mtime)
 
-# PT_SCALES = {
-#     # "ai0": (402.45048,0), # this is wrong
-#     # "ai1": (1,0),
-#     "LNGTANK": (402.45048,-0.471844),
-#     "VENT": (402.45048,0),
-#     "COPV": (24471.303,5.4077),
-#     # "ai7": (1,0),
-#     "LOXING": (402.45048,0),
-#     "LNGING": (402.45048,0),
-#     # "ai10": (1,0),
-#     "LOXTANK": (399.579,3.581),
-#     "LOXPOT": (402.45048,0),
-#     "LNGPOT": (402.45048,0),
-# }
-PT_SCALES = {}
-ROLLING_AVERAGE_SAMPLES = {
-    "COPV": 200,
-    "LNGING": 200, 
-    "LOXING": 200,
-    "LOXTANK": 200, 
-    "LNGTANK": 200
+PT_SCALES = {
+    # "ai0": (402.45048,0), # this is wrong
+    # "ai1": (1,0),
+    "LNGTANK": (1,0),
+    "LOXTANK": (1,0),
+    
+    "VENT": (1,0),
+    "COPV": (1,0),#(24471.303,5.4077),
+    # "ai7": (1,0),
+    "LOXING": (1,0),
+    "LNGING": (1,0),
+    # "ai10": (1,0),
+    "LOXPOT": (1,0),
+    "LNGPOT": (1,0),
+    # "PT10": (1,0),
+    "Thrust": (1,0),
 }
+
+SIGNAL_COLORS = {
+    "LNGTANK": "tab:blue",
+    "VENT": "tab:orange",
+    "COPV": "tab:green",
+    "LOXING": "tab:red",
+    "LNGING": "tab:purple",
+    "LOXTANK": "tab:brown",
+    "LNGPOT": "tab:pink",
+    "LOXPOT": "tab:gray",
+}
+SIGNAL_LINESTYLES = {
+    # "VENT": "--",
+    # "COPV": "--",
+    # "LOXING": "-.",
+    # "LNGING": "-.",
+    # "LNGTANK": "-",
+    # "LOXTANK": "-",
+    # "LNGPOT": ":",
+    # "LOXPOT": ":",
+}
+ROLLING_AVERAGE_SAMPLES = {
+    "COPV": 0,
+    "LNGING": 0, 
+    "LOXING": 0,
+    "LOXTANK": 0, 
+    "LNGTANK": 0
+}
+
+
+def signal_format_value(
+    mapping: dict[str, str], dataset_name: str, column: str
+) -> str | None:
+    return mapping.get(f"{dataset_name}.{column}", mapping.get(column))
+
+
+def plot_style(dataset_name: str, column: str) -> dict[str, str]:
+    style = {}
+    color = signal_format_value(SIGNAL_COLORS, dataset_name, column)
+    linestyle = signal_format_value(SIGNAL_LINESTYLES, dataset_name, column)
+    if color is not None:
+        style["color"] = color
+    if linestyle is not None:
+        style["linestyle"] = linestyle
+    return style
+
+
+def format_nidaq_pressure_axis(axis) -> None:
+    from matplotlib.ticker import MultipleLocator
+
+    axis.set_ylabel("pressure (psi)")
+    axis.yaxis.set_major_locator(MultipleLocator(100))
+    axis.yaxis.set_minor_locator(MultipleLocator(25))
+    axis.xaxis.set_major_locator(MultipleLocator(1))
+    axis.grid(which="major", axis="y", linewidth=0.8, alpha=0.45)
+    axis.grid(which="minor", axis="y", linewidth=0.35, alpha=0.3)
+    axis.grid(which="major", axis="x", linewidth=0.35, alpha=0.3)
 
 
 def columns_to_read(column_names: list[str], dataset_name: str, x_name: str) -> list[str]:
@@ -80,7 +132,7 @@ def columns_to_read(column_names: list[str], dataset_name: str, x_name: str) -> 
     return [
         column
         for column in column_names
-        # if column in PT_SCALES or column in x_columns
+            if column in PT_SCALES or column in x_columns
     ]
 
 
@@ -97,7 +149,7 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
     for index, file in enumerate(files, start=1):
-        if index < total_files - 200 or index > total_files - 50:
+        if index < total_files - 350 or index > total_files - 150:
             continue
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
@@ -270,11 +322,20 @@ def plot_dataset(
     fig, axis = plt.subplots(figsize=(14, 7))
 
     for column in columns:
-        axis.plot(x, ys[column], linewidth=1.0, label=f"{dataset_name}.{column}")
+        axis.plot(
+            x,
+            ys[column],
+            linewidth=1.0,
+            label=f"{dataset_name}.{column}",
+            **plot_style(dataset_name, column),
+        )
 
     axis.set_xlabel(x_label)
-    axis.set_ylabel("scaled value" if dataset_name == "nidaq" else "value")
-    axis.grid(True, alpha=0.3)
+    if dataset_name == "nidaq":
+        format_nidaq_pressure_axis(axis)
+    else:
+        axis.set_ylabel("value")
+        axis.grid(True, alpha=0.3)
     axis.legend(loc="upper left", fontsize="small", ncols=2)
     fig.suptitle(f"{dataset_name} data: {session_dir.name}")
     fig.tight_layout()
@@ -317,7 +378,13 @@ def plot_combined_datasets(
 
         for column in columns:
             target_axis = gse_axis if dataset_name == "gse" else axis
-            target_axis.plot(x, ys[column], linewidth=1.0, label=f"{dataset_name}.{column}")
+            target_axis.plot(
+                x,
+                ys[column],
+                linewidth=1.0,
+                label=f"{dataset_name}.{column}",
+                **plot_style(dataset_name, column),
+            )
             plotted += 1
 
     if plotted == 0:
@@ -325,10 +392,9 @@ def plot_combined_datasets(
     print(f"Plotted {plotted} signals total.")
 
     axis.set_xlabel(x_label)
-    axis.set_ylabel("nidaq scaled value")
+    format_nidaq_pressure_axis(axis)
     gse_axis.set_ylabel("gse internal state")
     gse_axis.set_ylim(-0.05, 1.05)
-    axis.grid(True, alpha=0.3)
     handles, labels = axis.get_legend_handles_labels()
     gse_handles, gse_labels = gse_axis.get_legend_handles_labels()
     axis.legend(handles + gse_handles, labels + gse_labels, loc="upper left", fontsize="small", ncols=3)

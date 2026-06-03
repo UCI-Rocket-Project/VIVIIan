@@ -175,6 +175,17 @@ class Button:
         self.enabled = enabled
 
 
+
+
+
+
+
+
+
+
+
+
+
 @dataclass
 class valve_state:
     server: LatestServer
@@ -583,3 +594,32 @@ class NidaqGraph:
             imgui.text_unformatted(f"{field}: {value - oldest_value:.2f}")
         imgui.end_group()
         imgui.pop_id()
+
+
+
+
+
+
+
+
+
+
+@dataclass
+class MVAS_STATE(valve_state):
+    latest_toggled_value: bool | None = None
+    
+    label: str = "MVAS"
+    field: None = None
+
+
+    def _read_latest_state(self) -> bool | None:
+        #lngpot on top of lox pot means closed
+        self.latest = self.server.latest
+        if self.latest.get("LNGPOT") is None or self.latest.get("LOXPOT") is None:
+            return None
+        if self.latest.get("LNGPOT") < self.latest.get("LOXPOT"):
+            return False
+        return True
+
+
+
