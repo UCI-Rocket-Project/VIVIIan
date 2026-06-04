@@ -375,7 +375,12 @@ class NidaqGraph:
 
         self.times.append(now)
 
-        self.history.append([(float(latest[field]))*scale[0] for field, scale in zip(self.fields, self.scales)   ])
+        self.history.append(
+            [
+                (float(latest[field]) * scale[0]) + scale[1]
+                for field, scale in zip(self.fields, self.scales)
+            ]
+        )
 
         # Keep only the last 300 seconds of data
         cutoff = now - self.WINDOW_SECONDS
@@ -474,6 +479,24 @@ class NidaqGraph:
         if np.isnan(value):
             return "NAN"
         return f"{value:.2f}/min"
+
+    def _calculate_thrust_impulse(
+        self,
+        times_list: list[float],
+        data: np.ndarray,
+    ) -> float:
+        if "Thrust" not in self.fields or len(times_list) < 2:
+            return float("nan")
+
+        thrust_index = self.fields.index("Thrust")
+        times = np.asarray(times_list, dtype=np.float64)
+        thrust = np.asarray(data[:, thrust_index], dtype=np.float64)
+        thrust = np.where(thrust >= 1, thrust, 0)
+
+        if hasattr(np, "trapezoid"):
+            return float(np.trapezoid(thrust, times))
+
+        return float(np.trapz(thrust, times))
 
     def draw(self, imgui) -> None:
         imgui.push_id(self.graph_id)
@@ -592,6 +615,11 @@ class NidaqGraph:
         for i, (field, value) in enumerate(zip(self.fields, latest_values)):
             oldest_value = data[0, i]
             imgui.text_unformatted(f"{field}: {value - oldest_value:.2f}")
+
+        imgui.separator()
+        imgui.text_unformatted("3 min impulse")
+        thrust_impulse = self._calculate_thrust_impulse(times_list, data)
+        imgui.text_unformatted(f"Thrust: {thrust_impulse if not np.isnan(thrust_impulse) else "NAN"} lbf s")
         imgui.end_group()
         imgui.pop_id()
 
@@ -615,6 +643,8 @@ class MVAS_STATE(valve_state):
     def _read_latest_state(self) -> bool | None:
         #lngpot on top of lox pot means closed
         self.latest = self.server.latest
+        if self.latest is None:
+            return None
         if self.latest.get("LNGPOT") is None or self.latest.get("LOXPOT") is None:
             return None
         if self.latest.get("LNGPOT") < self.latest.get("LOXPOT"):
