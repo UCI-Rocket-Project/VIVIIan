@@ -12,30 +12,30 @@ import pyarrow.flight as flight
 from generic_connector import CommandServer
 
 
-# --- Constants for GSE2V1 Connector ---
-#GSE2V1_IP = "127.0.0.1"
-GSE2V1_IP = "10.0.0.217"
-GSE2V1_PORT = 10001
-GSE2V1_RECONNECT_S = 0.5
+# --- Constants for GSEV1 Connector ---
+#GSEV1_IP = "127.0.0.1"
+GSEV1_IP = "10.0.0.217"
+GSEV1_PORT = 10001
+GSEV1_RECONNECT_S = 0.5
 
-# --- Constants for GSE2V1 Backend ---
-GSE2V1_FLIGHT_BIND = "grpc://127.0.0.1:8815"
-GSE2V1_ROWS_PER_FRAME = 1
+# --- Constants for GSEV1 Backend ---
+GSEV1_FLIGHT_BIND = "grpc://127.0.0.1:8815"
+GSEV1_ROWS_PER_FRAME = 1
 
-# --- Constants for GSE2V1 Frontend ---
-GSE2V1_ECHO_FLIGHT = "grpc://127.0.0.1:8820"
-GSE2V1_CMD_FLIGHT_BIND = "grpc://0.0.0.0:8827"
+# --- Constants for GSEV1 Frontend ---
+GSEV1_ECHO_FLIGHT = "grpc://127.0.0.1:8820"
+GSEV1_CMD_FLIGHT_BIND = "grpc://0.0.0.0:8827"
 
 
 # --- PACKET DEFINITIONS ---
-GSE2V1_HEADER_ALIGN_BYTES = b"\xef\xbe\xad\xde"
+GSEV1_HEADER_ALIGN_BYTES = b"\xef\xbe\xad\xde"
 
-GSE2V1_DATA_FORMAT = "<I I 15? 17f I"
-GSE2V1_DATA_SIZE = struct.calcsize(GSE2V1_DATA_FORMAT)
+GSEV1_DATA_FORMAT = "<I I 15? 17f I"
+GSEV1_DATA_SIZE = struct.calcsize(GSEV1_DATA_FORMAT)
 
-GSE2V1_COMMAND_FORMAT = "<I 15? I"
-GSE2V1_COMMAND_MAGIC = 0xDEADD00D
-GSE2V1_COMMAND_SIZE = struct.calcsize(GSE2V1_COMMAND_FORMAT)
+GSEV1_COMMAND_FORMAT = "<I 15? I"
+GSEV1_COMMAND_MAGIC = 0xDEADD00D
+GSEV1_COMMAND_SIZE = struct.calcsize(GSEV1_COMMAND_FORMAT)
 
 
 _TCP_SESSION_ERRORS = (
@@ -48,7 +48,7 @@ _TCP_SESSION_ERRORS = (
 )
 
 
-GSE2V1_COMMAND_FIELD_NAME_MAP = {
+GSEV1_COMMAND_FIELD_NAME_MAP = {
     "igniter0Fire": "igniter0Fire",
     "igniter1Fire": "igniter1Fire",
     "alarm": "alarm",
@@ -66,12 +66,12 @@ GSE2V1_COMMAND_FIELD_NAME_MAP = {
     "solenoidState11": "solenoidState11",
 }
 
-GSE2V1_COMMAND_FIELDS = tuple(GSE2V1_COMMAND_FIELD_NAME_MAP.keys())
-GSE2V1_COMMAND_FIELD_NAMES = tuple(GSE2V1_COMMAND_FIELD_NAME_MAP.values())
-GSE2V1_NUM_COMMAND_SIGNALS = len(GSE2V1_COMMAND_FIELD_NAMES)
+GSEV1_COMMAND_FIELDS = tuple(GSEV1_COMMAND_FIELD_NAME_MAP.keys())
+GSEV1_COMMAND_FIELD_NAMES = tuple(GSEV1_COMMAND_FIELD_NAME_MAP.values())
+GSEV1_NUM_COMMAND_SIGNALS = len(GSEV1_COMMAND_FIELD_NAMES)
 
 
-GSE2V1_STATE_FIELD_NAME_MAP = {
+GSEV1_STATE_FIELD_NAME_MAP = {
     "igniterArmed": "igniterArmed",
     "igniter0Continuity": "igniter0Continuity",
     "igniter1Continuity": "igniter1Continuity",
@@ -86,11 +86,11 @@ GSE2V1_STATE_FIELD_NAME_MAP = {
     "solenoidCurrent8": "solenoidCurrent8",
 }
 
-GSE2V1_STATE_FIELDS = tuple(GSE2V1_STATE_FIELD_NAME_MAP.keys())
-GSE2V1_STATE_FIELD_NAMES = tuple(GSE2V1_STATE_FIELD_NAME_MAP.values())
+GSEV1_STATE_FIELDS = tuple(GSEV1_STATE_FIELD_NAME_MAP.keys())
+GSEV1_STATE_FIELD_NAMES = tuple(GSEV1_STATE_FIELD_NAME_MAP.values())
 
 
-GSE2V1_FIELD_NAME_MAP = {
+GSEV1_FIELD_NAME_MAP = {
     "magicHeader": "magicHeader",
     "timestamp": "timestamp",
     "igniterArmed": "igniterArmed",
@@ -128,12 +128,12 @@ GSE2V1_FIELD_NAME_MAP = {
     "crc": "crc",
 }
 
-GSE2V1_FIELDS = tuple(GSE2V1_FIELD_NAME_MAP.keys())
-GSE2V1_FIELD_NAMES = tuple(GSE2V1_FIELD_NAME_MAP.values())
-GSE2V1_NUM_SIGNALS = len(GSE2V1_FIELD_NAMES)
-GSE2V1_FIELD_INDEX = {field: i for i, field in enumerate(GSE2V1_FIELDS)}
+GSEV1_FIELDS = tuple(GSEV1_FIELD_NAME_MAP.keys())
+GSEV1_FIELD_NAMES = tuple(GSEV1_FIELD_NAME_MAP.values())
+GSEV1_NUM_SIGNALS = len(GSEV1_FIELD_NAMES)
+GSEV1_FIELD_INDEX = {field: i for i, field in enumerate(GSEV1_FIELDS)}
 
-GSE2V1_COMMAND_ECHO_FIELDS = (
+GSEV1_COMMAND_ECHO_FIELDS = (
     "igniterInternalState0",
     "igniterInternalState1",
     "alarmInternalState",
@@ -151,24 +151,24 @@ GSE2V1_COMMAND_ECHO_FIELDS = (
     None,
 )
 
-GSE2V1_COMMAND_ECHO_FIELD_INDICES = tuple(
-    None if field is None else GSE2V1_FIELD_INDEX[field]
-    for field in GSE2V1_COMMAND_ECHO_FIELDS
+GSEV1_COMMAND_ECHO_FIELD_INDICES = tuple(
+    None if field is None else GSEV1_FIELD_INDEX[field]
+    for field in GSEV1_COMMAND_ECHO_FIELDS
 )
 
-GSE2V1_ECHO_FIELD_NAMES = ("connected", *GSE2V1_COMMAND_FIELD_NAMES)
-GSE2V1_NUM_ECHO_SIGNALS = len(GSE2V1_ECHO_FIELD_NAMES)
+GSEV1_ECHO_FIELD_NAMES = ("connected", *GSEV1_COMMAND_FIELD_NAMES)
+GSEV1_NUM_ECHO_SIGNALS = len(GSEV1_ECHO_FIELD_NAMES)
 
 
-if len(GSE2V1_COMMAND_ECHO_FIELD_INDICES) != GSE2V1_NUM_COMMAND_SIGNALS:
-    raise ValueError("GSE2V1 command echo field count must match command field count")
+if len(GSEV1_COMMAND_ECHO_FIELD_INDICES) != GSEV1_NUM_COMMAND_SIGNALS:
+    raise ValueError("GSEV1 command echo field count must match command field count")
 
 
 def decode_gse2v1_data(raw_bytes: bytes) -> tuple | None:
     try:
-        return struct.unpack(GSE2V1_DATA_FORMAT, raw_bytes)
+        return struct.unpack(GSEV1_DATA_FORMAT, raw_bytes)
     except struct.error as e:
-        print(f"Error decoding GSE2V1 data: {e}")
+        print(f"Error decoding GSEV1 data: {e}")
         return None
 
 
@@ -279,7 +279,7 @@ class _TcpSocketProxy:
             sock = self._socket
 
         if sock is None:
-            raise ConnectionError("GSE2V1 TCP command socket is not connected")
+            raise ConnectionError("GSEV1 TCP command socket is not connected")
 
         try:
             sock.sendall(data)
@@ -302,23 +302,23 @@ def read_gse2v1_packets(sock: socket.socket):
         chunk = sock.recv(256)
 
         if not chunk:
-            raise ConnectionError("GSE2V1 TCP socket closed by board")
+            raise ConnectionError("GSEV1 TCP socket closed by board")
 
         running_buffer += chunk
 
-        while len(running_buffer) >= GSE2V1_DATA_SIZE:
-            magic_idx = running_buffer.find(GSE2V1_HEADER_ALIGN_BYTES)
+        while len(running_buffer) >= GSEV1_DATA_SIZE:
+            magic_idx = running_buffer.find(GSEV1_HEADER_ALIGN_BYTES)
 
             if magic_idx == -1:
                 running_buffer = running_buffer[-3:]
                 break
 
-            if len(running_buffer) - magic_idx < GSE2V1_DATA_SIZE:
+            if len(running_buffer) - magic_idx < GSEV1_DATA_SIZE:
                 running_buffer = running_buffer[magic_idx:]
                 break
 
-            packet_bytes = running_buffer[magic_idx : magic_idx + GSE2V1_DATA_SIZE]
-            running_buffer = running_buffer[magic_idx + GSE2V1_DATA_SIZE :]
+            packet_bytes = running_buffer[magic_idx : magic_idx + GSEV1_DATA_SIZE]
+            running_buffer = running_buffer[magic_idx + GSEV1_DATA_SIZE :]
 
             decoded = decode_gse2v1_data(packet_bytes)
             if decoded is not None:
@@ -326,22 +326,22 @@ def read_gse2v1_packets(sock: socket.socket):
 
 
 def make_telemetry_writer() -> _ReconnectFlightWriter:
-    telemetry_schema = pa.schema([(name, pa.float64()) for name in GSE2V1_FIELD_NAMES])
+    telemetry_schema = pa.schema([(name, pa.float64()) for name in GSEV1_FIELD_NAMES])
 
     return _ReconnectFlightWriter(
-        name="GSE2V1 telemetry Flight writer",
-        address=GSE2V1_FLIGHT_BIND,
+        name="GSEV1 telemetry Flight writer",
+        address=GSEV1_FLIGHT_BIND,
         path="gse2v1_telemetry",
         schema=telemetry_schema,
     )
 
 
 def make_echo_writer() -> _ReconnectFlightWriter:
-    echo_schema = pa.schema([(name, pa.float64()) for name in GSE2V1_ECHO_FIELD_NAMES])
+    echo_schema = pa.schema([(name, pa.float64()) for name in GSEV1_ECHO_FIELD_NAMES])
 
     return _ReconnectFlightWriter(
-        name="GSE2V1 echo Flight writer",
-        address=GSE2V1_ECHO_FLIGHT,
+        name="GSEV1 echo Flight writer",
+        address=GSEV1_ECHO_FLIGHT,
         path="gse2v1_echo_state",
         schema=echo_schema,
     )
@@ -352,7 +352,7 @@ def make_echo_row(telemetry_row: Sequence[float] | np.ndarray, connected: bool) 
 
     echo_row.extend(
         0.0 if index is None else float(telemetry_row[index])
-        for index in GSE2V1_COMMAND_ECHO_FIELD_INDICES
+        for index in GSEV1_COMMAND_ECHO_FIELD_INDICES
     )
 
     return echo_row
@@ -369,7 +369,7 @@ def run_gse2v1_telemetry_session(sock: socket.socket) -> None:
     telemetry_writer = make_telemetry_writer()
     echo_writer = make_echo_writer()
 
-    last_echo_row = [0.0] * GSE2V1_NUM_ECHO_SIGNALS
+    last_echo_row = [0.0] * GSEV1_NUM_ECHO_SIGNALS
     _prev_state_key: tuple | None = None
 
     try:
@@ -378,13 +378,13 @@ def run_gse2v1_telemetry_session(sock: socket.socket) -> None:
 
             state_key = tuple(
                 False if i is None else bool(telemetry_row[i] > 0.5)
-                for i in GSE2V1_COMMAND_ECHO_FIELD_INDICES
+                for i in GSEV1_COMMAND_ECHO_FIELD_INDICES
             )
             if state_key != _prev_state_key:
                 state_str = ", ".join(
-                    f"{name}={v}" for name, v in zip(GSE2V1_COMMAND_ECHO_FIELDS, state_key)
+                    f"{name}={v}" for name, v in zip(GSEV1_COMMAND_ECHO_FIELDS, state_key)
                 )
-                print(f"[GSE2V1 STATE] {state_str}")
+                print(f"[GSEV1 STATE] {state_str}")
                 _prev_state_key = state_key
 
             telemetry_writer.write_row(telemetry_row)
@@ -393,7 +393,7 @@ def run_gse2v1_telemetry_session(sock: socket.socket) -> None:
             echo_writer.write_row(last_echo_row)
 
     finally:
-        echo_writer.write_row([0.0] * GSE2V1_NUM_ECHO_SIGNALS)
+        echo_writer.write_row([0.0] * GSEV1_NUM_ECHO_SIGNALS)
 
         telemetry_writer.close()
         echo_writer.close()
@@ -407,7 +407,7 @@ def gse2v1_cmd_pack(
 ) -> bytes:
     payload = struct.pack(
         "<I 15?",
-        GSE2V1_COMMAND_MAGIC,
+        GSEV1_COMMAND_MAGIC,
         igniter0_fire,
         igniter1_fire,
         alarm,
@@ -419,7 +419,7 @@ def gse2v1_cmd_pack(
 
 
 def gse2v1_cmd_pack_from_row(row: np.ndarray) -> bytes:
-    n = GSE2V1_NUM_COMMAND_SIGNALS
+    n = GSEV1_NUM_COMMAND_SIGNALS
 
     if row.shape[0] < n:
         raise ValueError(f"Expected at least {n} command fields, got row length {row.shape[0]}")
@@ -445,9 +445,9 @@ def gse2v1_make_command_server(
 
         row = data[-1]
         cmd_str = ", ".join(
-            f"{name}={bool(row[i] > 0.5)}" for i, name in enumerate(GSE2V1_COMMAND_FIELD_NAMES)
+            f"{name}={bool(row[i] > 0.5)}" for i, name in enumerate(GSEV1_COMMAND_FIELD_NAMES)
         )
-        print(f"[GSE2V1 CMD] {cmd_str}")
+        print(f"[GSEV1 CMD] {cmd_str}")
         return gse2v1_cmd_pack_from_row(row)
 
     return command_server(location, tcp_connection, _converter)  # type: ignore[arg-type]
@@ -480,7 +480,7 @@ def main() -> None:
     command_socket = _TcpSocketProxy()
 
     command_server = gse2v1_make_command_server(
-        GSE2V1_CMD_FLIGHT_BIND,
+        GSEV1_CMD_FLIGHT_BIND,
         command_socket,
     )
 
@@ -496,17 +496,17 @@ def main() -> None:
             sock: socket.socket | None = None
 
             try:
-                print(f"GSE2V1 connector: connecting to {GSE2V1_IP}:{GSE2V1_PORT}")
+                print(f"GSEV1 connector: connecting to {GSEV1_IP}:{GSEV1_PORT}")
 
                 sock = socket.create_connection(
-                    (GSE2V1_IP, GSE2V1_PORT),
+                    (GSEV1_IP, GSEV1_PORT),
                     timeout=5.0,
                 )
 
                 sock.settimeout(0.4)
                 command_socket.set_socket(sock)
 
-                print("GSE2V1 connector: TCP connected")
+                print("GSEV1 connector: TCP connected")
 
                 run_gse2v1_telemetry_session(sock)
 
@@ -514,20 +514,20 @@ def main() -> None:
                 raise
 
             except _TCP_SESSION_ERRORS as e:
-                print(f"GSE2V1 connector: TCP session ended: {e}")
+                print(f"GSEV1 connector: TCP session ended: {e}")
 
             except Exception as e:
-                print(f"GSE2V1 connector: unexpected session error: {e}")
+                print(f"GSEV1 connector: unexpected session error: {e}")
 
             finally:
                 command_socket.clear_socket(sock)
                 _close_socket(sock)
 
-            print(f"GSE2V1 connector: reconnecting in {GSE2V1_RECONNECT_S:.1f}s")
-            time.sleep(GSE2V1_RECONNECT_S)
+            print(f"GSEV1 connector: reconnecting in {GSEV1_RECONNECT_S:.1f}s")
+            time.sleep(GSEV1_RECONNECT_S)
 
     except KeyboardInterrupt:
-        print("\nGSE2V1 connector: shutting down")
+        print("\nGSEV1 connector: shutting down")
 
     finally:
         command_socket.clear_socket()
@@ -535,5 +535,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    print("GSE2V1 connector — telemetry to backend, commands from frontend to TCP")
+    print("GSEV1 connector — telemetry to backend, commands from frontend to TCP")
     main()

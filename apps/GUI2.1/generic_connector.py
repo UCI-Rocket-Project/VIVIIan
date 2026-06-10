@@ -10,6 +10,18 @@ from typing import Callable
 import numpy as np
 import pyarrow as pa
 
+from __future__ import annotations
+
+import socket
+import time
+from typing import Any
+
+from numpy._core.umath import NAN
+import pyarrow as pa
+import pyarrow.flight as flight
+
+from gui_elements import BUTTON_STATUS_OFF_COLOR, BUTTON_STATUS_ON_COLOR, Button
+
 
 
 class PrintServer(flight.FlightServerBase):
@@ -274,3 +286,298 @@ def generic_stream_connector(*, stream, field_names: list[str], flight_address: 
         except Exception as e:
             print(f"Error sending data: {e}")
             time.sleep(0.01)
+
+
+
+
+
+
+
+
+CMD_RETRY_SECONDS = 1.0
+CMD_CONNECT_TIMEOUT_SECONDS = 0.02
+ECHO_STALE_SECONDS = 2.0
+ECHO_GRACE_SECONDS = 0.5
+BUTTON_WIDTH = 260.0
+
+
+class RocketPCBCommandClient:
+    def __init__(
+        self,
+        *,
+        pcb_name: str,
+        cmd_field_names: tuple[str, ...],
+        cmd_host: str,
+        cmd_port: int,
+        button_configs: dict[str, dict[str, Any]],
+        table_button_configs: dict[str, dict[str, Any]] | None = None,
+        latest_server: LatestServer,
+        retry_seconds: float = CMD_RETRY_SECONDS,
+        connect_timeout_seconds: float = CMD_CONNECT_TIMEOUT_SECONDS,
+        echo_grace_seconds: float = ECHO_GRACE_SECONDS,
+        echo_stale_seconds: float = ECHO_STALE_SECONDS,
+        button_width: float = BUTTON_WIDTH,
+    ) -> None:
+        self.pcb_name = pcb_name
+        self.cmd_field_names = tuple(cmd_field_names)
+        self.cmd_host = cmd_host
+        self.cmd_port = cmd_port
+        self.button_configs = button_configs 
+        self.table_button_configs = table_button_configs or {}
+        self.latest_server = latest_server
+        self.retry_seconds = retry_seconds
+        self.connect_timeout_seconds = connect_timeout_seconds
+        self.echo_grace_seconds = echo_grace_seconds
+        self.echo_stale_seconds = echo_stale_seconds
+        self.button_width = button_width
+        self.buttons: dict[str, Button] = {}
+        self.row = [0.0] * len(self.cmd_field_names)
+        self.schema = pa.schema([(name, pa.float64()) for name in self.cmd_field_names])
+        self.descriptor = flight.FlightDescriptor.for_path(f"{pcb_name}_commands")
+        self.writer = None
+        self._next_connect_attempt_at = 0.0
+        self._last_echo_generation = -1
+        self._last_echo_connected: bool | None = None
+        self._ignore_echo_until = 0.0
+
+    def command_field_index(self, command_field: str) -> int:
+        return self.cmd_field_names.index(command_field)
+
+    def button_state(self, button_id: str) -> bool:
+        button = self.buttons.get(button_id)
+        return bool(button.state) if isinstance(button, Button) else False
+
+    def make_command_buttons(self) -> tuple[Button, ...]:
+        for button_id, config in self.button_configs.items():
+            button = Button(
+                button_id,
+                config["display_name"],
+                width=self.button_width,
+                toggle_on_click=config.get("momentary_seconds") is None,
+                momentary_seconds=config.get("momentary_seconds"),
+                status_color=BUTTON_STATUS_OFF_COLOR,
+                enabled=self.make_enabled_rule(config),
+                status_text=self.make_status_text_getter(config.get("status_value")),
+                internal_status_value=self.make_internal_status_value_getter(
+                    config.get("status_field")
+                ),
+            )
+            self.buttons[button_id] = button
+
+            def send(clicked_button: Button, clicked_id: str = button_id) -> None:
+                self.handle_button_click(clicked_id, clicked_button)
+
+            button.on_click = send
+
+        return tuple(self.buttons[button_id] for button_id in self.button_configs)
+
+    def make_enabled_rule(self, config: dict[str, Any]) -> Any:
+        disabled_by = config.get("disabled_by")
+        if disabled_by is not None:
+            return lambda disabled_by=disabled_by: not self.button_state(disabled_by)
+        return config.get("enabled", True)
+
+    def handle_button_click(self, button_id: str, button: Button) -> None:
+        self.sync_button_to_row(button_id)
+        self.sync_button_status(button)
+
+        if button_id in self.table_button_configs and button.state:
+            self.apply_table_state(self.table_button_configs[button_id]["table_states"])
+
+        self.send()
+
+    def apply_table_state(self, table: dict[str, bool]) -> None:
+        for button_id, config in self.button_configs.items():
+            if button_id in self.table_button_configs or button_id == "alarm":
+                continue
+            button = self.buttons.get(button_id)
+            if not isinstance(button, Button):
+                continue
+            button.set_state(table.get(button_id, False))
+            if button_id in table:
+                table_state = table[button_id]
+                button.set_state(table_state)
+                if button.momentary_seconds is not None:
+                    button.momentary_until = (
+                        time.monotonic() + button.momentary_seconds
+                        if table_state
+                        else None
+                    )
+            self.sync_button_status(button)
+            self.sync_button_to_row(button_id)
+
+    def sync_button_to_row(self, button_id: str) -> None:
+        config = self.button_configs[button_id]
+        command_fields = self._field_names(config.get("command_field"))
+        if command_fields:
+            self.sync_command_fields_to_row(button_id, command_fields)
+
+    def sync_command_fields_to_row(
+        self,
+        button_id: str,
+        command_fields: tuple[str, ...],
+    ) -> None:
+        button = self.buttons.get(button_id)
+        if not isinstance(button, Button):
+            return
+        value = 1.0 if button.state else 0.0
+        for command_field in command_fields:
+            index = self.command_field_index(command_field)
+            self.row[index] = value
+
+    def sync_buttons_from_echo(self, echo_server: LatestServer) -> None:
+        latest = echo_server.latest
+        connected = (
+            latest is not None
+            and echo_server.is_fresh(self.echo_stale_seconds)
+            and float(latest.get("connected", 0.0)) > 0.5
+        )
+
+        if (
+            connected == self._last_echo_connected
+            and echo_server.latest_generation == self._last_echo_generation
+        ):
+            return
+
+        self._last_echo_connected = connected
+        self._last_echo_generation = echo_server.latest_generation
+        if connected:
+            self._next_connect_attempt_at = 0.0
+
+        for button_id, config in self.button_configs.items():
+            button = self.buttons.get(button_id)
+            if not isinstance(button, Button):
+                continue
+
+            button.set_enabled(self.make_enabled_rule(config) if connected else False)
+            if button_id in self.table_button_configs:
+                continue
+
+            if connected and (
+                button.momentary_until is not None
+                or time.monotonic() < self._ignore_echo_until
+            ):
+                continue
+
+            command_fields = self._field_names(config.get("command_field"))
+            state = (
+                all(float(latest.get(field, 0.0)) > 0.5 for field in command_fields)
+                if connected and command_fields
+                else False
+            )
+            button.set_state(state)
+            button.momentary_until = None
+            self.sync_button_status(button)
+            self.sync_button_to_row(button_id)
+
+    def make_status_text_getter(self, status_value_field: str | list[str] | None):
+        def get_status_text_for_button():
+            status_value_fields = self._field_names(status_value_field)
+            if not status_value_fields:
+                return "NAN"
+            values = []
+            for field in status_value_fields:
+                try:
+                    value = self.latest_server.latest[field]
+                except KeyError:
+                    return "NAN"
+                except Exception:
+                    return "NAN"
+                if value is None:
+                    return "NAN"
+                values.append(value)
+            if len(values) == 1:
+                return f"{values[0]:.3f}"
+            return "/".join(f"{value:.3f}" for value in values)
+
+        return get_status_text_for_button
+
+    def make_internal_status_value_getter(
+        self,
+        internal_status_field: str | list[str] | None,
+    ):
+        def get_internal_status_value_for_button():
+            internal_status_fields = self._field_names(internal_status_field)
+            if not internal_status_fields:
+                return NAN
+            values = []
+            for field in internal_status_fields:
+                try:
+                    value = self.latest_server.latest[field]
+                except KeyError:
+                    return NAN
+                except Exception:
+                    return NAN
+                if value is None:
+                    return NAN
+                values.append(value)
+            if len(values) == 1:
+                return values[0]
+            return all(value > 0.0 for value in values)
+
+        return get_internal_status_value_for_button
+
+    @staticmethod
+    def sync_button_status(button: Button) -> None:
+        button.set_status_color(BUTTON_STATUS_ON_COLOR if button.state else BUTTON_STATUS_OFF_COLOR)
+
+    @staticmethod
+    def _field_names(field_name: str | list[str] | None) -> tuple[str, ...]:
+        if field_name is None:
+            return ()
+        if isinstance(field_name, str):
+            return (field_name,)
+        return tuple(field_name)
+
+    def send(self) -> bool:
+        batch = pa.RecordBatch.from_arrays(
+            [pa.array([value], type=pa.float64()) for value in self.row],
+            schema=self.schema,
+        )
+
+        had_writer = self.writer is not None
+        if self._write_batch(batch):
+            self._ignore_echo_until = time.monotonic() + self.echo_grace_seconds
+            return True
+
+        if not had_writer:
+            return False
+
+        self.writer = None
+        self._next_connect_attempt_at = 0.0
+        if self._write_batch(batch):
+            self._ignore_echo_until = time.monotonic() + self.echo_grace_seconds
+            return True
+
+        return False
+
+    def _write_batch(self, batch: pa.RecordBatch) -> bool:
+        now = time.monotonic()
+        if self.writer is None:
+            if now < self._next_connect_attempt_at:
+                return False
+            if not self._is_command_server_listening():
+                print(f"[{self.pcb_name} CMD] connector unavailable on {self.cmd_host}:{self.cmd_port}")
+                self._next_connect_attempt_at = now + self.retry_seconds
+                return False
+        try:
+            if self.writer is None:
+                client = flight.connect(f"grpc://{self.cmd_host}:{self.cmd_port}")
+                self.writer, _ = client.do_put(self.descriptor, self.schema)
+            self.writer.write_batch(batch)
+        except Exception as e:
+            print(f"[{self.pcb_name} CMD] send failed: {type(e).__name__}")
+            self.writer = None
+            self._next_connect_attempt_at = now + self.retry_seconds
+            return False
+        return True
+
+    def _is_command_server_listening(self) -> bool:
+        try:
+            with socket.create_connection(
+                (self.cmd_host, self.cmd_port),
+                timeout=self.connect_timeout_seconds,
+            ):
+                return True
+        except OSError:
+            return False

@@ -3,11 +3,12 @@ from __future__ import annotations
 import threading
 
 from gse21connector import (
+    GSE2V1_COMMAND_FIELD_NAMES,
     GSE2V1_ECHO_FIELD_NAMES,
     GSE2V1_FIELD_NAMES,
 )
 from nidaq_gse import NIDAQ_FIELD_NAMES
-from generic_connector import LatestServer
+from generic_connector import LatestServer, RocketPCBCommandClient
 from gui_elements import (
     APP_BACKGROUND_COLOR,
     Button,
@@ -18,9 +19,10 @@ from gui_elements import (
 )
 from gui_gse2v1 import (
     GSE2V1_COMMAND_BUTTONS,
-    GseCommandClient,
-    make_gse2v1_command_buttons,
-    sync_gse2v1_command_buttons_from_echo,
+    GSE2V1_CMD_HOST,
+    GSE2V1_CMD_PORT,
+    GSE2V1_PCB_NAME,
+    TABLE_BUTTONS,
 )
 
 BUTTON_STATES = {} #dictionary of all button states
@@ -91,10 +93,18 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     implot.create_context()
     renderer = GlfwRenderer(window)
     
-    gse_command_client = GseCommandClient()
     gse_server = next(server for server in servers if server.name == "gse")
     echo_server = next(server for server in servers if server.name == "echo")
     nidaq_server = next(server for server in servers if server.name == "nidaq")
+    gse_command_client = RocketPCBCommandClient(
+        pcb_name=GSE2V1_PCB_NAME,
+        cmd_field_names=GSE2V1_COMMAND_FIELD_NAMES,
+        cmd_host=GSE2V1_CMD_HOST,
+        cmd_port=GSE2V1_CMD_PORT,
+        button_configs=GSE2V1_COMMAND_BUTTONS,
+        table_button_configs=TABLE_BUTTONS,
+        latest_server=gse_server,
+    )
     
     nidaq_graph_general = NidaqGraph(
         nidaq_server,
@@ -104,7 +114,7 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     )
 
   
-    command_buttons = make_gse2v1_command_buttons(gse_command_client, gse_server)
+    command_buttons = gse_command_client.make_command_buttons()
     valve_states = make_valve_states(gse_server)
     mvas_state = MVAS_STATE(
         server=nidaq_server,
@@ -133,7 +143,7 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         )
         imgui.text_unformatted(f"FPS: {imgui.get_io().framerate:.1f}")
         imgui.separator()
-        sync_gse2v1_command_buttons_from_echo(gse_command_client, echo_server)
+        gse_command_client.sync_buttons_from_echo(echo_server)
         draw_command_buttons(imgui, command_buttons, valve_states)
         imgui.separator()
         mvas_state.render(imgui)
