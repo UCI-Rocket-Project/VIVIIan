@@ -154,14 +154,14 @@ def _sync_pv2_to_client_row(client: GseCommandClient) -> None:
 
 
 def _sync_tank_vent_to_client_row(client: GseCommandClient) -> None:
-    _sync_command_fields_to_client_row(client, "tank_vent", ("solenoidState8",))
+    _sync_command_fields_to_client_row(client, "tank_vent", ("solenoidState7",))
 
 
 def _sync_mvas_open_to_client_row(client: GseCommandClient) -> None:
     _sync_command_fields_to_client_row(
         client,
         "mvas_open",
-        ("solenoidState4", "solenoidState5"),
+        ("solenoidState2",),
     )
 
 def _sync_open_mvas_lox_to_client_row(client: GseCommandClient) -> None: 
@@ -172,7 +172,7 @@ def _sync_open_mvas_lng_to_client_row(client: GseCommandClient) -> None:
 
 
 def _sync_mvas_close_to_client_row(client: GseCommandClient) -> None:
-    _sync_command_fields_to_client_row(client, "mvas_close", ("solenoidState6",))
+    _sync_command_fields_to_client_row(client, "mvas_close", ("solenoidState3",))
 
 
 def _sync_igniter_0_to_client_row(client: GseCommandClient) -> None:
@@ -200,30 +200,6 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
 
         "enabled": abort_is_inactive,
     },
-    "sol_gn2_fill_2": {
-        "display_name": "GN2 Fill 2",
-        "command_field": "solenoidState2",
-        "status_field": "solenoidInternalState2",
-        "status_value": "solenoidCurrent2",
-        "sync_button_to_client_row": _sync_sol_gn2_fill_2_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "sol_gn2_fill_3": {
-        "display_name": "GN2 Fill 3",
-        "command_field": "solenoidState3",
-        "status_field": "solenoidInternalState3",
-        "status_value": "solenoidCurrent3",
-        "sync_button_to_client_row": _sync_sol_gn2_fill_3_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "sol_gn2_fill_4": {
-        "display_name": "GN2 Fill 4",
-        "command_field": "solenoidState7",
-        "status_field": "solenoidInternalState7",
-        "status_value": "solenoidCurrent7",
-        "sync_button_to_client_row": _sync_sol_gn2_fill_4_to_client_row,
-        "enabled": abort_is_inactive,
-    },
     "sol_gn2_vent": {
         "display_name": "GN2 Vent",
         "command_field": "solenoidState0",
@@ -232,141 +208,31 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "sync_button_to_client_row": _sync_sol_gn2_vent_to_client_row,
         "enabled": abort_is_inactive,
     },
-    "copv_vent": {
-        "display_name": "COPV Vent",
-        "command_field": "solenoidState9",
-        "status_field": "solenoidInternalState9",
-        "status_value": "solenoidCurrent9",
-        "sync_button_to_client_row": _sync_copv_vent_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "pv1": {
-        "display_name": "PV1",
-        "command_field": "solenoidState10",
-        "status_field": "solenoidInternalState10",
-        "status_value": "solenoidCurrent10",
-        "sync_button_to_client_row": _sync_pv1_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "pv2": {
-        "display_name": "PV2",
-        "command_field": "solenoidState11",
-        "status_field": "solenoidInternalState11",
-        "status_value": "solenoidCurrent11",
-        "sync_button_to_client_row": _sync_pv2_to_client_row,
-        "enabled": abort_is_inactive,
-    },
     "tank_vent": {
         "display_name": "Tank Vent",
-        "command_field": "solenoidState8",
-        "status_field": "solenoidInternalState8",
-        "status_value": "solenoidCurrent8",
+        "command_field": "solenoidState7",
+        "status_field": "solenoidInternalState7",
+        "status_value": "solenoidCurrent7",
         "sync_button_to_client_row": _sync_tank_vent_to_client_row,
         "enabled": abort_is_inactive,
     },
     "mvas_open": {
         "display_name": "Mvas Open",
-        "command_field": ["solenoidState4", "solenoidState5"],
-        "status_field": ["solenoidInternalState4", "solenoidInternalState5"],
-        "status_value": ["solenoidCurrent4", "solenoidCurrent5"],
+        "command_field": ["solenoidState2"],
+        "status_field": ["solenoidInternalState2"],
+        "status_value": ["solenoidCurrent2"],
         "sync_button_to_client_row": _sync_mvas_open_to_client_row,
-        "enabled": abort_is_inactive,
-        "momentary_seconds": 1.0,
-    },
-    "open_mvas_lox": {
-        "display_name": "Open Mvas Lox",
-        "command_field": "solenoidState4",
-        "status_field": "solenoidInternalState4",
-        "status_value": "solenoidCurrent4",
-        "sync_button_to_client_row": _sync_open_mvas_lox_to_client_row,
-        "enabled": abort_is_inactive,
-        "momentary_seconds": 1.0,
-    },
-    "open_mvas_lng": {
-        "display_name": "Open Mvas Lng",
-        "command_field": "solenoidState5",
-        "status_field": "solenoidInternalState5",
-        "status_value": "solenoidCurrent5",
-        "sync_button_to_client_row": _sync_open_mvas_lng_to_client_row,
         "enabled": abort_is_inactive,
         "momentary_seconds": 1.0,
     },
     "mvas_close": {
         "display_name": "Mvas Close",
-        "command_field": "solenoidState6",
-        "status_field": "solenoidInternalState6",
-        "status_value": "solenoidCurrent6",
+        "command_field": "solenoidState3",
+        "status_field": "solenoidInternalState3",
+        "status_value": "solenoidCurrent3",
         "sync_button_to_client_row": _sync_mvas_close_to_client_row,
         "enabled": abort_is_inactive,
         "momentary_seconds": 1.0,
-    },
-    "igniter_0": {
-        "display_name": "Igniter 0",
-        "command_field": "igniter0Fire",
-        "status_field": "igniterInternalState0",
-        "status_value": "igniter0Continuity",
-        "sync_button_to_client_row": _sync_igniter_0_to_client_row,
-        "enabled": abort_is_inactive,
-        "momentary_seconds": IGNITER_MOMENTARY_SECONDS,
-    },
-    "igniter_1": {
-        "display_name": "Igniter 1",
-        "command_field": "igniter1Fire",
-        "status_field": "igniterInternalState1",
-        "status_value": "igniter1Continuity",
-        "sync_button_to_client_row": _sync_igniter_1_to_client_row,
-        "enabled": abort_is_inactive,
-        "momentary_seconds": IGNITER_MOMENTARY_SECONDS,
-    },
-    "alarm": {
-        "display_name": "Alarm",
-        "command_field": "alarm",
-        "status_field": "alarmInternalState",
-        "status_value": "alarmCurrent",
-        "sync_button_to_client_row": _sync_alarm_to_client_row,
-        "enabled": True,
-    },
-    f"{ABORT_BUTTON_ID}": {
-        "display_name": "Abort",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": True,
-    },
-    "all_off_t12_t13_t16": {
-        "display_name": "All Off (T12, T13, T16)",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "purge_1_t17": {
-        "display_name": "Purge #1 (T17)",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "purge_2_t18": {
-        "display_name": "Purge #2 (T18)",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "t19": {
-        "display_name": "T19",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "t20": {
-        "display_name": "T20",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "final_t23": {
-        "display_name": "Final (T23)",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": abort_is_inactive,
     },
 }
 

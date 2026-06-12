@@ -46,21 +46,8 @@ def find_latest_common_session(data_root: Path, dataset_names: list[str]) -> Pat
     return max(sessions, key=lambda path: path.stat().st_mtime)
 
 PT_SCALES = {
-    # "ai0": (402.45048,0), # this is wrong
-    # "ai1": (1,0),
-    "LNGTANK": (1,0),
-    "LOXTANK": (1,0),
-    
-    "VENT": (1,0),
-    "COPV": (1,0),#(24471.303,5.4077),
-    # "ai7": (1,0),
-    "LOXING": (1,0),
-    "LNGING": (1,0),
-    # "ai10": (1,0),
-    "LOXPOT": (1,0),
-    "LNGPOT": (1,0),
-    # "PT10": (1,0),
-    "Thrust": (1,0),
+    "LOXPOT": (402.45048,0),
+    "LNGPOT": (402.45048,0),
 }
 
 SIGNAL_COLORS = {
@@ -114,8 +101,8 @@ def format_nidaq_pressure_axis(axis) -> None:
 
     axis.set_ylabel("pressure (psi)")
     axis.yaxis.set_major_locator(MultipleLocator(100))
-    axis.yaxis.set_minor_locator(MultipleLocator(25))
-    axis.xaxis.set_major_locator(MultipleLocator(1))
+    axis.yaxis.set_minor_locator(MultipleLocator(10))
+    axis.xaxis.set_major_locator(MultipleLocator(0.2))
     axis.grid(which="major", axis="y", linewidth=0.8, alpha=0.45)
     axis.grid(which="minor", axis="y", linewidth=0.35, alpha=0.3)
     axis.grid(which="major", axis="x", linewidth=0.35, alpha=0.3)
@@ -149,8 +136,8 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
     for index, file in enumerate(files, start=1):
-        if index < total_files - 350 or index > total_files - 150:
-            continue
+        if index < total_files - 300 or index > total_files - 0:
+             continue
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
             column_names = pq.read_schema(file).names
@@ -161,7 +148,7 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
             tables.append(pq.read_table(file, columns=selected_columns))
         except (pa.lib.ArrowInvalid, OSError, EOFError) as exc:
             skipped.append((file, str(exc)))
-    print()
+
 
     for file, reason in skipped:
         print(f"Skipped unreadable parquet file; not plotted: {file}")

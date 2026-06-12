@@ -16,17 +16,9 @@ NIDAQ_FLIGHT_BIND = "grpc://127.0.0.1:8825"
 NIDAQ_ROWS_PER_FRAME = 1000
 
 # --- Packet DEFINITIONS ---
-NIDAQ_FIELD_NAME_MAP = { 
-    "ai1": "VENT",# "PT0",
-    "ai0": "LOXTANK",# "PT1",
-    "ai8": "COPV",
-    "ai9": "LNGTANK",# "PT3",
+NIDAQ_FIELD_NAME_MAP = {
     "ai2": "LNGPOT",# "PT4",
     "ai10": "LOXPOT",# "PT5",
-    "ai11": "LOXING",# "PT6",
-    "ai3": "LNGING",# "PT7",
-    "ai12": "PT10",# "PT10",
-    "ai7": "Thrust",# "LC0"
 }
 
 
