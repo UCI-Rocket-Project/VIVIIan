@@ -28,13 +28,10 @@ GSEV1_CMD_FLIGHT_BIND = "grpc://0.0.0.0:8828"
 
 
 # --- PACKET DEFINITIONS ---
-GSEV1_HEADER_ALIGN_BYTES = b"\xef\xbe\xad\xde"
-
-GSEV1_DATA_FORMAT = "<I I 15? 17f I"
+GSEV1_DATA_FORMAT = "<I 15? 17f I"
 GSEV1_DATA_SIZE = struct.calcsize(GSEV1_DATA_FORMAT)
 
-GSEV1_COMMAND_FORMAT = "<I 15? I"
-GSEV1_COMMAND_MAGIC = 0xDEADD00D
+GSEV1_COMMAND_FORMAT = "<12? I"
 GSEV1_COMMAND_SIZE = struct.calcsize(GSEV1_COMMAND_FORMAT)
 
 
@@ -61,9 +58,6 @@ GSEV1_COMMAND_FIELD_NAME_MAP = {
     "solenoidState6": "solenoidState6",
     "solenoidState7": "solenoidState7",
     "solenoidState8": "solenoidState8",
-    "solenoidState9": "solenoidState9",
-    "solenoidState10": "solenoidState10",
-    "solenoidState11": "solenoidState11",
 }
 
 GSEV1_COMMAND_FIELDS = tuple(GSEV1_COMMAND_FIELD_NAME_MAP.keys())
@@ -91,7 +85,6 @@ GSEV1_STATE_FIELD_NAMES = tuple(GSEV1_STATE_FIELD_NAME_MAP.values())
 
 
 GSEV1_FIELD_NAME_MAP = {
-    "magicHeader": "magicHeader",
     "timestamp": "timestamp",
     "igniterArmed": "igniterArmed",
     "igniter0Continuity": "igniter0Continuity",
@@ -146,9 +139,6 @@ GSEV1_COMMAND_ECHO_FIELDS = (
     "solenoidInternalState6",
     "solenoidInternalState7",
     "solenoidInternalState8",
-    None,
-    None,
-    None,
 )
 
 GSEV1_COMMAND_ECHO_FIELD_INDICES = tuple(
@@ -290,7 +280,7 @@ class _TcpSocketProxy:
 
 def read_gse2v1_packets(sock: socket.socket):
     """
-    Read raw TCP bytes, align to magic header, and yield decoded packets.
+    Read fixed-size raw TCP packets and yield decoded packets.
 
     If the TCP socket dies, this raises an exception.
     The outer reconnect loop owns reconnecting.
@@ -307,18 +297,8 @@ def read_gse2v1_packets(sock: socket.socket):
         running_buffer += chunk
 
         while len(running_buffer) >= GSEV1_DATA_SIZE:
-            magic_idx = running_buffer.find(GSEV1_HEADER_ALIGN_BYTES)
-
-            if magic_idx == -1:
-                running_buffer = running_buffer[-3:]
-                break
-
-            if len(running_buffer) - magic_idx < GSEV1_DATA_SIZE:
-                running_buffer = running_buffer[magic_idx:]
-                break
-
-            packet_bytes = running_buffer[magic_idx : magic_idx + GSEV1_DATA_SIZE]
-            running_buffer = running_buffer[magic_idx + GSEV1_DATA_SIZE :]
+            packet_bytes = running_buffer[:GSEV1_DATA_SIZE]
+            running_buffer = running_buffer[GSEV1_DATA_SIZE:]
 
             decoded = decode_gse2v1_data(packet_bytes)
             if decoded is not None:
@@ -406,8 +386,7 @@ def gse2v1_cmd_pack(
     solenoid_states: list[bool],
 ) -> bytes:
     payload = struct.pack(
-        "<I 15?",
-        GSEV1_COMMAND_MAGIC,
+        "<12?",
         igniter0_fire,
         igniter1_fire,
         alarm,

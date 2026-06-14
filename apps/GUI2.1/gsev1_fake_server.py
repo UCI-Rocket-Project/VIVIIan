@@ -25,15 +25,12 @@ import time
 from dataclasses import dataclass, field
 
 from gsev1connector import (
-    GSEV1_COMMAND_MAGIC,
     GSEV1_COMMAND_SIZE,
     GSEV1_DATA_SIZE,
-    GSEV1_HEADER_ALIGN_BYTES,
 )
 
-_MAGIC_HEADER = struct.unpack("<I", GSEV1_HEADER_ALIGN_BYTES)[0]
-_DATA_BODY_FORMAT = "<I I 15? 17f"
-_CMD_BODY_FORMAT = "<I 15?"
+_DATA_BODY_FORMAT = "<I 15? 17f"
+_CMD_BODY_FORMAT = "<12?"
 _DATA_BODY_SIZE = struct.calcsize(_DATA_BODY_FORMAT)
 _CMD_BODY_SIZE = struct.calcsize(_CMD_BODY_FORMAT)
 
@@ -53,28 +50,20 @@ class _SimState:
     igniter0_fire: bool = False
     igniter1_fire: bool = False
     alarm: bool = False
-    solenoid_states: list[bool] = field(default_factory=lambda: [False] * 12)
+    solenoid_states: list[bool] = field(default_factory=lambda: [False] * 9)
 
 
 def _pack_telemetry(seq: int, state: _SimState) -> bytes:
     t = seq / UPDATE_HZ
-    internal_solenoids = state.solenoid_states[:9]
     currents = [
         (1.8 + 0.25 * math.sin(t * 2 * math.pi * (0.5 + i * 0.11) + i))
-        if internal_solenoids[i]
+        if state.solenoid_states[i]
         else (0.04 + 0.015 * math.sin(t * 2 * math.pi * (0.3 + i * 0.05) + i))
         for i in range(9)
-    ]
-    pressures = [
-        700.0 + 15.0 * math.sin(t * 0.9),
-        520.0 + 8.0 * math.sin(t * 0.7 + 1.0),
-        35.0 + 2.0 * math.sin(t * 1.2 + 2.0),
-        480.0 + 10.0 * math.sin(t * 0.6 + 3.0),
     ]
 
     payload = struct.pack(
         _DATA_BODY_FORMAT,
-        _MAGIC_HEADER,
         seq & 0xFFFFFFFF,
         True,                    # igniterArmed
         True,                    # igniter0Continuity
@@ -82,13 +71,16 @@ def _pack_telemetry(seq: int, state: _SimState) -> bytes:
         state.igniter0_fire,     # igniterInternalState0
         state.igniter1_fire,     # igniterInternalState1
         state.alarm,             # alarmInternalState
-        *internal_solenoids,     # solenoidInternalState0-8
+        *state.solenoid_states,  # solenoidInternalState0-8
         5.0,                     # supplyVoltage0
         5.0,                     # supplyVoltage1
         *currents,               # solenoidCurrent0-8
         295.0 + 3.0 * math.sin(t * 0.4),
         292.0 + 2.0 * math.sin(t * 0.35 + 1.0),
-        *pressures,
+        700.0 + 15.0 * math.sin(t * 0.9),
+        480.0 + 10.0 * math.sin(t * 0.6 + 3.0),
+        35.0 + 2.0 * math.sin(t * 1.2 + 2.0),
+        520.0 + 8.0 * math.sin(t * 0.7 + 1.0),
     )
     crc = binascii.crc32(payload) & 0xFFFFFFFF
     return payload + struct.pack("<I", crc)
@@ -116,15 +108,11 @@ def _drain_commands(sock: socket.socket, buf: bytearray, state: _SimState) -> bo
             print("fake GSEV1: dropped command with bad CRC")
             continue
 
-        magic, *bools = struct.unpack(_CMD_BODY_FORMAT, body)
-        if magic != GSEV1_COMMAND_MAGIC:
-            print(f"fake GSEV1: dropped command with bad magic 0x{magic:08x}")
-            continue
-
+        bools = struct.unpack(_CMD_BODY_FORMAT, body)
         state.igniter0_fire = bool(bools[0])
         state.igniter1_fire = bool(bools[1])
         state.alarm = bool(bools[2])
-        state.solenoid_states = [bool(value) for value in bools[3:15]]
+        state.solenoid_states = [bool(value) for value in bools[3:12]]
         print(
             "fake GSEV1 command:",
             f"igniter0={state.igniter0_fire}",
