@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 #generic connector 
 import pyarrow.flight as flight
@@ -10,7 +11,6 @@ from typing import Callable
 import numpy as np
 import pyarrow as pa
 
-from __future__ import annotations
 
 import socket
 import time

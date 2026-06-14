@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import threading
 
+from typing import Any
+
 from gse21connector import (
     GSE2V1_COMMAND_FIELD_NAMES,
     GSE2V1_ECHO_FIELD_NAMES,
     GSE2V1_FIELD_NAMES,
+)
+
+from gsev1connector import (
+    GSEV1_COMMAND_FIELD_NAMES,
+    GSEV1_ECHO_FIELD_NAMES,
+    GSEV1_FIELD_NAMES,
 )
 from nidaq_gse import NIDAQ_FIELD_NAMES
 from generic_connector import LatestServer, RocketPCBCommandClient
@@ -25,9 +33,16 @@ from gui_gse2v1 import (
     TABLE_BUTTONS,
 )
 
+from gui_gsev1 import (
+    GSEV1_COMMAND_BUTTONS,
+    GSEV1_CMD_HOST,
+    GSEV1_CMD_PORT,
+    GSEV1_PCB_NAME,
+)
+
 BUTTON_STATES = {} #dictionary of all button states
 COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 
-def make_valve_states(gse_server: LatestServer) -> dict[str, valve_state]:
+def make_valve_states(gse_server: LatestServer, command_buttons: dict[str, dict[str, Any]]) -> dict[str, valve_state]:
     return {
         button_id: valve_state(
             server=gse_server,
@@ -35,7 +50,7 @@ def make_valve_states(gse_server: LatestServer) -> dict[str, valve_state]:
             label=config["display_name"],
             invert=button_id in ("pv2", "tank_vent"),
         )
-        for button_id, config in GSE2V1_COMMAND_BUTTONS.items()
+        for button_id, config in command_buttons.items()
         if config.get("status_field") is not None
     }
 
@@ -94,7 +109,9 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     renderer = GlfwRenderer(window)
     
     gse_server = next(server for server in servers if server.name == "gse")
+    gsev1_server = next(server for server in servers if server.name == "gsev1")
     echo_server = next(server for server in servers if server.name == "echo")
+    v1echo_server = next(server for server in servers if server.name == "v1echo")
     nidaq_server = next(server for server in servers if server.name == "nidaq")
     gse_command_client = RocketPCBCommandClient(
         pcb_name=GSE2V1_PCB_NAME,
@@ -104,6 +121,15 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         button_configs=GSE2V1_COMMAND_BUTTONS,
         table_button_configs=TABLE_BUTTONS,
         latest_server=gse_server,
+    )
+
+    gsev1_command_client = RocketPCBCommandClient(
+        pcb_name=GSEV1_PCB_NAME,
+        cmd_field_names=GSEV1_COMMAND_FIELD_NAMES,
+        cmd_host=GSEV1_CMD_HOST,
+        cmd_port=GSEV1_CMD_PORT,
+        button_configs=GSEV1_COMMAND_BUTTONS,
+        latest_server=gsev1_server,
     )
     
     nidaq_graph_general = NidaqGraph(
@@ -115,7 +141,9 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
 
   
     command_buttons = gse_command_client.make_command_buttons()
-    valve_states = make_valve_states(gse_server)
+    v1_command_buttons = gsev1_command_client.make_command_buttons()
+    valve_states = make_valve_states(gse_server, GSE2V1_COMMAND_BUTTONS)
+    v1_valve_states = make_valve_states(gsev1_server, GSEV1_COMMAND_BUTTONS)
     mvas_state = MVAS_STATE(
         server=nidaq_server,
         label="MVAS",
@@ -146,6 +174,9 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         gse_command_client.sync_buttons_from_echo(echo_server)
         draw_command_buttons(imgui, command_buttons, valve_states)
         imgui.separator()
+        gsev1_command_client.sync_buttons_from_echo(v1echo_server)
+        draw_command_buttons(imgui, v1_command_buttons, v1_valve_states)
+        imgui.separator()
         mvas_state.render(imgui)
         imgui.separator()
         for server in servers: 
@@ -175,6 +206,8 @@ def main() -> None:
         for address, name, fields in (
             ("grpc://0.0.0.0:8819", "gse", GSE2V1_FIELD_NAMES),
             ("grpc://0.0.0.0:8820", "echo", GSE2V1_ECHO_FIELD_NAMES),
+            ("grpc://0.0.0.0:8821", "gsev1", GSEV1_FIELD_NAMES),
+            ("grpc://0.0.0.0:8822", "v1echo", GSEV1_ECHO_FIELD_NAMES),
             ("grpc://0.0.0.0:8826", "nidaq", NIDAQ_FIELD_NAMES),
         )
     )

@@ -13,18 +13,18 @@ from generic_connector import CommandServer
 
 
 # --- Constants for GSEV1 Connector ---
-#GSEV1_IP = "127.0.0.1"
-GSEV1_IP = "10.0.0.217"
+GSEV1_IP = "127.0.0.1"
+#GSEV1_IP = "10.0.0.88"
 GSEV1_PORT = 10001
 GSEV1_RECONNECT_S = 0.5
 
 # --- Constants for GSEV1 Backend ---
-GSEV1_FLIGHT_BIND = "grpc://127.0.0.1:8815"
+GSEV1_FLIGHT_BIND = "grpc://127.0.0.1:8816"
 GSEV1_ROWS_PER_FRAME = 1
 
 # --- Constants for GSEV1 Frontend ---
-GSEV1_ECHO_FLIGHT = "grpc://127.0.0.1:8820"
-GSEV1_CMD_FLIGHT_BIND = "grpc://0.0.0.0:8827"
+GSEV1_ECHO_FLIGHT = "grpc://127.0.0.1:8822"
+GSEV1_CMD_FLIGHT_BIND = "grpc://0.0.0.0:8828"
 
 
 # --- PACKET DEFINITIONS ---
@@ -331,7 +331,7 @@ def make_telemetry_writer() -> _ReconnectFlightWriter:
     return _ReconnectFlightWriter(
         name="GSEV1 telemetry Flight writer",
         address=GSEV1_FLIGHT_BIND,
-        path="gse2v1_telemetry",
+        path="gsev1_telemetry",
         schema=telemetry_schema,
     )
 
@@ -342,7 +342,7 @@ def make_echo_writer() -> _ReconnectFlightWriter:
     return _ReconnectFlightWriter(
         name="GSEV1 echo Flight writer",
         address=GSEV1_ECHO_FLIGHT,
-        path="gse2v1_echo_state",
+        path="gsev1_echo_state",
         schema=echo_schema,
     )
 

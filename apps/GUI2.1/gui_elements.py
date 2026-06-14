@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from generic_connector import LatestServer
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 import numpy as np
 import time
 from imgui_bundle import imgui, implot
+
+if TYPE_CHECKING:
+    from generic_connector import LatestServer
 
 RGBA = tuple[float, float, float, float]
 
@@ -650,6 +652,5 @@ class MVAS_STATE(valve_state):
         if self.latest.get("LNGPOT") < self.latest.get("LOXPOT"):
             return False
         return True
-
 
 

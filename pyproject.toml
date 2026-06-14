@@ -19,7 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 ni  = ["nidaqmx"]
-gui = ["imgui", "glfw", "PyOpenGL"]
+gui = ["imgui-bundle", "glfw", "PyOpenGL"]
 dev = ["watchdog"]
 
 [tool.setuptools.packages.find]

@@ -15,8 +15,14 @@ from gse21connector import (
     GSE2V1_NUM_SIGNALS,
     GSE2V1_ROWS_PER_FRAME,
 )
+from gsev1connector import (
+    GSEV1_FIELD_NAMES,
+    GSEV1_NUM_SIGNALS,
+    GSEV1_ROWS_PER_FRAME,
+)
 
 GSE2V1_FLIGHT_BIND = "grpc://0.0.0.0:8815"
+GSEV1_FLIGHT_BIND = "grpc://0.0.0.0:8816"
 
 from nidaq_gse import (
     NIDAQ_AVERAGE_OVER,
@@ -28,11 +34,13 @@ NIDAQ_FLIGHT_BIND = "grpc://0.0.0.0:8825"
 #NIDAQ_VOLTAGE_SCALE = 399.4583344984201
 NIDAQ_VOLTAGE_SCALE = 1
 FRONTEND_FLIGHT_GSE2V1_CONNECT = "grpc://127.0.0.1:8819"
+FRONTEND_FLIGHT_GSEV1_CONNECT = "grpc://127.0.0.1:8821"
 FRONTEND_FLIGHT_NIDAQ_CONNECT = "grpc://127.0.0.1:8826"
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / datetime.now().strftime("%Y-%m-%d_%H-%M")
 STORAGE_TIMESTAMP_FIELD = "storageTimestamp"
 GSE2V1_STORAGE_FIELD_NAMES = (*GSE2V1_FIELD_NAMES, STORAGE_TIMESTAMP_FIELD)
+GSEV1_STORAGE_FIELD_NAMES = (*GSEV1_FIELD_NAMES, STORAGE_TIMESTAMP_FIELD)
 NIDAQ_STORAGE_FIELD_NAMES = (*NIDAQ_FIELD_NAMES, STORAGE_TIMESTAMP_FIELD)
 
 
@@ -86,6 +94,15 @@ def gse2v1_raw_telemetry_storage_write(*, stream) -> None:
         rollover_seconds=5.0,
     )
 
+def gsev1_raw_telemetry_storage_write(*, stream) -> None:
+    write_from_stream(
+        stream,
+        DATA_DIR / "gsev1_raw_telemetry_data",
+        list(GSEV1_STORAGE_FIELD_NAMES),
+        [pa.float64() for _ in range(GSEV1_NUM_SIGNALS + 1)],
+        rollover_seconds=5.0,
+    )
+
 
 def nidaq_raw_telemetry_storage_write(*, stream) -> None:
     write_from_stream(
@@ -108,6 +125,19 @@ def main() -> None:
         field_names=list(GSE2V1_FIELD_NAMES),
         flight_address=FRONTEND_FLIGHT_GSE2V1_CONNECT,
     )
+
+    gsev1_flight_fn = functools.partial(
+        backend_run_flight_server,
+        grpc_bind=GSEV1_FLIGHT_BIND,
+        rows_per_frame=GSEV1_ROWS_PER_FRAME,
+        num_signals=GSEV1_NUM_SIGNALS,
+    )
+    frontend_gsev1_connector_fn = functools.partial(
+        generic_connector,
+        field_names=list(GSEV1_FIELD_NAMES),
+        flight_address=FRONTEND_FLIGHT_GSEV1_CONNECT,
+    )
+
     nidaq_flight_fn = functools.partial(
         backend_run_flight_server,
         grpc_bind=NIDAQ_FLIGHT_BIND,
@@ -129,6 +159,13 @@ def main() -> None:
         pipeline.add_stream(
             "gse2v1_received_data",
             shape=(GSE2V1_ROWS_PER_FRAME, GSE2V1_NUM_SIGNALS + 1),
+            dtype=np.float64,
+            cache_align=True,
+            frames=64,
+        )
+        pipeline.add_stream(
+            "gsev1_received_data",
+            shape=(GSEV1_ROWS_PER_FRAME, GSEV1_NUM_SIGNALS + 1),
             dtype=np.float64,
             cache_align=True,
             frames=64,
@@ -162,6 +199,22 @@ def main() -> None:
             fn=frontend_gse2v1_connector_fn,
             reads={"stream": "gse2v1_received_data"},
         )
+
+        pipeline.add_task(
+            "gsev1_flight_server",
+            fn=gsev1_flight_fn,
+            writes={"stream": "gsev1_received_data"},
+        )
+        pipeline.add_task(
+            "gsev1_raw_telemetry_storage_write",
+            fn=gsev1_raw_telemetry_storage_write,
+            reads={"stream": "gsev1_received_data"},
+        )
+        pipeline.add_task(
+            "frontend_gsev1_connector",
+            fn=frontend_gsev1_connector_fn,
+            reads={"stream": "gsev1_received_data"},
+        )
         pipeline.add_task(
             "nidaq_flight_server",
             fn=nidaq_flight_fn,
@@ -190,5 +243,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     print("GSE2V1 Flight:", GSE2V1_FLIGHT_BIND)
+    print("GSEV1 Flight:", GSEV1_FLIGHT_BIND)
     print("NIDAQ Flight:", NIDAQ_FLIGHT_BIND)
     main()
