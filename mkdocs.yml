@@ -24,6 +24,7 @@ nav:
       - 3D Viewer Maintainer Notes: 3d-viewer-maintainer.md
       - Simulation Utils: simulation-utils.md
       - Data Storage: datastorage.md
+      - GSE Control State Machine: state-machine.md
       - Examples: examples.md
   - Contributing: contributing.md
   - Roadmap: roadmap.md
