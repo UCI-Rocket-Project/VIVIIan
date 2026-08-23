@@ -31,7 +31,7 @@ from gse21connector import (
 )
 
 _MAGIC_HEADER = struct.unpack('<I', GSE2V1_HEADER_ALIGN_BYTES)[0]
-_DATA_BODY_FORMAT = '<I I 18? 14f 3I'  # GSE2V1_DATA_FORMAT without the trailing CRC uint32
+_DATA_BODY_FORMAT = '<I I 18? 14f 3I'   # GSE2V1_DATA_FORMAT without the trailing CRC uint32
 _CMD_BODY_FORMAT = '<I 15?'             # GSE2V1_COMMAND_FORMAT without trailing CRC
 
 DATA_SIZE = GSE2V1_DATA_SIZE

@@ -22,6 +22,10 @@ from gui_gse2v1 import (
     make_gse2v1_command_buttons,
     sync_gse2v1_command_buttons_from_echo,
 )
+from gui_state_machine import StateMachinePanel
+from state_machine import ControlContext, Dispatcher
+from procedures.operations import GseEffector, GseValveMap, attach_manual_listener
+from procedures.pressure_decay import DECAY_SECTIONS, build_machine
 
 BUTTON_STATES = {} #dictionary of all button states
 COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 
@@ -111,6 +115,21 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         label="MVAS",
     )
 
+    control_context = ControlContext(
+        gse_server=gse_server,
+        echo_server=echo_server,
+        nidaq_server=nidaq_server,
+        scales=PT_SCALES,
+        valves=GseValveMap(),
+    )
+    dispatcher = Dispatcher(
+        build_machine(),
+        control_context,
+        GseEffector(gse_command_client),
+    )
+    attach_manual_listener(dispatcher)
+    state_machine_panel = StateMachinePanel(dispatcher, decay_sections=DECAY_SECTIONS)
+
     while not glfw.window_should_close(window):
         glfw.poll_events()
         renderer.process_inputs()
@@ -134,6 +153,9 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         imgui.text_unformatted(f"FPS: {imgui.get_io().framerate:.1f}")
         imgui.separator()
         sync_gse2v1_command_buttons_from_echo(gse_command_client, echo_server)
+        dispatcher.tick()
+        state_machine_panel.render(imgui)
+        imgui.separator()
         draw_command_buttons(imgui, command_buttons, valve_states)
         imgui.separator()
         mvas_state.render(imgui)

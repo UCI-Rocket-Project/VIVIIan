@@ -1,4 +1,5 @@
 import binascii
+import os
 import socket
 import struct
 import threading
@@ -13,8 +14,7 @@ from generic_connector import CommandServer
 
 
 # --- Constants for GSE2V1 Connector ---
-#GSE2V1_IP = "127.0.0.1"
-GSE2V1_IP = "10.0.0.217"
+GSE2V1_IP = os.environ.get("GSE2V1_IP", "10.0.0.217")  # run_sim.py points this at 127.0.0.1
 GSE2V1_PORT = 10001
 GSE2V1_RECONNECT_S = 0.5
 

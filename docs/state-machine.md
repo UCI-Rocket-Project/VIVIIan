@@ -75,10 +75,6 @@ ways; call it once the procedure shapes are clearer.
   make the same A→B move, depending on which procedure we're following.
 - there is a **safe state**, from which you can go anywhere.
 
-Candidate (explicitly "thinking out loud", not a decision): an operation might
-declare it can only be invoked from a certain *type* of state. Worth considering
-once we've read the real procedures more carefully.
-
 ## Determinism Chcker
 
 Build after the state machine logic works.
@@ -110,7 +106,7 @@ button.
 
 ## First implementation target: Pressure Decay Test
 
-Exit/reward state can be arbitrary placeholder for now, just use ALL OFF.
+Exit state can be arbitrary placeholder for now, just use ALL OFF.
 
 Procedure doc:
 <https://docs.google.com/document/d/1kGY1s4ODOznzf9VR1rpAl6Mk8TwQzJjOZ2U9wVmrtfo/edit>
@@ -172,6 +168,119 @@ copy-pasting them. Told "don't worry about this right now."
 
 - Buttons on `frontendv2` for whole operations
 
+## A command is not a command until the board says so
+
+Found while running the sim against the state machine: the abort table's two
+vent-opens were reaching the board and then being taken away again.
+
+`sync_gse2v1_command_buttons_from_echo` rewrites every button from the board's
+command echo each frame, with `GSE2V1_ECHO_GRACE_SECONDS` (0.5s) of protection
+after a send. That grace is a bet that the round trip beats a timer, and it
+does not always: a command acknowledged at t=0.8 spends 0.3s looking like the
+board saying "off", so the sync reverts the button and undoes the command.
+Survivable for a fill solenoid, not survivable for the abort table.
+
+The echo now only speaks for a field once it agrees with what we asked for
+(`GseCommandClient.awaiting_echo`), bounded by `_pending_until` so a command the
+board genuinely refuses still surfaces rather than pinning the button. Covered
+by `tests/test_gse2v1_commands.py`.
+
+---
+
+# Action items from the follow-up meeting
+
+Six items came out of the meeting. All six are in. Notes on what each one
+turned into, and where it lives.
+
+## Abort on a state mismatch
+
+A valve disagreeing with `State.expected_state` means the system is not where
+the procedure thinks it is, which is worse than most of what we could hit
+downstream. So it now runs that state's safe-out instead of printing a warning
+and carrying on.
+
+`State.on_mismatch` is a `MismatchPolicy`, defaulting to `ABORT`. `WARN` is the
+old behaviour if some state wants it, `IGNORE` skips the check entirely.
+
+There is a grace period (`State.mismatch_grace_s`) before the check bites,
+because valves take time to move and checking on arrival would abort on entry
+to every state.
+
+**Only while armed.** Disarmed means the operator is hand-flying, and in
+`PD_00_ALL_OFF` — which pins all nine steady valves — touching any raw valve
+button would otherwise slam the abort table onto someone who never armed
+anything. That is rule 1 above being broken by the safety feature. Disarmed,
+a mismatch shows in the panel and says what arming would do.
+
+**`PD_ABORTED` is `WARN`, not `ABORT`.** Its safe-out is the abort table, which
+is the state it is already in, so aborting on a mismatch there panics into
+itself once a cycle forever. `validate()` now rejects that shape, and
+`_panic_now` halts rather than repeating a panic whose destination is the
+current state.
+
+## Explicit start state
+
+`start=True` on the state the procedure begins from. `Machine.build` finds it;
+two of them or none of them is a `StartStateError` rather than a machine that
+quietly starts wherever. `pressure_decay.py` also names `START_STATE` in the
+build call, so the flag and the name have to agree.
+
+## Better names in the procedures
+
+Thresholds now say what they limit instead of restating their own value:
+`COPV_FILL_200_PSI` became `SYSTEM_CHARGE_TARGET_PSI`, and so on. `_Latch` is
+`OneShotLatch`, `eff` is `effector` everywhere, and the valve configurations
+that were being spelled out repeatedly are now `TANKS_PRESSURIZING` and
+`GSE_VENTED`.
+
+## Don't care in an expected state
+
+`DONT_CARE` for a valve the procedure genuinely does not pin, built with
+`table_states.unchecked(table, "valve_a")`.
+
+It raises on `bool()`, deliberately. `bool(DONT_CARE)` would quietly be `True`,
+and `True` means "expect open" - a wrong assertion about a valve that nobody
+would spot in review.
+
+Still never leave a valve out of a table: an absent key means "expect closed"
+and means it.
+
+## Operation feedback, and lead time
+
+An operation is now four steps rather than one: actions, lead time, destination
+check, transition.
+
+`Operation.lead_time_s` is how long we wait between the last command and
+believing the board about it - 0.75 s by default, 1.5 s for whole-table
+commands since those move several valves at once.
+
+`Operation.feedback` carries the phase, duration, both hashes, the mismatches
+and anything the board is not reporting. The dispatcher keeps `last_feedback`
+and, separately, `last_failure` - a failure is immediately followed by a panic,
+and the panic's own tidy "done" would otherwise be the only thing on screen.
+
+## Operation hash check
+
+At the end of the lead time: hash the valves the destination state pins, hash
+what the board reports, compare. A difference fails the operation, and a failed
+operation panics.
+
+A valve the board is not reporting is a third outcome, not a failure. If the
+GSE feed has gone stale we are blind, not in trouble — the valves have not
+moved, we just cannot see them — so the operation holds in `VERIFYING` for up
+to `VERIFY_FEED_GRACE_SECONDS` and carries on if the feed returns. Only a
+healthy feed with a missing status field fails immediately, because that is a
+wiring fault rather than a blip. The first sim run panicked a good procedure on
+a two-second telemetry gap during a manual gate that moved no valves at all.
+
+`verify_dest=False` opts out, and every abort path uses it: an abort has to
+land, and a failed check could only abort again.
+
+`Machine.validate()` runs the same comparison at build time, predicting where
+an operation's actions would leave the valves and checking that against the
+state it claims to enter. Same mistake, found before anyone arms the machine
+rather than at 350 psig.
+
 ---
 
 # Questions for Prop
@@ -182,6 +291,16 @@ Ask in the campfire:
    manual button abandon the running operation, or interrupt-and-resume it
    without resetting?
 2. Do you want a defined safe state per operation, or is ALL OFF good enough
-   as a universal safe-out?
-4. Longer term: which operations are reusable across procedures, and are there
+   as a universal safe-out? ALL OFF and ABORT are not the
+   same table: ABORT opens the GN2 and COPV vents and closes MVAS, ALL OFF
+   leaves those two vents shut. Panic applies ABORT today, but these notes
+   call ALL OFF the safe state.
+3. Longer term: which operations are reusable across procedures, and are there
    any that should only be callable from specific system states?
+4. Where do GN2 VV and GN2 Fill 1 sit through the decay measurement? §3 step 16
+   opens both and §3 never mentions them again, so they are currently
+   unchecked rather than asserted at a position we guessed. See
+   `GSE_VENTED_HOLD` in `procedures/pressure_decay.py`.
+5. How long does a solenoid actually take to move and report back? The lead
+   time before we believe the board is 0.75 s, which is a guess. Too short and
+   good operations start failing their own destination check.

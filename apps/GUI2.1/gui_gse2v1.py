@@ -23,6 +23,9 @@ GSE2V1_ECHO_STALE_SECONDS = 2.0
 GSE2V1_ECHO_GRACE_SECONDS = 0.5
 
 
+_COMMAND_INDEX = {name: index for index, name in enumerate(GSE2V1_COMMAND_FIELD_NAMES)}
+
+
 class GseCommandClient:
     def __init__(self) -> None:
         self.row = [0.0] * GSE2V1_NUM_COMMAND_SIGNALS
@@ -33,6 +36,45 @@ class GseCommandClient:
         self._last_echo_generation = -1
         self._last_echo_connected: bool | None = None
         self._ignore_echo_until = 0.0
+        self._pending_row: list[float] | None = None
+        self._pending_until = 0.0
+
+    def _mark_sent(self) -> None:
+        now = time.monotonic()
+        self._ignore_echo_until = now + GSE2V1_ECHO_GRACE_SECONDS
+        self._pending_row = list(self.row)
+        self._pending_until = now + GSE2V1_ECHO_STALE_SECONDS
+
+    def _echo_matches_pending(self, echo: dict) -> bool:
+        """Whether the board has acknowledged every field of the pending row.
+
+        Once it has, the board is authoritative again and the echo resumes
+        driving the buttons.
+        """
+        for name, index in _COMMAND_INDEX.items():
+            commanded = self._pending_row[index] > 0.5
+            if commanded != (float(echo.get(name, 0.0)) > 0.5):
+                return False
+        return True
+
+    def awaiting_echo(self, echo: dict, command_fields: tuple[str, ...]) -> bool:
+        """
+        Whether the board has yet to acknowledge what we last commanded.
+        """
+        if self._pending_row is None or not command_fields:
+            return False
+        if time.monotonic() > self._pending_until or self._echo_matches_pending(echo):
+            self._pending_row = None
+            return False
+        for field in command_fields:
+            index = _COMMAND_INDEX.get(field)
+            if index is None:
+                continue
+            commanded = self._pending_row[index] > 0.5
+            acknowledged = float(echo.get(field, 0.0)) > 0.5
+            if commanded != acknowledged:
+                return True
+        return False
 
     def send(self) -> bool:
         batch = pa.RecordBatch.from_arrays(
@@ -42,7 +84,7 @@ class GseCommandClient:
 
         had_writer = self.writer is not None
         if self._write_batch(batch):
-            self._ignore_echo_until = time.monotonic() + GSE2V1_ECHO_GRACE_SECONDS
+            self._mark_sent()
             return True
 
         if not had_writer:
@@ -51,7 +93,7 @@ class GseCommandClient:
         self.writer = None
         self._next_connect_attempt_at = 0.0
         if self._write_batch(batch):
-            self._ignore_echo_until = time.monotonic() + GSE2V1_ECHO_GRACE_SECONDS
+            self._mark_sent()
             return True
 
         return False
@@ -614,6 +656,8 @@ def sync_gse2v1_command_buttons_from_echo(
             continue
 
         command_fields = _field_names(config.get("command_field"))
+        if connected and client.awaiting_echo(latest, command_fields):
+            continue  # the board has not acknowledged our command yet
         state = (
             all(float(latest.get(field, 0.0)) > 0.5 for field in command_fields)
             if connected and command_fields
