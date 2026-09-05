@@ -1,41 +1,8 @@
-"""
-GSE control state machine.
+"""GSE control-state-machine engine.
 
-Vocabulary follows docs/state-machine.md:
-
-- **Action** — one atomic thing done to the system (set a valve, wait, pulse).
-- **Operation** — a reusable sequence of Actions that takes the system from one
-  state to another. Names its destination explicitly.
-- **State** — a condition the system is *in*, between operations. Owns its own
-  exit criteria; only the current state's criteria are evaluated each cycle.
-
-The engine deliberately knows nothing about imgui or about the GSE2V1 button
-config. It talks to hardware through the ``Effector`` protocol and reads valve
-identity through the ``ValveMap`` protocol; ``procedures/operations.py``
-implements both against the existing ``gui_gse2v1`` layer, so commands go out
-through the same buttons the operator uses and the GUI stays in sync.
-
-Guard-writing rules (they matter, and the engine enforces what it can):
-
-1. Every sensor read goes through the per-cycle snapshot. Missing or stale data
-   reads as NaN or None, never 0.0 — a dead transducer must not look like
-   "0 psi" and satisfy a "pressure is below X" criterion.
-2. Write guards positively. ``slope <= 3.0`` is False for NaN (safe);
-   ``not (slope > 3.0)`` is True for NaN (a NaN-passes-the-test bug).
-3. Because a NaN guard never fires, any state with automatic exits must set
-   ``max_seconds``. ``Machine.validate()`` rejects states that don't.
-
-An operation is not finished when its last action is staged, only when the
-board agrees it happened: actions, then ``lead_time_s`` for the valves to
-actually move and be reported, then a comparison against the destination
-state's ``expected_state``, and only then the transition. The comparison is a
-hash of the valves that state pins against a hash of what the board reports;
-a difference fails the operation, and a failed operation panics. Missing
-feedback fails too.
-
-Valves the destination does not pin are written ``DONT_CARE``, which
-keeps them out of both the hash and the mismatch checks. Never leave them out of
-the table instead: an omitted key reads as "expect closed".
+The engine is independent of ImGui and GSE2V1 button configuration; adapters
+in ``procedures/operations.py`` provide those integrations. See
+``docs/state-machine.md`` for control invariants and design rationale.
 """
 from __future__ import annotations
 
@@ -60,33 +27,25 @@ PANIC_PRIORITY = 900
 DEFAULT_PRIORITY = 0
 
 # --- Control cycle ----------------------------------------------------------
-# The imgui frame loop runs uncapped (glfw.swap_interval(0)), so the control
-# cycle is gated to a fixed rate. Control behaviour must not depend on frame
-# rate.
+# Fixed-rate control cycle; the GUI frame loop is uncapped.
 CONTROL_PERIOD_SECONDS = 0.05
 
-# Decay-slope window. 180 s matches NidaqGraph.WINDOW_SECONDS so the number on
-# screen and the number the machine decides on describe the same interval.
-# run_sim.py shortens it so a full procedure walkthrough is watchable.
+# Default pressure-decay measurement window.
 DECAY_WINDOW_SECONDS = float(os.environ.get("GSE_DECAY_WINDOW", "180.0"))
+
+# Separate window for determining whether a fill transient has settled.
+SETTLE_WINDOW_SECONDS = 10.0
 
 LOG_LINES = 400
 
 # --- Lead time --------------------------------------------------------------
-# How long an operation waits after its last action before it believes what the
-# board reports. A solenoid takes time to move and the board takes time to
-# report it, so checking immediately would fail every operation. Override
-# `lead_time_s` per operation for a slow valve or a whole-table command.
+# Default actuator-and-telemetry settling allowance.
 DEFAULT_LEAD_TIME_SECONDS = 0.75
 
-# The same allowance for a state nobody drove an operation into — a forced state
-# or the first state after startup — since no lead time was applied on the way in.
+# Grace for startup and forced-state entries.
 MISMATCH_GRACE_SECONDS = DEFAULT_LEAD_TIME_SECONDS
 
-# How long past the lead time an operation will wait for a telemetry feed that
-# has gone stale before it gives up. A blip in the GSE feed is not a reason to
-# dump the tanks: the valves have not moved, we just cannot see them. Long
-# enough to ride out a reconnect, short enough that a dead feed still fails.
+# Additional stale-feed grace during destination verification.
 VERIFY_FEED_GRACE_SECONDS = 5.0
 
 
@@ -367,6 +326,7 @@ class ControlContext:
         scales: Mapping[str, tuple[float, float]],
         valves: ValveMap,
         window_seconds: float = DECAY_WINDOW_SECONDS,
+        settle_window_seconds: float = SETTLE_WINDOW_SECONDS,
     ) -> None:
         self.gse_server = gse_server
         self.echo_server = echo_server
@@ -376,6 +336,7 @@ class ControlContext:
         self.scales = dict(scales)
         self.valves = valves
         self.slopes = SlopeTracker(tuple(self.scales.keys()), window_seconds)
+        self.settle = SlopeTracker(tuple(self.scales.keys()), settle_window_seconds)
         self.state_entered_at = time.monotonic()
         self.op_started_at: float | None = None
         self.snap = Snapshot(
@@ -410,7 +371,9 @@ class ControlContext:
             nidaq_fresh=self.nidaq_server.is_fresh(_STALE_SECONDS),
             nidaq_generation=int(self.nidaq_server.latest_generation),
         )
-        self.slopes.sample(self.scaled_pressures(), self.snap.nidaq_generation, now)
+        scaled = self.scaled_pressures()
+        self.slopes.sample(scaled, self.snap.nidaq_generation, now)
+        self.settle.sample(scaled, self.snap.nidaq_generation, now)
 
     def enter_state(self, now: float) -> None:
         self.state_entered_at = now
@@ -420,6 +383,9 @@ class ControlContext:
         self.op_started_at = now
 
     def reset_slopes(self) -> None:
+        """Restart the decay measurement. The settle window is left alone: it
+        describes what the pressures are doing right now, which does not stop
+        being true because a measurement started."""
         self.slopes.reset()
 
     # -- pressures ----------------------------------------------------------
@@ -441,16 +407,47 @@ class ControlContext:
         return {name: self.psi(name) for name in self.scales}
 
     def slope_psi_per_min(self, field_name: str) -> float:
+        """Rate of change, signed: negative while a section is losing pressure."""
         return self.slopes.slope_per_min(field_name)
+
+    def decay_psi_per_min(self, field_name: str) -> float:
+        """The same rate stated as a decay, so losing pressure reads positive.
+
+        This is the sense the procedure speaks in — "no section may lose more
+        than 3 psi/minute" — and the sense the readout and the recorded result
+        use, so a number on screen never has to be mentally negated.
+        """
+        return -self.slopes.slope_per_min(field_name)
 
     def slope_ready(self) -> bool:
         return self.slopes.is_ready()
 
     def worst_slope(self, field_names: Sequence[str]) -> float:
-        """Largest absolute decay rate across the named sections. NaN-safe."""
+        """Largest rate of change across the named sections, in either
+        direction. NaN-safe.
+
+        Unsigned on purpose: a section climbing during a hold with the vents
+        open is as wrong as one falling, and this is what the pass/fail
+        criterion is measured against. See the open question in
+        docs/state-machine.md.
+        """
         values = [abs(self.slope_psi_per_min(name)) for name in field_names]
         finite = [v for v in values if math.isfinite(v)]
         return max(finite) if finite else math.nan
+
+    def settled(self, field_names: Sequence[str], limit_psi_per_min: float) -> bool:
+        """Every named section flat to within *limit* over the settle window.
+
+        False while the window is still filling, and False for a section
+        reading NaN: a sensor we cannot see is not a sensor we can call stable.
+        """
+        if not field_names or not self.settle.is_ready():
+            return False
+        for name in field_names:
+            rate = self.settle.slope_per_min(name)
+            if not math.isfinite(rate) or abs(rate) > limit_psi_per_min:
+                return False
+        return True
 
     # -- valves -------------------------------------------------------------
 
@@ -710,15 +707,13 @@ class OperationFeedback:
         return f"{self.operation}: {self.phase.value}"
 
 
-# ---------------------------------------------------------------------------
 # Operation
-# ---------------------------------------------------------------------------
 
 
 @dataclass
 class Operation:
     actions: Sequence[Action]
-    dest_state: str | "State"
+    dest_state: str | "State" # pyright: ignore[reportGeneralTypeIssues]
     auto: bool = False
     name: str = ""
     guard: Callable[[ControlContext], bool] | None = None
@@ -929,9 +924,7 @@ class Operation:
         return predicted
 
 
-# ---------------------------------------------------------------------------
 # State
-# ---------------------------------------------------------------------------
 
 
 @dataclass

@@ -246,13 +246,13 @@ class StateMachinePanel:
         if not self.decay_sections:
             return
 
-        imgui.text_unformatted("decay (psi/min)")
+        imgui.text_unformatted("decay (psi/min, positive = losing pressure)")
         ready = d.ctx.slope_ready()
         for section in self.decay_sections:
-            live = d.ctx.slope_psi_per_min(section)
+            live = d.ctx.decay_psi_per_min(section)
             psi = d.ctx.psi(section)
             recorded = DECAY_RESULT.get(section)
-            line = f"  {section:<9} {_fmt(psi, ' psi'):>12}   slope {_fmt(live):>7}"
+            line = f"  {section:<9} {_fmt(psi, ' psi'):>12}   decay {_fmt(live):>7}"
             if isinstance(recorded, float):
                 line += f"   recorded {_fmt(recorded)}"
             self._text(imgui, COLOR_WHITE if ready else COLOR_DIM, line)

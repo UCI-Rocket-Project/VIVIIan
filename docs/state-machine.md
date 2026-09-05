@@ -259,6 +259,54 @@ and anything the board is not reporting. The dispatcher keeps `last_feedback`
 and, separately, `last_failure` - a failure is immediately followed by a panic,
 and the panic's own tidy "done" would otherwise be the only thing on screen.
 
+## Runtime timing
+
+The ImGui frame loop is uncapped, but the dispatcher runs at a fixed 50 ms
+period (`CONTROL_PERIOD_SECONDS`) so control behavior does not vary with render
+rate. The default decay measurement window is 180 s
+(`DECAY_WINDOW_SECONDS`); `run_sim.py` shortens it for walkthroughs.
+
+The 10 s settle window (`SETTLE_WINDOW_SECONDS`) is intentionally distinct from
+the decay window. It identifies an ended fill transient, while the decay window
+is reset at the start of the measurement and is used only for the decay result.
+
+After staging an action, an operation waits 0.75 s by default
+(`DEFAULT_LEAD_TIME_SECONDS`) before checking the board. The same grace applies
+after startup and a forced state. A stale GSE feed has a further 5 s
+(`VERIFY_FEED_GRACE_SECONDS`) to recover during destination verification; this
+distinguishes a temporary loss of visibility from evidence that a valve failed
+to move.
+
+## Control invariants
+
+An **action** is one atomic command or wait. An **operation** is a reusable
+sequence of actions with an explicit destination state. A **state** is the
+stable condition between operations and owns the exit criteria evaluated while
+the machine is in it. Hardware and ImGui integration live behind the
+`Effector` and `ValveMap` adapters; the engine does not import button code.
+
+Each control cycle reads a single snapshot. Missing or stale sensor data is
+represented as `NaN` or `None`, never zero. Guards must therefore be written
+positively: `slope <= 3.0` safely evaluates false for `NaN`, while
+`not (slope > 3.0)` would incorrectly pass. A state with automatic exits must
+have a `max_seconds` watchdog because a guard reading `NaN` may never fire.
+
+An operation is complete only after its actions, settling time, and destination
+table check succeed. The table check compares the valves pinned by the
+destination state with the board report; disagreement fails the operation and
+triggers its safe-out. `DONT_CARE` is the explicit way to leave a valve
+unchecked; omitted table keys mean closed.
+
+## Pressure-decay assumptions
+
+The current procedure uses a 300 psig vent-recovery target and considers a
+section settled when every monitored pressure changes by at most 10 psi/min over
+the 10 s settle window. These are engineering assumptions, not values specified
+by the source procedure. `GSE_VENTED_HOLD` also deliberately leaves GN2 VV and
+GN2 Fill 1 unchecked after the GSE is vented, because the procedure does not
+specify their required hold positions. The open questions below track each of
+these choices.
+
 ## Operation hash check
 
 At the end of the lead time: hash the valves the destination state pins, hash
@@ -304,3 +352,16 @@ Ask in the campfire:
 5. How long does a solenoid actually take to move and report back? The lead
    time before we believe the board is 0.75 s, which is a guess. Too short and
    good operations start failing their own destination check.
+6. §3 step 11.2 says to repressurise the vent line but gives no target.
+   `VENT_RECOVERY_TARGET_PSI` is 300 psig, picked to sit clear of the 150 psig
+   floor that triggers the fallback. What should it be?
+7. §3 step 12 says to read the PTs "once pressure has stabilized" without
+   saying what that means. `PRESSURE_SETTLE_LIMIT_PSI_PER_MIN` is 10 psi/min
+   over a 10 s window — looser than the 3 psi/min decay criterion, since this
+   is "the fill transient is over" rather than "the system does not leak".
+8. The decay criterion is currently unsigned: `worst_slope` takes a magnitude,
+   so a section *climbing* faster than 3 psi/min fails the test as well as one
+   falling. §3 step 15 only says "lose". A rise during the hold, with GN2 VV
+   and GN2 Fill 1 open, looks like something wrong rather than something to
+   pass — but it is a deliberate reading of the procedure rather than what it
+   literally says. Confirm or drop it.

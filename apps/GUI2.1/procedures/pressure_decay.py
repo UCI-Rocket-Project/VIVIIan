@@ -57,7 +57,7 @@ DECAY_SECTIONS = (COPV, LOX_TANK, LNG_TANK, VENT)
 # --- Thresholds, all psig ---------------------------------------------------
 COPV_FILL_TARGET_PSI = 350.0         # §3 step 4: pressurise COPV to 350 psig
 COPV_OVERPRESSURE_LIMIT_PSI = 400.0  # margin above target; falls to panic
-VENT_RECOVERY_TARGET_PSI = 300.0     # §3 step 8.2: repressurise the vent line
+VENT_RECOVERY_TARGET_PSI = 300.0
 SYSTEM_CHARGE_TARGET_PSI = 200.0     # §3 step 10.1
 TANK_CHARGE_LIMIT_PSI = 250.0        # §3 step 10.2
 VENT_MINIMUM_PSI = 150.0             # §3 step 8.1: Vent PT must stay above this
@@ -67,6 +67,7 @@ DECAY_LIMIT_PSI_PER_MIN = 3.0        # §3 step 15: no section above 3 psi/min
 
 # --- Timing -----------------------------------------------------------------
 PRESSURE_SETTLE_SECONDS = 15.0       # §3 step 9: "once pressure has stabilized"
+PRESSURE_SETTLE_LIMIT_PSI_PER_MIN = 10.0
 # The vent line reads ambient at the instant PV 1 opens and takes a moment to
 # come up, so the "Vent PT stays above 150 psig" watch cannot apply to the
 # initial transient — §3 step 8.1 is a criterion for the remainder of the test,
@@ -96,8 +97,6 @@ GSE_VENTED = valves(
     sol_gn2_fill_1=True,
 )
 
-# What the decay measurement and everything after it sit in.
-# @TODO Ask prop what these values should be, unclear from procedure
 GSE_VENTED_HOLD = unchecked(GSE_VENTED, "sol_gn2_vent", "sol_gn2_fill_1")
 
 
@@ -136,7 +135,8 @@ def _record_decay(verdict: str):
         DECAY_RESULT.clear()
         DECAY_RESULT["verdict"] = verdict
         for section in DECAY_SECTIONS:
-            DECAY_RESULT[section] = ctx.slope_psi_per_min(section)
+            # Stated as a decay: positive means the section lost pressure.
+            DECAY_RESULT[section] = ctx.decay_psi_per_min(section)
 
     return write_result
 
@@ -296,10 +296,12 @@ def build_machine() -> Machine:
                     (),
                     guard=lambda ctx: (
                         ctx.in_state_for() >= PRESSURE_SETTLE_SECONDS
-                        and math.isfinite(ctx.psi(LOX_TANK))
-                        and math.isfinite(ctx.psi(LNG_TANK))
+                        and ctx.settled(DECAY_SECTIONS, PRESSURE_SETTLE_LIMIT_PSI_PER_MIN)
                     ),
-                    guard_text=f"settled for {PRESSURE_SETTLE_SECONDS:.0f}s with tank PTs reading",
+                    guard_text=(
+                        f"{PRESSURE_SETTLE_SECONDS:.0f}s in state and every section "
+                        f"flat within {PRESSURE_SETTLE_LIMIT_PSI_PER_MIN:.0f} psi/min"
+                    ),
                     description="§3 step 12: read out all PTs once pressure has stabilised.",
                 ),
                 auto_operation(
@@ -339,8 +341,13 @@ def build_machine() -> Machine:
                     "Vent line repressurised — close GN2 Fill 1",
                     "PD_06_READY_TANK_PRESS",
                     (close_valve("sol_gn2_fill_1"),),
-                    guard=lambda ctx: ctx.psi(COPV) >= VENT_RECOVERY_TARGET_PSI,
-                    guard_text=f"COPV PT >= {VENT_RECOVERY_TARGET_PSI:.0f} psig",
+                    # The vent line is what fell and what this state exists to
+                    # refill, so it is the vent line that has to come back.
+                    # Watching COPV instead let the state exit on a pressure
+                    # that had never dropped, blipping GN2 Fill 1 open and shut
+                    # inside a second and leaving the vent line where it was.
+                    guard=lambda ctx: ctx.psi(VENT) >= VENT_RECOVERY_TARGET_PSI,
+                    guard_text=f"Vent PT >= {VENT_RECOVERY_TARGET_PSI:.0f} psig",
                     description="§3 step 11.2, then repeat tank press.",
                 ),
             ),
