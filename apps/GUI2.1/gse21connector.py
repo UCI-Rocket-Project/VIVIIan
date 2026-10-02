@@ -30,7 +30,8 @@ GSE2V1_CMD_FLIGHT_BIND = "grpc://0.0.0.0:8827"
 # --- PACKET DEFINITIONS ---
 GSE2V1_HEADER_ALIGN_BYTES = b"\xef\xbe\xad\xde"
 
-GSE2V1_DATA_FORMAT = "<I I 18? 14f 4I"
+# The wire packet is serialized without C++ struct padding.
+GSE2V1_DATA_FORMAT = "<I I 18? 14f 3I 8f I"
 GSE2V1_DATA_SIZE = struct.calcsize(GSE2V1_DATA_FORMAT)
 
 GSE2V1_COMMAND_FORMAT = "<I 15? I"
@@ -131,6 +132,14 @@ GSE2V1_FIELD_NAME_MAP = {
     "temperature0": "temperature0",
     "temperature1": "temperature1",
     "temperature2": "temperature2",
+    "pressure0": "pressure0",
+    "pressure1": "pressure1",
+    "pressure2": "pressure2",
+    "pressure3": "pressure3",
+    "loadCellForce2": "loadCellForce2",
+    "loadCellForce3": "loadCellForce3",
+    "loadCellForce4": "loadCellForce4",
+    "loadCellForce5": "loadCellForce5",
     "crc": "crc",
 }
 
