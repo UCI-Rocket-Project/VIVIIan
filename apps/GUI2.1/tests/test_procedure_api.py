@@ -1,5 +1,6 @@
 """Procedure authoring and shared safe-out regressions, without hardware."""
 from pathlib import Path
+from types import SimpleNamespace
 import sys
 import unittest
 import math
@@ -14,6 +15,7 @@ from state_machine.state_machine import (
 )
 from tests.test_state_machine import FakeEffector, make_context
 from state_machine.procedures.pressure_decay import build_machine
+from state_machine.procedures import pressure_decay
 from state_machine.operations import close_valve, open_valve
 
 
@@ -102,6 +104,63 @@ class TestProcedureAPI(unittest.TestCase):
                 self.assertTrue(close_valve(valve).state)
         self.assertTrue(open_valve("pv1").state)
         self.assertFalse(close_valve("pv1").state)
+
+
+class TestPressureDecayBookkeeping(unittest.TestCase):
+    def setUp(self):
+        self.machine = build_machine()
+        self.addCleanup(pressure_decay.reset_latches)
+
+    def test_recovery_and_abort_latch_independently_until_acknowledged(self):
+        context = SimpleNamespace(
+            psi=lambda field: 700.0 if field in ("LOXTANK", "LNGTANK") else 100.0,
+            in_state_for=lambda: pressure_decay.VENT_WATCH_DELAY_SECONDS + 1,
+        )
+        recovery = self.machine.states["PD_07_TANK_PRESSURIZING"].operations[1]
+        abort = self.machine.global_transitions[0]
+        self.assertTrue(recovery.guard(context))
+        self.assertTrue(abort.guard(context))
+
+        recovery.actions[-1].begin(context, FakeEffector())
+        self.assertFalse(recovery.guard(context))
+        self.assertTrue(abort.guard(context))
+        abort.actions[-1].begin(context, FakeEffector())
+        self.assertFalse(abort.guard(context))
+
+        pressure_decay.DECAY_RESULT["verdict"] = "FAIL"
+        acknowledge = self.machine.states["PD_ABORTED"].operations[0]
+        acknowledge.actions[-1].begin(context, FakeEffector())
+        self.assertTrue(recovery.guard(context))
+        self.assertTrue(abort.guard(context))
+        self.assertEqual(pressure_decay.DECAY_RESULT, {})
+
+    def test_decay_requires_a_full_finite_window_and_preserves_boundary(self):
+        state = self.machine.states["PD_13_DECAY_MEASURING"]
+        for ready, slope, destination in (
+            (False, 0.0, None),
+            (True, math.nan, None),
+            (True, math.inf, None),
+            (True, -math.inf, None),
+            (True, 3.0, "PD_14_DECAY_PASS"),
+            (True, 3.01, "PD_15_DECAY_FAIL"),
+        ):
+            with self.subTest(ready=ready, slope=slope):
+                context = SimpleNamespace(slope_ready=lambda: ready, worst_slope=lambda fields: slope)
+                self.assertEqual(
+                    [op.dest_name() for op in state.evaluate(context)],
+                    [] if destination is None else [destination],
+                )
+
+    def test_both_verdict_actions_record_current_signed_decay(self):
+        rates = dict(zip(pressure_decay.DECAY_SECTIONS, (1.0, -2.0, 3.0, 4.0)))
+        context = SimpleNamespace(decay_psi_per_min=rates.__getitem__)
+        for operation, verdict in zip(
+            self.machine.states["PD_13_DECAY_MEASURING"].operations, ("PASS", "FAIL")
+        ):
+            with self.subTest(verdict=verdict):
+                pressure_decay.DECAY_RESULT["old section"] = 999.0
+                operation.actions[0].begin(context, FakeEffector())
+                self.assertEqual(pressure_decay.DECAY_RESULT, {"verdict": verdict, **rates})
 
 
 if __name__ == "__main__":

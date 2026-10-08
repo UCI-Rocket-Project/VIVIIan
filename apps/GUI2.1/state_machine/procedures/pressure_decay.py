@@ -11,6 +11,7 @@ Pressure Decay Test — MOCH4 Cold Flow procedure, section 3.
 Pressures are read in psig through the context, which applies the calibration
 frontendv2 already owns.
 """
+
 from __future__ import annotations
 
 import math
@@ -21,7 +22,6 @@ from ..state_machine import (
     MismatchPolicy,
     ControlContext,
     DECAY_WINDOW_SECONDS,
-    Effector,
     Machine,
     Operation,
     Pulse,
@@ -43,9 +43,6 @@ from ..operations import (
     panic_operation,
 )
 from ..table_states import unchecked, valves
-
-# Stable identifier used by the frontend and simulator.
-START_STATE = "PD_00_ALL_OFF"
 
 COPV = "COPV"
 LOX_TANK = "LOXTANK"
@@ -107,59 +104,34 @@ GSE_VENTED_HOLD = unchecked(GSE_VENTED, "sol_gn2_vent", "sol_gn2_fill_1")
 DECAY_RESULT: dict[str, float | str] = {}
 
 
-class OneShotLatch:
-    """A true guard only fires once"""
-
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.used = False
-
-    def set(self, ctx: ControlContext, effector: Effector) -> None:
-        self.used = True
-
-    def reset(self) -> None:
-        self.used = False
-
-
-VENT_RECOVERY_LATCH = OneShotLatch("vent recovery")   # §3 step 8.2: "not more than once"
-OVERPRESSURE_LATCH = OneShotLatch("overpressure abort")
+# Recovery and overpressure abort may each fire only once until acknowledged.
+LATCHES: set[str] = set()
 
 
 def reset_latches() -> None:
-    VENT_RECOVERY_LATCH.reset()
-    OVERPRESSURE_LATCH.reset()
+    LATCHES.clear()
     DECAY_RESULT.clear()
 
 
-def _record_decay(verdict: str):
-    def write_result(ctx: ControlContext, effector: Effector) -> None:
-        DECAY_RESULT.clear()
-        DECAY_RESULT["verdict"] = verdict
-        for section in DECAY_SECTIONS:
-            # Stated as a decay: positive means the section lost pressure.
-            DECAY_RESULT[section] = ctx.decay_psi_per_min(section)
-
-    return write_result
-
-
-def _decay_measurement_ready(ctx: ControlContext) -> bool:
-    """A full window has accumulated and the slopes are readable."""
-    return ctx.slope_ready() and math.isfinite(ctx.worst_slope(DECAY_SECTIONS))
+def _record_decay(ctx: ControlContext, verdict: str) -> None:
+    DECAY_RESULT.clear()
+    DECAY_RESULT["verdict"] = verdict
+    for section in DECAY_SECTIONS:
+        # Stated as a decay: positive means the section lost pressure.
+        DECAY_RESULT[section] = ctx.decay_psi_per_min(section)
 
 
 def build_machine() -> Machine:
     reset_latches()
 
     # -- §12.1, evaluated in every state ------------------------------------
-    # No destination check: the abort has to land, and a failed check could
-    # only abort again.
     overpressure_abort = Operation(
-        actions=(apply_table("abort"), Call(OVERPRESSURE_LATCH.set, "latch abort")),
+        actions=(apply_table("abort"), Call(lambda ctx, effector: LATCHES.add("overpressure"), "latch abort")),
         dest_state="PD_ABORTED",
         auto=True,
         name="ABORT — tank overpressure",
         guard=lambda ctx: (
-            not OVERPRESSURE_LATCH.used
+            "overpressure" not in LATCHES
             and (
                 ctx.psi(LOX_TANK) >= TANK_OVERPRESSURE_LIMIT_PSI
                 or ctx.psi(LNG_TANK) >= TANK_OVERPRESSURE_LIMIT_PSI
@@ -174,7 +146,6 @@ def build_machine() -> Machine:
     )
 
     states = [
-        # ------------------------------------------------------------------
         State.define(
             "PD_00_ALL_OFF",
             manual_gate(
@@ -208,7 +179,6 @@ def build_machine() -> Machine:
             ),
             expected_state=table_states.ALL_OFF,
         ),
-        # ------------------------------------------------------------------
         State.define(
             "PD_03_COPV_FILL",
             auto_operation(
@@ -266,7 +236,6 @@ def build_machine() -> Machine:
             ),
             expected_state=valves(tank_vent=True),
         ),
-        # ------------------------------------------------------------------
         State.define(
             "PD_07_TANK_PRESSURIZING",
             auto_operation(
@@ -290,10 +259,10 @@ def build_machine() -> Machine:
                     close_valve("pv1"),
                     open_valve("pv2"),
                     open_valve("sol_gn2_fill_1"),
-                    Call(VENT_RECOVERY_LATCH.set, "latch vent recovery"),
+                    Call(lambda ctx, effector: LATCHES.add("vent recovery"), "latch vent recovery"),
                 ),
                 guard=lambda ctx: (
-                    not VENT_RECOVERY_LATCH.used
+                    "vent recovery" not in LATCHES
                     and ctx.in_state_for() >= VENT_WATCH_DELAY_SECONDS
                     and ctx.psi(VENT) < VENT_MINIMUM_PSI
                 ),
@@ -317,11 +286,6 @@ def build_machine() -> Machine:
                 "Vent line repressurised — close GN2 Fill 1",
                 "PD_06_READY_TANK_PRESS",
                 (close_valve("sol_gn2_fill_1"),),
-                # The vent line is what fell and what this state exists to
-                # refill, so it is the vent line that has to come back.
-                # Watching COPV instead let the state exit on a pressure
-                # that had never dropped, blipping GN2 Fill 1 open and shut
-                # inside a second and leaving the vent line where it was.
                 guard=lambda ctx: ctx.psi(VENT) >= VENT_RECOVERY_TARGET_PSI,
                 guard_text=f"Vent PT >= {VENT_RECOVERY_TARGET_PSI:.0f} psig",
                 description="§3 step 11.2, then repeat tank press.",
@@ -329,7 +293,6 @@ def build_machine() -> Machine:
             expected_state=valves(tank_vent=True, sol_gn2_fill_1=True),
             max_seconds=VENT_WATCHDOG_SECONDS,
         ),
-        # ------------------------------------------------------------------
         State.define(
             "PD_08_TANKS_STABLE",
             manual_operation(
@@ -384,7 +347,6 @@ def build_machine() -> Machine:
             ),
             expected_state=TANKS_PRESSURIZING,
         ),
-        # ------------------------------------------------------------------
         State.define(
             "PD_12_GSE_DEPRESSURIZED",
             manual_operation(
@@ -403,9 +365,10 @@ def build_machine() -> Machine:
             auto_operation(
                 "Decay within limit — PASS",
                 "PD_14_DECAY_PASS",
-                (Call(_record_decay("PASS"), "record decay result"),),
+                (Call(lambda ctx, effector: _record_decay(ctx, "PASS"), "record decay result"),),
                 guard=lambda ctx: (
-                    _decay_measurement_ready(ctx)
+                    ctx.slope_ready()
+                    and math.isfinite(ctx.worst_slope(DECAY_SECTIONS))
                     and ctx.worst_slope(DECAY_SECTIONS) <= DECAY_LIMIT_PSI_PER_MIN
                 ),
                 guard_text=f"all sections <= {DECAY_LIMIT_PSI_PER_MIN:.0f} psi/min",
@@ -415,16 +378,15 @@ def build_machine() -> Machine:
             auto_operation(
                 "Decay exceeds limit — FAIL",
                 "PD_15_DECAY_FAIL",
-                (Call(_record_decay("FAIL"), "record decay result"),),
+                (Call(lambda ctx, effector: _record_decay(ctx, "FAIL"), "record decay result"),),
                 guard=lambda ctx: (
-                    _decay_measurement_ready(ctx)
+                    ctx.slope_ready()
+                    and math.isfinite(ctx.worst_slope(DECAY_SECTIONS))
                     and ctx.worst_slope(DECAY_SECTIONS) > DECAY_LIMIT_PSI_PER_MIN
                 ),
                 guard_text=f"a section exceeds {DECAY_LIMIT_PSI_PER_MIN:.0f} psi/min",
                 mutually_exclusive_with=("Decay within limit — PASS",),
             ),
-            # Holding: nothing moves, so the configuration is known and worth
-            # watching for drift.
             expected_state=GSE_VENTED_HOLD,
             max_seconds=DECAY_WATCHDOG_SECONDS,
             description=(
@@ -452,7 +414,6 @@ def build_machine() -> Machine:
             expected_state=GSE_VENTED_HOLD,
             description="§3 step 18, Table 15: a section exceeded 3 psi/min.",
         ),
-        # ------------------------------------------------------------------
         State.define(
             "PD_16_DEPRESS_READY",
             manual_operation(
@@ -517,7 +478,6 @@ def build_machine() -> Machine:
             expected_state=table_states.ALL_OFF,
             description="Pressure decay complete.",
         ),
-        # ------------------------------------------------------------------
         State.define(
             "PD_ABORTED",
             manual_operation(
@@ -548,7 +508,6 @@ def build_machine() -> Machine:
     return Machine.build(
         "pressure_decay",
         states,
-        START_STATE,
         default_panic=panic_operation("PD_ABORTED"),
         global_transitions=(overpressure_abort,),
     )
