@@ -23,9 +23,9 @@ from gui_gse2v1 import (
     sync_gse2v1_command_buttons_from_echo,
 )
 from gui_state_machine import StateMachinePanel
-from state_machine import ControlContext, Dispatcher
-from procedures.operations import GseEffector, GseValveMap, attach_manual_listener
-from procedures.pressure_decay import DECAY_SECTIONS, build_machine
+from state_machine.state_machine import ControlContext, Dispatcher
+from state_machine.operations import GseEffector, GseValveMap, attach_manual_listener
+from state_machine.procedures.pressure_decay import DECAY_SECTIONS, build_machine
 
 BUTTON_STATES = {} #dictionary of all button states
 COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 

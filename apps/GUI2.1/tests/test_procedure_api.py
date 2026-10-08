@@ -8,13 +8,13 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "apps" / "GUI2.1"))
 
-from state_machine import (
+from state_machine.state_machine import (
     Dispatcher, Machine, MismatchPolicy, Operation, OpStatus, State,
     VERIFY_FEED_GRACE_SECONDS,
 )
 from tests.test_state_machine import FakeEffector, make_context
-from procedures.pressure_decay import build_machine
-from procedures.operations import close_valve, open_valve
+from state_machine.procedures.pressure_decay import build_machine
+from state_machine.operations import close_valve, open_valve
 
 
 class TestProcedureAPI(unittest.TestCase):

@@ -25,7 +25,7 @@ from gui_gse2v1 import (  # noqa: E402
     make_gse2v1_command_buttons,
     sync_gse2v1_command_buttons_from_echo,
 )
-from procedures import table_states  # noqa: E402
+from state_machine import table_states  # noqa: E402
 
 
 class FakeEcho:

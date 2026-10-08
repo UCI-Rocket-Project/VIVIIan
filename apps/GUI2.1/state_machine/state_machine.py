@@ -1,7 +1,7 @@
 """GSE control-state-machine engine.
 
 The engine is independent of ImGui and GSE2V1 button configuration; adapters
-in ``procedures/operations.py`` provide those integrations. See
+in ``state_machine/operations.py`` provide those integrations. See
 ``docs/state-machine.md`` for control invariants and design rationale.
 """
 from __future__ import annotations
@@ -716,7 +716,7 @@ class Operation:
     """Ordered actions followed by settling and destination verification.
 
     Procedure authors normally use the manual/automatic factories in
-    ``procedures.operations``. Instances carry execution state; construct fresh
+    ``state_machine.operations``. Instances carry execution state; construct fresh
     operations and actions for each machine.
     """
 

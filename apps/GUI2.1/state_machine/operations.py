@@ -10,7 +10,7 @@ from typing import Callable
 import gui_gse2v1
 from gui_elements import Button
 from gui_gse2v1 import GSE2V1_COMMAND_BUTTONS, GseCommandClient, abort_is_inactive
-from state_machine import (
+from .state_machine import (
     Action,
     ApplyTable,
     ControlContext,

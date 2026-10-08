@@ -1,9 +1,9 @@
-"""Named valve configurations.
+"""
+Named valve configurations.
 
 The tables already exist in ``gui_gse2v1.TABLE_BUTTONS`` and are what the
-operator's table buttons apply. This module reads them rather than restating
-them, so buttons and operations can never drift apart, and expands each one so
-every valve is spelled out explicitly.
+operator's table buttons apply. This module reads tables from ``gui_gse2v1.TABLE_BUTTONS``
+and expands them so buttons and operations match.
 
 Valve polarity, from ``frontendv2.make_valve_states``: ``pv2`` and ``tank_vent``
 are normally open, so solenoid ``False`` means the valve is OPEN. In procedure
@@ -14,10 +14,11 @@ terms:
     open  PV 1             ->  pv1       = True
     open  GN2 Fill 1       ->  sol_gn2_fill_1 = True
 """
+
 from __future__ import annotations
 
 from gui_gse2v1 import TABLE_BUTTONS
-from state_machine import DONT_CARE, ValveState
+from .state_machine import DONT_CARE, ValveState
 
 # Steady-state valves. Momentary commands (mvas_open/mvas_close and the
 # per-tank MVAS opens) are excluded on purpose: they pulse for a second and
@@ -35,10 +36,8 @@ VALVE_IDS: tuple[str, ...] = (
 )
 
 # MVAS is the Main Valve Actuation System: the pneumatic actuators that turn the
-# LOX and LNG main ball valves feeding the injector. The actuators are
-# double-acting, so they hold the last commanded position rather than failing
-# closed mid-burn, which is why open and close are separate momentary commands
-# instead of one toggle.
+# LOX and LNG main ball valves feeding the injector. The actuators hold the last
+# commanded position, which is why they are seperate commands
 MOMENTARY_IDS: tuple[str, ...] = (
     "mvas_open",
     "mvas_close",

@@ -15,7 +15,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "apps", "GUI2.1"))
 
-from state_machine import (  # noqa: E402
+from state_machine.state_machine import (  # noqa: E402
     ABORT_PRIORITY,
     VERIFY_FEED_GRACE_SECONDS,
     Action,

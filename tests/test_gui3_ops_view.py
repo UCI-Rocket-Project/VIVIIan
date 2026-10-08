@@ -37,10 +37,10 @@ from panels import (  # noqa: E402
 )
 
 from captcha import Captcha67Gate  # noqa: E402
-from state_machine import ControlContext, Dispatcher, DispatcherMode  # noqa: E402
+from state_machine.state_machine import ControlContext, Dispatcher, DispatcherMode  # noqa: E402
 from gui_gse2v1 import GseCommandClient, make_gse2v1_command_buttons  # noqa: E402
-from procedures.operations import GseValveMap  # noqa: E402
-from procedures.pressure_decay import build_machine  # noqa: E402
+from state_machine.operations import GseValveMap  # noqa: E402
+from state_machine.procedures.pressure_decay import build_machine  # noqa: E402
 
 # Mirrors frontendv2.PT_SCALES. Imported there in the app; restated here so the
 # test does not need nidaqmx, which frontendv2 pulls in.

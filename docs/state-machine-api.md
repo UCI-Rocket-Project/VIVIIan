@@ -1,7 +1,7 @@
 # Writing GSE procedures
 
-The GUI2.1 engine is in `apps/GUI2.1/state_machine.py`. Procedure definitions
-live in `apps/GUI2.1/procedures/`; `pressure_decay.py` is the complete example.
+The GUI2.1 engine is in `apps/GUI2.1/state_machine/state_machine.py`. Procedure definitions
+live in `apps/GUI2.1/state_machine/procedures/`; `pressure_decay.py` is the complete example.
 The engine has no ImGui dependency. Hardware commands go through an `Effector`,
 and valve feedback goes through a `ValveMap`.
 
@@ -16,13 +16,12 @@ their state. All state settings are keyword-only; no surrounding exit tuple or
 positional `None` placeholders are needed. The original `State(...)` constructor
 remains supported.
 
-This small authoring example uses an illustrative pressure target, not an
-approved operating procedure:
+This small authoring example uses an illustrative pressure target:
 
 ```python
-from state_machine import Machine, MismatchPolicy, State
-from procedures import table_states
-from procedures.operations import (
+from state_machine.state_machine import Machine, MismatchPolicy, State
+from state_machine import table_states
+from state_machine.operations import (
     apply_table, auto_operation, close_valve, manual_gate,
     manual_operation, open_valve, panic_operation,
 )
@@ -75,8 +74,7 @@ def build_machine():
 Create fresh states, operations and actions inside each build: operations and
 actions carry mutable execution state. `Machine.build` links destination names
 to states and rejects duplicate names, unknown destinations and conflicting
-start declarations. Mark exactly one state `start=True`. For compatibility,
-`initial="READY"` can instead mark the start; if both are given they must agree.
+start declarations. Mark exactly one state `start=True`.
 
 ## State settings
 
@@ -97,7 +95,7 @@ state halts rather than repeatedly commanding the same safe-out.
 
 ## Operation and action reference
 
-Factories in `procedures.operations` return ordinary engine `Operation` objects:
+Factories in `state_machine.operations` return ordinary engine `Operation` objects:
 
 | Factory | Use |
 | --- | --- |

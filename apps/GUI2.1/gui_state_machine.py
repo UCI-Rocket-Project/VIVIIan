@@ -14,7 +14,7 @@ from gui_elements import (
     BUTTON_STATUS_ON_COLOR,
     COLOR_WHITE,
 )
-from state_machine import (
+from state_machine.state_machine import (
     Dispatcher,
     DispatcherMode,
     MismatchPolicy,
@@ -240,7 +240,7 @@ class StateMachinePanel:
             self._text(imgui, COLOR_DIM, f"  watchdog: {remaining:.0f}s remaining")
 
     def _decay(self, imgui) -> None:
-        from procedures.pressure_decay import DECAY_RESULT
+        from state_machine.procedures.pressure_decay import DECAY_RESULT
 
         d = self.dispatcher
         if not self.decay_sections:
