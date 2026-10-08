@@ -151,13 +151,9 @@ def manual_gate(
     description: str = "",
     lead_time_s: float = DEFAULT_LEAD_TIME_SECONDS,
 ) -> Operation:
-    """A human step: the machine holds until the operator confirms it happened.
-
-    Uses the procedure's own wording, so the state machine doubles as the
-    checklist the test director is reading from.
-
-    A gate moves no valves, but the destination check still runs, confirming
-    the system is where the procedure claims it is before the next step is unlocked.
+    """
+    A guard that waits for operator confirmation before proceeding.
+    Use this for checks that don't move valves, such as manual inspection.
     """
     return Operation(
         actions=(),
@@ -228,10 +224,10 @@ def auto_operation(
 def panic_operation(dest: str, *, label: str = "PANIC — abort configuration") -> Operation:
     """Per-state safe-out: the abort table, which opens the vents and closes MVAS.
 
-    The alarm is staged separately because ``_apply_table_state`` skips it, so
-    the ``alarm: True`` in the abort table never actually reaches the board.
     """
     return Operation(
+        # The alarm is staged separately because ``_apply_table_state`` skips it, so
+        # the ``alarm: True`` in the abort table would never reach the board.
         actions=(apply_table("abort"), SetValve("alarm", True)),
         dest_state=dest,
         auto=False,

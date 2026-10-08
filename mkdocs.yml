@@ -25,6 +25,7 @@ nav:
       - Simulation Utils: simulation-utils.md
       - Data Storage: datastorage.md
       - GSE Control State Machine: state-machine.md
+      - State Machine API: state-machine-api.md
       - Examples: examples.md
   - Contributing: contributing.md
   - Roadmap: roadmap.md

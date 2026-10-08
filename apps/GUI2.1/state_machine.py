@@ -490,7 +490,8 @@ class ControlContext:
 
 
 class Action:
-    """One atomic thing done to the system.
+    """
+    One atomic thing done to the system.
 
     Actions never block: ``begin`` stages, ``poll`` is called once per control
     cycle until it returns True. All staging within a cycle is batched into a
@@ -503,7 +504,7 @@ class Action:
         self.failed = False
         self.failure_reason = ""
 
-    def begin(self, ctx: ControlContext, effector: Effector) -> None:  # noqa: B027
+    def begin(self, ctx: ControlContext, effector: Effector) -> None:
         return None
 
     def poll(self, ctx: ControlContext) -> bool:
@@ -712,6 +713,13 @@ class OperationFeedback:
 
 @dataclass
 class Operation:
+    """Ordered actions followed by settling and destination verification.
+
+    Procedure authors normally use the manual/automatic factories in
+    ``procedures.operations``. Instances carry execution state; construct fresh
+    operations and actions for each machine.
+    """
+
     actions: Sequence[Action]
     dest_state: str | "State" # pyright: ignore[reportGeneralTypeIssues]
     auto: bool = False
@@ -768,7 +776,7 @@ class Operation:
     def step(self, ctx: ControlContext, effector: Effector) -> OpStatus:
         # 1. Actions, one per cycle at most, so staging stays batched and a
         #    long chain can't monopolise a frame.
-        while self._index < len(self.actions):
+        if self._index < len(self.actions):
             action = self.actions[self._index]
             if not self._begun:
                 action.begin(ctx, effector)
@@ -825,7 +833,9 @@ class Operation:
         if unreadable:
             # A stale feed is a "we are blind" problem, not a valve problem.
             # Hold and keep looking; the operation's timeout still bounds it.
-            waited = ctx.snap.now - (self._actions_done_at or ctx.snap.now)
+            # Zero is a valid timestamp (not an unset clock).
+            actions_done_at = self._actions_done_at
+            waited = ctx.snap.now - (actions_done_at if actions_done_at is not None else ctx.snap.now)
             if not ctx.snap.gse_fresh and waited < self.lead_time_s + VERIFY_FEED_GRACE_SECONDS:
                 self._verify_detail = "waiting for board telemetry"
                 if feedback is not None:
@@ -953,6 +963,39 @@ class State:
     # already waited out its own lead time; this covers the ways into a state
     # that skip one, like force_state() and startup.
     mismatch_grace_s: float = MISMATCH_GRACE_SECONDS
+
+    @classmethod
+    def define(
+        cls,
+        name: str,
+        *operations: Operation,
+        expected_state: ExpectedTable | None = None,
+        panic: Operation | None = None,
+        max_seconds: float | None = None,
+        on_mismatch: MismatchPolicy | str = MismatchPolicy.ABORT,
+        description: str = "",
+        entry_from: frozenset[str] | None = None,
+        start: bool = False,
+        mismatch_grace_s: float = MISMATCH_GRACE_SECONDS,
+    ) -> State:
+        """Define exits inline, with named state settings and no tuple wrapper.
+
+        ``State.define("READY", manual_gate("Proceed", "FILL"),
+        expected_state=ALL_OFF, start=True)`` is equivalent to the existing
+        dataclass constructor. Omit ``panic`` to use the machine's default.
+        """
+        return cls(
+            name=name,
+            operations=operations,
+            expected_state=expected_state,
+            panic=panic,
+            max_seconds=max_seconds,
+            on_mismatch=on_mismatch,
+            description=description,
+            entry_from=entry_from,
+            start=start,
+            mismatch_grace_s=mismatch_grace_s,
+        )
 
     def __post_init__(self) -> None:
         self.operations = tuple(self.operations)
@@ -1152,7 +1195,7 @@ class Machine:
                 # can hang silently on a dead sensor.
                 problems.append(f"{state.name}: has automatic exits but no max_seconds watchdog")
 
-            if not state.operations and state.panic is None:
+            if not state.operations and state.panic is None and self.default_panic is None:
                 problems.append(f"{state.name}: dead end (no operations, no panic)")
 
             # Two automatic exits at equal priority is a tie that *can* happen,
@@ -1216,8 +1259,9 @@ class Machine:
         while queue:
             state = self.states[queue.pop()]
             targets = [op.dest_state for op in state.operations]
-            if state.panic is not None:
-                targets.append(state.panic.dest_state)
+            safe_out = state.panic or self.default_panic
+            if safe_out is not None:
+                targets.append(safe_out.dest_state)
             for op in self.global_transitions:
                 targets.append(op.dest_state)
             for dest in targets:

@@ -1,5 +1,9 @@
 # GSE Control State Machine
 
+For current authoring syntax, examples and runtime behavior, see the
+[State Machine API](state-machine-api.md). The notes below preserve the design
+history and open engineering questions.
+
 Running working notes for the GSE control / state machine work.
 This document should be transitioned into a proper design doc once the design is stable.
 
