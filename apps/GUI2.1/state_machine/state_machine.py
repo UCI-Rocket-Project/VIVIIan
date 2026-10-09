@@ -1,4 +1,5 @@
-"""GSE control-state-machine engine.
+"""
+GSE control-state-machine engine.
 
 The engine is independent of ImGui and GSE2V1 button configuration; adapters
 in ``state_machine/operations.py`` provide those integrations. See
@@ -19,15 +20,10 @@ from typing import Any, Callable, NamedTuple, Protocol, Union
 
 import numpy as np
 
-# --- Priorities -------------------------------------------------------------
-# "if the cycle produced both a hot fire transition and an abort transition,
-#  abort wins. Anything equally likely does not happen."
 ABORT_PRIORITY = 1000
 PANIC_PRIORITY = 900
 DEFAULT_PRIORITY = 0
 
-# --- Control cycle ----------------------------------------------------------
-# Fixed-rate control cycle; the GUI frame loop is uncapped.
 CONTROL_PERIOD_SECONDS = 0.05
 
 # Default pressure-decay measurement window.
@@ -38,7 +34,6 @@ SETTLE_WINDOW_SECONDS = 10.0
 
 LOG_LINES = 400
 
-# --- Lead time --------------------------------------------------------------
 # Default actuator-and-telemetry settling allowance.
 DEFAULT_LEAD_TIME_SECONDS = 0.75
 
@@ -56,7 +51,7 @@ class OpStatus(Enum):
 
 
 class OpPhase(Enum):
-    """Where an operation is in its lifecycle, for the operator panel."""
+    """Where an operation is in its lifecycle for the operator panel."""
 
     IDLE = "idle"
     ACTING = "acting"          # staging and polling actions
@@ -106,13 +101,22 @@ class StartStateError(ValueError):
     pass
 
 
+class MachineValidationError(ValueError):
+    """All static audit failures found while constructing a machine."""
+
+    def __init__(self, name: str, problems: Sequence[str]) -> None:
+        self.problems = tuple(problems)
+        super().__init__(f"Invalid machine {name!r}:\n" + "\n".join(f"- {p}" for p in problems))
+
+
 # ---------------------------------------------------------------------------
 # Expected valve tables
 # ---------------------------------------------------------------------------
 
 
 class _DontCare:
-    """Marker for a valve a state deliberately does not pin.
+    """
+    Marker for a valve a state deliberately does not pin.
 
     ``bool()`` raises, and that is the whole point. ``bool(DONT_CARE)`` would
     quietly be ``True``, and ``True`` means "expect open" — a wrong assertion
@@ -144,7 +148,8 @@ class Mismatch(NamedTuple):
 
 
 def pinned_valves(table: ExpectedTable | None) -> tuple[tuple[str, bool], ...]:
-    """The entries a table actually asserts, in a stable order.
+    """
+    The entries a table actually asserts, in a stable order.
 
     ``DONT_CARE`` entries are dropped: they are in the table to document that
     nobody checks them, not to be checked.
@@ -159,11 +164,8 @@ def pinned_valves(table: ExpectedTable | None) -> tuple[tuple[str, bool], ...]:
 
 
 def table_signature(table: ExpectedTable | None) -> str:
-    """Short hash of the valves a table pins, for comparing configurations.
-
-    Equal signatures mean equal tables over everything either one asserts, so
-    an operation can confirm it arrived by comparing two of these rather than
-    walking pairs of booleans.
+    """
+    Short hash of the valves a table pins, for comparing configurations.
     """
     payload = ";".join(f"{name}={int(state)}" for name, state in pinned_valves(table))
     return hashlib.blake2b(payload.encode("utf-8"), digest_size=6).hexdigest()
@@ -172,7 +174,8 @@ def table_signature(table: ExpectedTable | None) -> str:
 def observe_table(ctx: "ControlContext", table: ExpectedTable | None) -> tuple[
     dict[str, ValveState], tuple[Mismatch, ...], tuple[str, ...]
 ]:
-    """What the board says about the valves *table* pins.
+    """
+    What the board says about the valves *table* pins.
 
     Returns the observed table (an unreadable valve becomes ``DONT_CARE``), the
     valves that disagree, and the valves the board is not reporting at all.
@@ -181,6 +184,7 @@ def observe_table(ctx: "ControlContext", table: ExpectedTable | None) -> tuple[
     not agreement, and treating it as agreement is how a stuck valve gets
     confirmed as moved.
     """
+
     observed: dict[str, ValveState] = {}
     mismatches: list[Mismatch] = []
     unreadable: list[str] = []
@@ -194,11 +198,6 @@ def observe_table(ctx: "ControlContext", table: ExpectedTable | None) -> tuple[
         if actual != expected:
             mismatches.append(Mismatch(button_id, expected, actual))
     return observed, tuple(mismatches), tuple(unreadable)
-
-
-# ---------------------------------------------------------------------------
-# Ports the engine talks through
-# ---------------------------------------------------------------------------
 
 
 class Effector(Protocol):
@@ -220,17 +219,9 @@ class ValveMap(Protocol):
     def display_name(self, button_id: str) -> str: ...
 
 
-# ---------------------------------------------------------------------------
-# Sensors
-# ---------------------------------------------------------------------------
-
-
 class SlopeTracker:
-    """Least-squares slope per field, in units/minute, over a moving window.
-
-    Fed once per control cycle from the nidaq snapshot, and only when the
-    server's generation counter has moved — so it samples at the telemetry
-    rate, not the frame rate.
+    """
+    Least-squares slope per field in units/minute over a sliding window.
     """
 
     def __init__(self, fields: Sequence[str], window_seconds: float = DECAY_WINDOW_SECONDS) -> None:
@@ -294,7 +285,8 @@ class SlopeTracker:
 
 @dataclass(frozen=True)
 class Snapshot:
-    """One consistent read of every feed, taken at the top of a control cycle.
+    """
+    One consistent read of every feed, taken at the top of a control cycle.
 
     LatestServer.do_put rebinds `.latest` to a brand new dict from a Flight
     thread, so a single attribute read is a safe snapshot but two reads are
@@ -350,8 +342,6 @@ class ControlContext:
             nidaq_generation=-1,
         )
 
-    # -- lifecycle ----------------------------------------------------------
-
     def begin_cycle(self, now: float) -> None:
         gse = self.gse_server.latest
         echo = self.echo_server.latest
@@ -388,8 +378,6 @@ class ControlContext:
         being true because a measurement started."""
         self.slopes.reset()
 
-    # -- pressures ----------------------------------------------------------
-
     def raw(self, field_name: str) -> float:
         nidaq = self.snap.nidaq
         if nidaq is None or not self.snap.nidaq_fresh:
@@ -411,7 +399,8 @@ class ControlContext:
         return self.slopes.slope_per_min(field_name)
 
     def decay_psi_per_min(self, field_name: str) -> float:
-        """The same rate stated as a decay, so losing pressure reads positive.
+        """
+        The same rate stated as a decay, so losing pressure reads positive.
 
         This is the sense the procedure speaks in — "no section may lose more
         than 3 psi/minute" — and the sense the readout and the recorded result
@@ -423,20 +412,17 @@ class ControlContext:
         return self.slopes.is_ready()
 
     def worst_slope(self, field_names: Sequence[str]) -> float:
-        """Largest rate of change across the named sections, in either
+        """
+        Unsigned largest rate of change across the named sections, in either
         direction. NaN-safe.
-
-        Unsigned on purpose: a section climbing during a hold with the vents
-        open is as wrong as one falling, and this is what the pass/fail
-        criterion is measured against. See the open question in
-        docs/state-machine.md.
         """
         values = [abs(self.slope_psi_per_min(name)) for name in field_names]
         finite = [v for v in values if math.isfinite(v)]
         return max(finite) if finite else math.nan
 
     def settled(self, field_names: Sequence[str], limit_psi_per_min: float) -> bool:
-        """Every named section flat to within *limit* over the settle window.
+        """
+        Every named section flat to within *limit* over the settle window.
 
         False while the window is still filling, and False for a section
         reading NaN: a sensor we cannot see is not a sensor we can call stable.
@@ -448,8 +434,6 @@ class ControlContext:
             if not math.isfinite(rate) or abs(rate) > limit_psi_per_min:
                 return False
         return True
-
-    # -- valves -------------------------------------------------------------
 
     def commanded(self, button_id: str) -> bool:
         return self.valves.commanded(button_id)
@@ -675,12 +659,7 @@ def safe_guard(guard: Callable[[ControlContext], bool] | None, ctx: ControlConte
 
 @dataclass
 class OperationFeedback:
-    """What one attempt at an operation actually did, and what the board said.
-
-    The dispatcher keeps the most recent one for the panel, so "it moved on"
-    and "it moved on and the valves were confirmed" are distinguishable after
-    the fact rather than only in the log.
-    """
+    """What one attempted operation did vs what the board said."""
 
     operation: str
     dest: str
@@ -713,9 +692,10 @@ class OperationFeedback:
 
 @dataclass
 class Operation:
-    """Ordered actions followed by settling and destination verification.
+    """
+    Ordered actions followed by settling and destination verification.
 
-    Procedure authors normally use the manual/automatic factories in
+    Procedure authors should use the manual/automatic factories in
     ``state_machine.operations``. Instances carry execution state; construct fresh
     operations and actions for each machine.
     """
@@ -899,7 +879,8 @@ class Operation:
         return self.dest_state.name if isinstance(self.dest_state, State) else str(self.dest_state)
 
     def dest_table(self) -> ExpectedTable | None:
-        """The destination state's expected valves, once ``Machine.link()`` ran.
+        """
+        The destination state's expected valves, once ``Machine.link()`` ran.
 
         Before linking the destination is still a name, so there is no table to
         return yet.
@@ -909,7 +890,8 @@ class Operation:
         return None
 
     def predict_table(self, source: ExpectedTable | None) -> dict[str, ValveState]:
-        """Where this operation leaves the valves, starting from *source*.
+        """
+        Where this operation leaves the valves, starting from *source*.
 
         Valves the actions leave unknowable come back as ``DONT_CARE``.
         ``Machine.validate()`` compares this against the destination table, so
@@ -937,9 +919,10 @@ class Operation:
 # State
 
 
-@dataclass
+@dataclass(init=False)
 class State:
-    """A condition the system is in, between operations.
+    """
+    A condition the system is in, between operations.
 
     Exactly one state per machine carries ``start=True``; ``Machine.build``
     refuses anything else.
@@ -955,7 +938,7 @@ class State:
     expected_state: ExpectedTable | None = None
     panic: Operation | None = None
     max_seconds: float | None = None
-    on_mismatch: MismatchPolicy | str = MismatchPolicy.ABORT
+    on_mismatch: MismatchPolicy = MismatchPolicy.ABORT
     description: str = ""
     entry_from: frozenset[str] | None = None
     start: bool = False
@@ -964,48 +947,39 @@ class State:
     # that skip one, like force_state() and startup.
     mismatch_grace_s: float = MISMATCH_GRACE_SECONDS
 
-    @classmethod
-    def define(
-        cls,
+    def __init__(
+        self,
         name: str,
         *operations: Operation,
         expected_state: ExpectedTable | None = None,
         panic: Operation | None = None,
         max_seconds: float | None = None,
-        on_mismatch: MismatchPolicy | str = MismatchPolicy.ABORT,
+        on_mismatch: MismatchPolicy = MismatchPolicy.ABORT,
         description: str = "",
         entry_from: frozenset[str] | None = None,
         start: bool = False,
         mismatch_grace_s: float = MISMATCH_GRACE_SECONDS,
-    ) -> State:
-        """Define exits inline, with named state settings and no tuple wrapper.
-
-        ``State.define("READY", manual_gate("Proceed", "FILL"),
-        expected_state=ALL_OFF, start=True)`` is equivalent to the existing
-        dataclass constructor. Omit ``panic`` to use the machine's default.
+    ) -> None:
         """
-        return cls(
-            name=name,
-            operations=operations,
-            expected_state=expected_state,
-            panic=panic,
-            max_seconds=max_seconds,
-            on_mismatch=on_mismatch,
-            description=description,
-            entry_from=entry_from,
-            start=start,
-            mismatch_grace_s=mismatch_grace_s,
-        )
+        Define exits inline, with named state settings and no tuple wrapper.
 
-    def __post_init__(self) -> None:
-        self.operations = tuple(self.operations)
-        if not isinstance(self.on_mismatch, MismatchPolicy):
-            # Procedures written against the old string form said "warn" or
-            # "panic"; accept both rather than break them.
-            text = str(self.on_mismatch).lower()
-            if text == "panic":
-                text = "abort"
-            self.on_mismatch = MismatchPolicy(text)
+        Omit ``panic`` to use the machine's default. State settings are
+        keyword-only; positional arguments after the name are operations.
+        """
+        if not all(isinstance(op, Operation) for op in operations):
+            raise TypeError("State exits must be individual Operation objects")
+        if not isinstance(on_mismatch, MismatchPolicy):
+            raise TypeError("on_mismatch must be a MismatchPolicy")
+        self.name = name
+        self.operations = operations
+        self.expected_state = expected_state
+        self.panic = panic
+        self.max_seconds = max_seconds
+        self.on_mismatch = on_mismatch
+        self.description = description
+        self.entry_from = entry_from
+        self.start = start
+        self.mismatch_grace_s = mismatch_grace_s
 
     def evaluate(self, ctx: ControlContext) -> list[Operation]:
         """Automatic exits whose criteria are met. Only this state's criteria run."""
@@ -1023,7 +997,8 @@ class State:
         return table_signature(self.expected_state)
 
     def mismatches(self, ctx: ControlContext) -> list[Mismatch]:
-        """Valves where the board disagrees with this state.
+        """
+        Valves where the board disagrees with this state.
 
         This is the drift watch for a state we are sitting in, so an unreadable
         valve is not counted — demanding feedback belongs to the operation
@@ -1048,22 +1023,28 @@ class Machine:
     default_panic: Operation | None = None
     global_transitions: tuple[Operation, ...] = ()
 
+    def __post_init__(self) -> None:
+        self.link()
+        problems = self.validate()
+        if problems:
+            raise MachineValidationError(self.name, problems)
+
     @classmethod
     def build(
         cls,
         name: str,
         states: Iterable[State],
-        initial: str | None = None,
         *,
         default_panic: Operation | None = None,
         global_transitions: Sequence[Operation] = (),
     ) -> "Machine":
-        """Assemble a machine and resolve every destination name to a State.
+        """
+        Assemble a machine and resolve every destination name to a State.
 
         Declare where the procedure begins with ``State(..., start=True)``.
-        *initial* is optional and only says the same thing twice; if it
-        disagrees with the flag, or no state claims to be the start, that is a
-        ``StartStateError`` rather than a machine that quietly begins wherever.
+        Exactly one state must declare ``start=True``; otherwise building
+        raises ``StartStateError``. After linking, static audit failures raise
+        ``MachineValidationError`` with all problems in its ``problems`` tuple.
         """
         by_name: dict[str, State] = {}
         for state in states:
@@ -1073,41 +1054,27 @@ class Machine:
         machine = cls(
             name=name,
             states=by_name,
-            initial=cls._resolve_start(by_name, initial),
+            initial=cls._resolve_start(by_name),
             default_panic=default_panic,
             global_transitions=tuple(global_transitions),
         )
-        machine.link()
         return machine
 
     @staticmethod
-    def _resolve_start(states: dict[str, State], initial: str | None) -> str:
-        """The single declared start state, cross-checked against *initial*."""
+    def _resolve_start(states: dict[str, State]) -> str:
+        """Require a single explicitly declared start state."""
         declared = [state.name for state in states.values() if state.start]
         if len(declared) > 1:
             raise StartStateError(
                 f"more than one start state: {', '.join(sorted(declared))}. "
                 "Set start=True on exactly one state."
             )
-        if declared:
-            if initial is not None and initial != declared[0]:
-                raise StartStateError(
-                    f"initial={initial!r} does not match the declared start state "
-                    f"{declared[0]!r}"
-                )
-            return declared[0]
-        if initial is None:
+        if not declared:
             raise StartStateError(
                 "no start state. Set start=True on the state that the procedure "
                 "begins from."
             )
-        # Naming the start state in the call is explicit too, and it is what
-        # the small test machines do. Mark it so the flag and the name cannot
-        # drift apart afterwards.
-        state = states.get(initial)
-        if state is not None:
-            state.start = True
-        return initial
+        return declared[0]
 
     # -- linking ------------------------------------------------------------
 

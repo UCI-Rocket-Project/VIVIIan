@@ -226,8 +226,8 @@ current state.
 
 `start=True` on the state the procedure begins from. `Machine.build` finds it;
 two of them or none of them is a `StartStateError` rather than a machine that
-quietly starts wherever. `pressure_decay.py` also names `START_STATE` in the
-build call, so the flag and the name have to agree.
+quietly starts wherever. The build call no longer accepts a separate initial
+state; the state flag is the only declaration.
 
 ## Better names in the procedures
 

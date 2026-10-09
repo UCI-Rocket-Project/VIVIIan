@@ -146,7 +146,7 @@ def build_machine() -> Machine:
     )
 
     states = [
-        State.define(
+        State(
             "PD_00_ALL_OFF",
             manual_gate(
                 "Safety Officer: PPE on, perimeter established",
@@ -157,7 +157,7 @@ def build_machine() -> Machine:
             description="§3 step 3: valve states verified ALL OFF (Table 13).",
             start=True,
         ),
-        State.define(
+        State(
             "PD_01_AREA_SECURE",
             manual_gate(
                 "Test Director: alert personnel — COPV to 350 psig",
@@ -166,7 +166,7 @@ def build_machine() -> Machine:
             ),
             expected_state=table_states.ALL_OFF,
         ),
-        State.define(
+        State(
             "PD_02_BOTTLE_READY",
             manual_operation(
                 "Open GN2 Fill 1 (bottle open, regulator at 800 psig)",
@@ -179,7 +179,7 @@ def build_machine() -> Machine:
             ),
             expected_state=table_states.ALL_OFF,
         ),
-        State.define(
+        State(
             "PD_03_COPV_FILL",
             auto_operation(
                 "Close GN2 Fill 1 at 350 psig",
@@ -204,7 +204,7 @@ def build_machine() -> Machine:
             max_seconds=FILL_WATCHDOG_SECONDS,
             description="§3 steps 7-8: pressurising COPV, crew leak-checking fittings.",
         ),
-        State.define(
+        State(
             "PD_04_COPV_350",
             manual_operation(
                 "Close LOX VV & LNG VV (leaks mitigated)",
@@ -217,7 +217,7 @@ def build_machine() -> Machine:
             ),
             expected_state=valves(),
         ),
-        State.define(
+        State(
             "PD_05_TANKS_ISOLATED",
             manual_gate(
                 "Test Director: verify LOX FV & LNG FV are closed",
@@ -226,7 +226,7 @@ def build_machine() -> Machine:
             ),
             expected_state=valves(tank_vent=True),
         ),
-        State.define(
+        State(
             "PD_06_READY_TANK_PRESS",
             manual_operation(
                 "Close PV 2, then open PV 1",
@@ -236,7 +236,7 @@ def build_machine() -> Machine:
             ),
             expected_state=valves(tank_vent=True),
         ),
-        State.define(
+        State(
             "PD_07_TANK_PRESSURIZING",
             auto_operation(
                 "Pressures stabilised",
@@ -280,7 +280,7 @@ def build_machine() -> Machine:
             expected_state=TANKS_PRESSURIZING,
             max_seconds=SETTLE_WATCHDOG_SECONDS,
         ),
-        State.define(
+        State(
             "PD_07R_VENT_RECOVER",
             auto_operation(
                 "Vent line repressurised — close GN2 Fill 1",
@@ -293,7 +293,7 @@ def build_machine() -> Machine:
             expected_state=valves(tank_vent=True, sol_gn2_fill_1=True),
             max_seconds=VENT_WATCHDOG_SECONDS,
         ),
-        State.define(
+        State(
             "PD_08_TANKS_STABLE",
             manual_operation(
                 "Open GN2 Fill 1 — fill system to 200 psig",
@@ -306,7 +306,7 @@ def build_machine() -> Machine:
             ),
             expected_state=TANKS_PRESSURIZING,
         ),
-        State.define(
+        State(
             "PD_09_FILL_200",
             auto_operation(
                 "Close GN2 Fill 1 at target",
@@ -325,7 +325,7 @@ def build_machine() -> Machine:
             expected_state=valves(tank_vent=True, pv2=True, pv1=True, sol_gn2_fill_1=True),
             max_seconds=FILL_WATCHDOG_SECONDS,
         ),
-        State.define(
+        State(
             "PD_10_SYSTEM_CHARGED",
             manual_gate(
                 "Bottle Operator: close GN2 Bottle 1",
@@ -337,7 +337,7 @@ def build_machine() -> Machine:
             ),
             expected_state=TANKS_PRESSURIZING,
         ),
-        State.define(
+        State(
             "PD_11_BOTTLE_CLOSED",
             manual_operation(
                 "Open GN2 VV & GN2 Fill 1 — depressurise GSE",
@@ -347,7 +347,7 @@ def build_machine() -> Machine:
             ),
             expected_state=TANKS_PRESSURIZING,
         ),
-        State.define(
+        State(
             "PD_12_GSE_DEPRESSURIZED",
             manual_operation(
                 "Start Automated Pressure Decay Test",
@@ -360,7 +360,7 @@ def build_machine() -> Machine:
             ),
             expected_state=GSE_VENTED,
         ),
-        State.define(
+        State(
             "PD_13_DECAY_MEASURING",
             auto_operation(
                 "Decay within limit — PASS",
@@ -394,7 +394,7 @@ def build_machine() -> Machine:
                 "the verdict is taken from the slope at that moment."
             ),
         ),
-        State.define(
+        State(
             "PD_14_DECAY_PASS",
             manual_gate(
                 "Test Director: alert personnel — depressurising through MVAS",
@@ -404,7 +404,7 @@ def build_machine() -> Machine:
             expected_state=GSE_VENTED_HOLD,
             description="§3 step 18, Table 15: decay within 3 psi/min on every section.",
         ),
-        State.define(
+        State(
             "PD_15_DECAY_FAIL",
             manual_gate(
                 "Test Director: alert personnel — depressurising through MVAS",
@@ -414,7 +414,7 @@ def build_machine() -> Machine:
             expected_state=GSE_VENTED_HOLD,
             description="§3 step 18, Table 15: a section exceeded 3 psi/min.",
         ),
-        State.define(
+        State(
             "PD_16_DEPRESS_READY",
             manual_operation(
                 "Turn on Alarm",
@@ -424,7 +424,7 @@ def build_machine() -> Machine:
             ),
             expected_state=GSE_VENTED_HOLD,
         ),
-        State.define(
+        State(
             "PD_17_ALARM_ON",
             manual_gate(
                 "Stand clear, compressor at 120 psi, MVAS verified closed",
@@ -433,7 +433,7 @@ def build_machine() -> Machine:
             ),
             expected_state=GSE_VENTED_HOLD,
         ),
-        State.define(
+        State(
             "PD_18_COUNTDOWN",
             manual_operation(
                 "Open MVAS — 5...4...3...2...1...EARS",
@@ -447,7 +447,7 @@ def build_machine() -> Machine:
             ),
             expected_state=GSE_VENTED_HOLD,
         ),
-        State.define(
+        State(
             "PD_19_DEPRESSURIZING",
             auto_operation(
                 "Depressurised — set ALL OFF",
@@ -465,7 +465,7 @@ def build_machine() -> Machine:
             expected_state=GSE_VENTED_HOLD,
             max_seconds=VENT_WATCHDOG_SECONDS,
         ),
-        State.define(
+        State(
             "PD_20_COMPLETE",
             manual_gate(
                 "Restart procedure",
@@ -478,7 +478,7 @@ def build_machine() -> Machine:
             expected_state=table_states.ALL_OFF,
             description="Pressure decay complete.",
         ),
-        State.define(
+        State(
             "PD_ABORTED",
             manual_operation(
                 "Acknowledge — return to ALL OFF",

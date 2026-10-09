@@ -25,6 +25,7 @@ from state_machine.state_machine import (  # noqa: E402
     DispatcherMode,
     InterruptPolicy,
     Machine,
+    MachineValidationError,
     MismatchPolicy,
     OpPhase,
     Operation,
@@ -149,20 +150,17 @@ class Counter(Action):
 class TestDeterminism(unittest.TestCase):
     def _tie_machine(self):
         a = State(
-            "A",
-            (
-                Operation((), "B", True, name="left", guard=lambda ctx: True,
-                          mutually_exclusive_with=("right",)),
-                Operation((), "C", True, name="right", guard=lambda ctx: True,
-                          mutually_exclusive_with=("left",)),
-            ),
-            None,
-            None,
+            'A',
+            Operation((), 'B', True, name='left', guard=lambda ctx: True, mutually_exclusive_with=('right',)),
+            Operation((), 'C', True, name='right', guard=lambda ctx: True, mutually_exclusive_with=('left',)),
+            expected_state=None,
+            panic=None,
             max_seconds=1000.0,
+            start=True,
         )
-        b = State("B", (Operation((), "A", False, name="back"),))
-        c = State("C", (Operation((), "A", False, name="back"),))
-        return Machine.build("tie", [a, b, c], "A")
+        b = State('B', Operation((), 'A', False, name='back'))
+        c = State('C', Operation((), 'A', False, name='back'))
+        return Machine.build("tie", [a, b, c])
 
     def test_equal_priority_transitions_stop_and_ask(self):
         eff = FakeEffector()
@@ -188,20 +186,18 @@ class TestDeterminism(unittest.TestCase):
 
     def test_higher_priority_wins_without_asking(self):
         a = State(
-            "A",
-            (
-                Operation((), "B", True, name="normal", guard=lambda ctx: True),
-                Operation((), "SAFE", True, name="abort", guard=lambda ctx: True, priority=500),
-            ),
-            None,
-            None,
+            'A',
+            Operation((), 'B', True, name='normal', guard=lambda ctx: True),
+            Operation((), 'SAFE', True, name='abort', guard=lambda ctx: True, priority=500),
+            expected_state=None,
+            panic=None,
             max_seconds=1000.0,
+            start=True,
         )
         machine = Machine.build(
             "priority",
-            [a, State("B", (Operation((), "A", False, name="back"),)),
-             State("SAFE", (Operation((), "A", False, name="back"),))],
-            "A",
+            [a, State('B', Operation((), 'A', False, name='back')),
+             State('SAFE', Operation((), 'A', False, name='back'))],
         )
         d = Dispatcher(machine, make_context(), FakeEffector())
         d.armed = True
@@ -214,18 +210,16 @@ class TestDeterminism(unittest.TestCase):
         # An overpressure watch does not stop being true just because the abort
         # has started, so the global must not re-fire on top of itself.
         first, second = Counter(), Counter()
-        a = State("A", (Operation((), "B", False, name="manual"),))
+        a = State('A', Operation((), 'B', False, name='manual'), start=True)
         machine = Machine.build(
             "persistent",
-            [a, State("B", (Operation((), "A", False, name="back"),)),
-             State("SAFE", (Operation((), "A", False, name="back"),))],
-            "A",
+            [a, State('B', Operation((), 'A', False, name='back')),
+             State('SAFE', Operation((), 'A', False, name='back'))],
+            global_transitions=(
+                Operation((first, second), "SAFE", True, name="watch",
+                          guard=lambda ctx: True, priority=ABORT_PRIORITY),
+            ),
         )
-        machine.global_transitions = (
-            Operation((first, second), "SAFE", True, name="watch",
-                      guard=lambda ctx: True, priority=ABORT_PRIORITY),
-        )
-        machine.link()
 
         d = Dispatcher(machine, make_context(), FakeEffector())
         d.armed = True
@@ -236,7 +230,7 @@ class TestDeterminism(unittest.TestCase):
 
     def test_abort_priority_global_breaks_an_ambiguous_freeze(self):
         machine = self._tie_machine()
-        machine.states["SAFE"] = State("SAFE", (Operation((), "A", False, name="back"),))
+        machine.states["SAFE"] = State('SAFE', Operation((), 'A', False, name='back'))
         fired = {"value": False}
         machine.global_transitions = (
             Operation((), "SAFE", True, name="global abort",
@@ -294,11 +288,22 @@ class TestGuards(unittest.TestCase):
             calls["b"] += 1
             return False
 
-        a = State("A", (Operation((), "B", True, name="a->b", guard=guard_a),), None, None,
-                  max_seconds=1000.0)
-        b = State("B", (Operation((), "A", True, name="b->a", guard=guard_b),), None, None,
-                  max_seconds=1000.0)
-        d = Dispatcher(Machine.build("scoped", [a, b], "A"), make_context(), FakeEffector())
+        a = State(
+            'A',
+            Operation((), 'B', True, name='a->b', guard=guard_a),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+            start=True,
+        )
+        b = State(
+            'B',
+            Operation((), 'A', True, name='b->a', guard=guard_b),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+        )
+        d = Dispatcher(Machine.build("scoped", [a, b]), make_context(), FakeEffector())
         d.armed = True
         run_ticks(d, 5)
 
@@ -318,14 +323,22 @@ class TestCycle(unittest.TestCase):
             return True
 
         a = State(
-            "A",
-            (Operation((Counter(), Counter()), "B", True, name="a->b", guard=lambda ctx: True),),
-            None, None, max_seconds=1000.0,
+            'A',
+            Operation((Counter(), Counter()), 'B', True, name='a->b', guard=lambda ctx: True),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+            start=True,
         )
-        b = State("B", (Operation((), "C", True, name="b->c", guard=b_guard),),
-                  None, None, max_seconds=1000.0)
-        c = State("C", (Operation((), "A", False, name="restart"),))
-        d = Dispatcher(Machine.build("chain", [a, b, c], "A"), make_context(), FakeEffector())
+        b = State(
+            'B',
+            Operation((), 'C', True, name='b->c', guard=b_guard),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+        )
+        c = State('C', Operation((), 'A', False, name='restart'))
+        d = Dispatcher(Machine.build("chain", [a, b, c]), make_context(), FakeEffector())
         d.armed = True
 
         d.tick(1000.0)                     # start a->b, first action
@@ -350,12 +363,14 @@ class TestCycle(unittest.TestCase):
     def test_one_flush_per_cycle(self):
         eff = FakeEffector()
         a = State(
-            "A",
-            (Operation((SetValve("v1", True), SetValve("v2", True)), "B", True,
-                       name="two valves", guard=lambda ctx: True),),
-            None, None, max_seconds=1000.0,
+            'A',
+            Operation((SetValve('v1', True), SetValve('v2', True)), 'B', True, name='two valves', guard=lambda ctx: True),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+            start=True,
         )
-        machine = Machine.build("flush", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
+        machine = Machine.build("flush", [a, State('B', Operation((), 'A', False, name='back'))])
         d = Dispatcher(machine, make_context(), eff)
         d.armed = True
         run_ticks(d, 5)
@@ -365,9 +380,15 @@ class TestCycle(unittest.TestCase):
 
     def test_control_cycle_is_rate_limited(self):
         counter = Counter()
-        a = State("A", (Operation((counter,), "B", True, name="go", guard=lambda ctx: True),),
-                  None, None, max_seconds=1000.0)
-        machine = Machine.build("rate", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
+        a = State(
+            'A',
+            Operation((counter,), 'B', True, name='go', guard=lambda ctx: True),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+            start=True,
+        )
+        machine = Machine.build("rate", [a, State('B', Operation((), 'A', False, name='back'))])
         d = Dispatcher(machine, make_context(), FakeEffector(), period_s=1.0)
 
         d.armed = True
@@ -378,13 +399,18 @@ class TestCycle(unittest.TestCase):
 
     def test_state_watchdog_panics_rather_than_hanging(self):
         panic = Operation((SetValve("vent", True),), "SAFE", False, name="panic")
-        a = State("A", (Operation((), "B", True, name="never", guard=lambda ctx: False),),
-                  None, panic, max_seconds=5.0)
+        a = State(
+            'A',
+            Operation((), 'B', True, name='never', guard=lambda ctx: False),
+            expected_state=None,
+            panic=panic,
+            max_seconds=5.0,
+            start=True,
+        )
         machine = Machine.build(
             "watchdog",
-            [a, State("B", (Operation((), "A", False, name="back"),)),
-             State("SAFE", (Operation((), "A", False, name="back"),))],
-            "A",
+            [a, State('B', Operation((), 'A', False, name='back')),
+             State('SAFE', Operation((), 'A', False, name='back'))],
         )
         eff = FakeEffector()
         d = Dispatcher(machine, make_context(), eff)
@@ -406,12 +432,14 @@ class TestManualControl(unittest.TestCase):
     def _slow_machine(self):
         never = WaitUntil(lambda ctx: False, label="never")
         a = State(
-            "A",
-            (Operation((SetValve("v1", True), never), "B", True, name="slow",
-                       guard=lambda ctx: True, timeout_s=None),),
-            None, None, max_seconds=1000.0,
+            'A',
+            Operation((SetValve('v1', True), never), 'B', True, name='slow', guard=lambda ctx: True, timeout_s=None),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+            start=True,
         )
-        machine = Machine.build("slow", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
+        machine = Machine.build("slow", [a, State('B', Operation((), 'A', False, name='back'))])
         return machine
 
     def test_manual_click_suspends_and_resume_keeps_progress(self):
@@ -451,9 +479,15 @@ class TestManualControl(unittest.TestCase):
     def test_effector_refuses_to_stage_while_abort_is_latched(self):
         eff = FakeEffector()
         eff.abort = True
-        a = State("A", (Operation((SetValve("v1", True),), "B", True, name="go",
-                                  guard=lambda ctx: True),), None, None, max_seconds=1000.0)
-        machine = Machine.build("abort", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
+        a = State(
+            'A',
+            Operation((SetValve('v1', True),), 'B', True, name='go', guard=lambda ctx: True),
+            expected_state=None,
+            panic=None,
+            max_seconds=1000.0,
+            start=True,
+        )
+        machine = Machine.build("abort", [a, State('B', Operation((), 'A', False, name='back'))])
         d = Dispatcher(machine, make_context(), eff)
         d.armed = True
         run_ticks(d, 4)
@@ -473,76 +507,78 @@ class TestManualControl(unittest.TestCase):
 
 class TestMachineAudit(unittest.TestCase):
     def test_unknown_destination_raises_at_link_time(self):
-        a = State("A", (Operation((), "TYPO", False, name="go"),))
+        a = State('A', Operation((), 'TYPO', False, name='go'), start=True)
         with self.assertRaises(UnknownStateError):
-            Machine.build("bad", [a], "A")
+            Machine.build("bad", [a])
 
     def test_validate_flags_equal_priority_automatic_exits(self):
         a = State(
-            "A",
-            (
-                Operation((), "B", True, name="left", guard=lambda ctx: True),
-                Operation((), "B", True, name="right", guard=lambda ctx: True),
-            ),
-            None, None, max_seconds=10.0,
+            'A',
+            Operation((), 'B', True, name='left', guard=lambda ctx: True),
+            Operation((), 'B', True, name='right', guard=lambda ctx: True),
+            expected_state=None,
+            panic=None,
+            max_seconds=10.0,
+            start=True,
         )
-        machine = Machine.build("dup", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
-        problems = machine.validate()
-        self.assertTrue(any("share priority" in p for p in problems), problems)
+        with self.assertRaisesRegex(MachineValidationError, "share priority"):
+            Machine.build("dup", [a, State('B', Operation((), 'A', False, name='back'))])
 
     def test_declared_mutual_exclusion_silences_the_tie_warning(self):
         a = State(
-            "A",
-            (
-                Operation((), "B", True, name="left", guard=lambda ctx: True,
-                          mutually_exclusive_with=("right",)),
-                Operation((), "B", True, name="right", guard=lambda ctx: True,
-                          mutually_exclusive_with=("left",)),
-            ),
-            None, None, max_seconds=10.0,
+            'A',
+            Operation((), 'B', True, name='left', guard=lambda ctx: True, mutually_exclusive_with=('right',)),
+            Operation((), 'B', True, name='right', guard=lambda ctx: True, mutually_exclusive_with=('left',)),
+            expected_state=None,
+            panic=None,
+            max_seconds=10.0,
+            start=True,
         )
-        machine = Machine.build("declared", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
+        machine = Machine.build("declared", [a, State('B', Operation((), 'A', False, name='back'))])
         self.assertEqual([p for p in machine.validate() if "share priority" in p], [])
 
     def test_validate_requires_a_watchdog_on_automatic_states(self):
-        a = State("A", (Operation((), "B", True, name="go", guard=lambda ctx: True),))
-        machine = Machine.build("nowatchdog", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
-        self.assertTrue(any("max_seconds" in p for p in machine.validate()))
+        a = State('A', Operation((), 'B', True, name='go', guard=lambda ctx: True), start=True)
+        with self.assertRaisesRegex(MachineValidationError, "max_seconds"):
+            Machine.build("nowatchdog", [a, State('B', Operation((), 'A', False, name='back'))])
 
     def test_validate_flags_unreachable_states(self):
-        a = State("A", (Operation((), "B", False, name="go"),))
-        b = State("B", (Operation((), "A", False, name="back"),))
-        orphan = State("ORPHAN", (Operation((), "A", False, name="back"),))
-        machine = Machine.build("orphan", [a, b, orphan], "A")
-        self.assertTrue(any("unreachable" in p for p in machine.validate()))
+        a = State('A', Operation((), 'B', False, name='go'), start=True)
+        b = State('B', Operation((), 'A', False, name='back'))
+        orphan = State('ORPHAN', Operation((), 'A', False, name='back'))
+        with self.assertRaisesRegex(MachineValidationError, "unreachable"):
+            Machine.build("orphan", [a, b, orphan])
 
     def test_validate_flags_an_operation_that_misses_its_destination_table(self):
         # Actions open valve_a, the destination expects it closed. Catch that
         # at build time rather than at 350 psig.
         a = State(
-            "A",
-            (Operation((SetValve("valve_a", True),), "B", False, name="open a"),),
-            {"valve_a": False},
+            'A',
+            Operation((SetValve('valve_a', True),), 'B', False, name='open a'),
+            expected_state={'valve_a': False},
+            start=True,
         )
-        b = State("B", (Operation((), "A", False, name="back"),), {"valve_a": False})
-        machine = Machine.build("tables", [a, b], "A")
-
-        problems = machine.validate()
-
-        self.assertTrue(any("but B expects False" in p for p in problems), problems)
+        b = State('B', Operation((), 'A', False, name='back'), expected_state={'valve_a': False})
+        with self.assertRaisesRegex(MachineValidationError, "but B expects False") as caught:
+            Machine.build("tables", [a, b])
+        self.assertEqual(len(caught.exception.problems), 3)
+        self.assertTrue(any("no safe-out" in p for p in caught.exception.problems))
 
     def test_validate_accepts_an_operation_that_reaches_its_destination_table(self):
         a = State(
-            "A",
-            (Operation((SetValve("valve_a", True),), "B", False, name="open a"),),
-            {"valve_a": False},
+            'A',
+            Operation((SetValve('valve_a', True),), 'B', False, name='open a'),
+            expected_state={'valve_a': False},
+            on_mismatch=MismatchPolicy.WARN,
+            start=True,
         )
         b = State(
-            "B",
-            (Operation((SetValve("valve_a", False),), "A", False, name="back"),),
-            {"valve_a": True},
+            'B',
+            Operation((SetValve('valve_a', False),), 'A', False, name='back'),
+            expected_state={'valve_a': True},
+            on_mismatch=MismatchPolicy.WARN,
         )
-        machine = Machine.build("tables", [a, b], "A")
+        machine = Machine.build("tables", [a, b])
 
         self.assertEqual([p for p in machine.validate() if "expects" in p], [])
 
@@ -551,29 +587,26 @@ class TestMachineAudit(unittest.TestCase):
         # lands back in itself. That is an infinite panic, not a safe state.
         loop = Operation((), "ABORTED", False, name="safe-out")
         aborted = State(
-            "ABORTED",
-            (Operation((), "A", False, name="ack"),),
-            {"valve_a": True},
-            loop,
+            'ABORTED',
+            Operation((), 'A', False, name='ack'),
+            expected_state={'valve_a': True},
+            panic=loop,
         )
-        a = State("A", (Operation((), "ABORTED", False, name="go"),))
-        machine = Machine.build("loop", [a, aborted], "A")
-
-        problems = machine.validate()
-
-        self.assertTrue(any("re-enters ABORTED" in p for p in problems), problems)
+        a = State('A', Operation((), 'ABORTED', False, name='go'), start=True)
+        with self.assertRaisesRegex(MachineValidationError, "re-enters ABORTED"):
+            Machine.build("loop", [a, aborted])
 
     def test_panic_into_the_current_state_halts_instead_of_looping(self):
         loop = Operation((), "ABORTED", False, name="safe-out")
         aborted = State(
-            "ABORTED",
-            (Operation((), "A", False, name="ack"),),
-            {"valve_a": True},
-            loop,
+            'ABORTED',
+            Operation((), 'A', False, name='ack'),
+            expected_state={'valve_a': True},
+            panic=loop,
             on_mismatch=MismatchPolicy.WARN,
         )
-        a = State("A", (Operation((), "ABORTED", False, name="go"),))
-        machine = Machine.build("loop", [a, aborted], "A")
+        a = State('A', Operation((), 'ABORTED', False, name='go'), start=True)
+        machine = Machine.build("loop", [a, aborted])
         ctx = make_context()
         set_board(ctx, valve_a=False)
         d = Dispatcher(machine, ctx, FakeEffector())
@@ -591,23 +624,26 @@ class TestMachineAudit(unittest.TestCase):
         )
 
     def test_validate_flags_a_timeout_below_the_lead_time(self):
-        a = State(
-            "A",
-            (Operation((), "B", False, name="go", lead_time_s=2.0, timeout_s=1.0),),
-        )
-        machine = Machine.build(
-            "timeout", [a, State("B", (Operation((), "A", False, name="back"),))], "A"
-        )
-        self.assertTrue(any("lead time" in p for p in machine.validate()))
+        a = State('A', Operation((), 'B', False, name='go', lead_time_s=2.0, timeout_s=1.0), start=True)
+        with self.assertRaisesRegex(MachineValidationError, "lead time"):
+            Machine.build("timeout", [a, State('B', Operation((), 'A', False, name='back'))])
 
     def test_dispatcher_refuses_to_arm_with_outstanding_problems(self):
-        a = State("A", (Operation((), "B", True, name="go", guard=lambda ctx: True),))
-        machine = Machine.build("unsafe", [a, State("B", (Operation((), "A", False, name="back"),))], "A")
+        a = State('A', Operation((), 'B', True, name='go', guard=lambda ctx: True),
+                  max_seconds=10.0, start=True)
+        machine = Machine.build("unsafe", [a, State('B', Operation((), 'A', False, name='back'))])
+        # Retain the runtime defense if a valid machine is subsequently edited.
+        a.max_seconds = None
         d = Dispatcher(machine, make_context(), FakeEffector())
 
         d.arm()
 
         self.assertFalse(d.armed)
+
+    def test_direct_construction_also_runs_the_audit(self):
+        state = State("A", start=True)
+        with self.assertRaisesRegex(MachineValidationError, "dead end"):
+            Machine("direct", {"A": state}, "A")
 
 
 # --- Expected valve configuration -------------------------------------------
@@ -617,20 +653,20 @@ def expect_machine(expected, *, on_mismatch=MismatchPolicy.ABORT):
     """A machine whose start state asserts *expected* and can bail to SAFE."""
     safe_out = Operation((SetValve("vent", True),), "SAFE", False, name="panic")
     start = State(
-        "A",
-        (Operation((), "B", False, name="go"),),
-        expected,
-        safe_out,
+        'A',
+        Operation((), 'B', False, name='go'),
+        expected_state=expected,
+        panic=safe_out,
         on_mismatch=on_mismatch,
+        start=True,
     )
     return Machine.build(
         "expect",
         [
             start,
-            State("B", (Operation((), "A", False, name="back"),)),
-            State("SAFE", (Operation((), "A", False, name="back"),)),
+            State('B', Operation((), 'A', False, name='back')),
+            State('SAFE', Operation((), 'A', False, name='back')),
         ],
-        "A",
     )
 
 
@@ -729,16 +765,15 @@ def move_machine(dest_expected, *, lead_time_s=1.0, verify_dest=True):
     return Machine.build(
         "move",
         [
-            State("A", (move,), None, Operation((), "SAFE", False, name="panic")),
+            State('A', move, expected_state=None, panic=Operation((), 'SAFE', False, name='panic'), start=True),
             State(
-                "B",
-                (Operation((), "A", False, name="back"),),
-                dest_expected,
+                'B',
+                Operation((), 'A', False, name='back'),
+                expected_state=dest_expected,
                 on_mismatch=MismatchPolicy.WARN,
             ),
-            State("SAFE", (Operation((), "A", False, name="back"),)),
+            State('SAFE', Operation((), 'A', False, name='back')),
         ],
-        "A",
     )
 
 
@@ -861,8 +896,8 @@ class TestOperationFeedback(unittest.TestCase):
 class TestStartState(unittest.TestCase):
     def _states(self, **flags):
         return [
-            State("A", (Operation((), "B", False, name="go"),), start=flags.get("a", False)),
-            State("B", (Operation((), "A", False, name="back"),), start=flags.get("b", False)),
+            State('A', Operation((), 'B', False, name='go'), start=flags.get('a', False)),
+            State('B', Operation((), 'A', False, name='back'), start=flags.get('b', False)),
         ]
 
     def test_declared_start_state_needs_no_initial_argument(self):
@@ -877,15 +912,13 @@ class TestStartState(unittest.TestCase):
         with self.assertRaises(StartStateError):
             Machine.build("start", self._states())
 
-    def test_initial_argument_must_match_the_flag(self):
-        with self.assertRaises(StartStateError):
+    def test_positional_initial_argument_is_rejected(self):
+        with self.assertRaises(TypeError):
             Machine.build("start", self._states(a=True), "B")
 
-    def test_naming_the_start_state_marks_it(self):
-        machine = Machine.build("start", self._states(), "B")
-        self.assertEqual(machine.initial, "B")
-        self.assertTrue(machine.states["B"].start)
-        self.assertEqual(machine.validate(), [])
+    def test_keyword_initial_argument_is_rejected(self):
+        with self.assertRaises(TypeError):
+            Machine.build("start", self._states(a=True), initial="A")
 
 
 # --- Slope tracking ---------------------------------------------------------

@@ -20,13 +20,33 @@ from state_machine.operations import close_valve, open_valve
 
 
 class TestProcedureAPI(unittest.TestCase):
+    def test_removed_state_factory_is_unavailable(self):
+        self.assertFalse(hasattr(State, "define"))
+
+    def test_legacy_state_arguments_are_rejected(self):
+        exit_operation = Operation((), "B")
+        with self.assertRaises(TypeError):
+            State("A", (exit_operation,))
+        with self.assertRaises(TypeError):
+            State("A", operations=(exit_operation,))
+        with self.assertRaises(TypeError):
+            State("A", exit_operation, {"valve_a": True})
+
+    def test_mismatch_policy_requires_an_enum(self):
+        for policy in ("abort", "warn", "ignore", "panic", "WARN"):
+            with self.subTest(policy=policy), self.assertRaises(TypeError):
+                State("A", on_mismatch=policy)
+        for policy in MismatchPolicy:
+            with self.subTest(policy=policy):
+                self.assertIs(State("A", on_mismatch=policy).on_mismatch, policy)
+
     def test_inline_exits_link_and_execute_in_order(self):
         first = Operation((), "B", name="continue", lead_time_s=0)
         alternate = Operation((), "C", name="alternate", lead_time_s=0)
         machine = Machine.build("inline", [
-            State.define("A", first, alternate, start=True),
-            State.define("B", Operation((), "A")),
-            State.define("C", Operation((), "A")),
+            State("A", first, alternate, start=True),
+            State("B", Operation((), "A")),
+            State("C", Operation((), "A")),
         ])
         self.assertEqual(machine.validate(), [])
         dispatcher = Dispatcher(machine, make_context(), FakeEffector())
@@ -38,9 +58,9 @@ class TestProcedureAPI(unittest.TestCase):
     def test_default_panic_is_a_reachable_exit_and_runs(self):
         panic = Operation((), "SAFE", name="panic", verify_dest=False, lead_time_s=0)
         machine = Machine.build("shared panic", [
-            State.define("A", expected_state={"valve_a": True}, start=True,
+            State("A", expected_state={"valve_a": True}, start=True,
                          mismatch_grace_s=0),
-            State.define("SAFE", Operation((), "A"), on_mismatch=MismatchPolicy.WARN),
+            State("SAFE", Operation((), "A"), on_mismatch=MismatchPolicy.WARN),
         ], default_panic=panic)
         self.assertEqual(machine.validate(), [])
         dispatcher = Dispatcher(machine, make_context(), FakeEffector())
@@ -51,9 +71,9 @@ class TestProcedureAPI(unittest.TestCase):
 
     def test_state_panic_overrides_default_in_reachability_and_runtime(self):
         machine = Machine.build("override", [
-            State.define("A", start=True, panic=Operation((), "LOCAL", lead_time_s=0)),
-            State.define("LOCAL", Operation((), "A")),
-            State.define("DEFAULT", Operation((), "A")),
+            State("A", start=True, panic=Operation((), "LOCAL", lead_time_s=0)),
+            State("LOCAL", Operation((), "A")),
+            State("DEFAULT", Operation((), "A")),
         ], default_panic=Operation((), "DEFAULT", lead_time_s=0))
         self.assertEqual(machine.validate(), [])
         dispatcher = Dispatcher(machine, make_context(), FakeEffector())
@@ -62,7 +82,7 @@ class TestProcedureAPI(unittest.TestCase):
         self.assertEqual(dispatcher.current.name, "LOCAL")
 
     def test_stale_feed_grace_expires_when_actions_finish_at_zero(self):
-        destination = State.define("B", expected_state={"valve_a": True})
+        destination = State("B", expected_state={"valve_a": True})
         operation = Operation((), destination, lead_time_s=0)
         context = make_context(healthy=False)
         context.begin_cycle(0.0)

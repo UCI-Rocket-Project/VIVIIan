@@ -11,10 +11,10 @@ A **state** describes a stable valve configuration. An **operation** names a
 destination and the actions needed to get there. A **guard** decides when an
 automatic operation may start. Manual operations wait for an operator request.
 
-Use `State.define(name, *operations, **settings)` to put exits directly inside
+Use `State(name, *operations, **settings)` to put exits directly inside
 their state. All state settings are keyword-only; no surrounding exit tuple or
-positional `None` placeholders are needed. The original `State(...)` constructor
-remains supported.
+positional `None` placeholders are needed. Tuple-wrapped exits and positional
+state settings are not accepted.
 
 This small authoring example uses an illustrative pressure target:
 
@@ -31,7 +31,7 @@ def build_machine():
     return Machine.build(
         "fill_example",
         [
-            State.define(
+            State(
                 "READY",
                 manual_operation(
                     "Begin fill", dest="FILLING",
@@ -40,7 +40,7 @@ def build_machine():
                 expected_state=table_states.ALL_OFF,
                 start=True,
             ),
-            State.define(
+            State(
                 "FILLING",
                 auto_operation(
                     "Close fill at target", dest="DONE",
@@ -51,12 +51,12 @@ def build_machine():
                 expected_state=table_states.valves(sol_gn2_fill_1=True),
                 max_seconds=900.0,
             ),
-            State.define(
+            State(
                 "DONE",
                 manual_gate("Restart", dest="READY"),
                 expected_state=table_states.ALL_OFF,
             ),
-            State.define(
+            State(
                 "ABORTED",
                 manual_operation(
                     "Return to ALL OFF", dest="READY",
@@ -74,7 +74,9 @@ def build_machine():
 Create fresh states, operations and actions inside each build: operations and
 actions carry mutable execution state. `Machine.build` links destination names
 to states and rejects duplicate names, unknown destinations and conflicting
-start declarations. Mark exactly one state `start=True`.
+start declarations. Mark exactly one state `start=True`. `Machine.build` does
+not accept an initial-state argument; `machine.initial` reports the resolved
+start name.
 
 ## State settings
 
@@ -93,6 +95,7 @@ The abort destination normally uses `WARN`: an abort-on-mismatch state whose
 safe-out returns to itself is rejected by validation. Panic into the current
 state halts rather than repeatedly commanding the same safe-out.
 
+Pass enum members such as `MismatchPolicy.WARN`.
 ## Operation and action reference
 
 Factories in `state_machine.operations` return ordinary engine `Operation` objects:
@@ -174,10 +177,14 @@ put mutations in actions. Exceptions in guards are logged and treated as false.
 
 ## Validation and runtime integration
 
-Call `machine.validate()` and fix every returned message before use. It checks
-watchdogs, possible priority ties, valve-table contradictions, safe-outs and
-reachability. `Dispatcher.arm()` refuses outstanding problems. Validation is
-a static audit, not proof that arbitrary Python guards or callbacks are safe.
+Machine construction automatically links destinations and runs the static audit.
+Invalid definitions raise `MachineValidationError` (a `ValueError`) with every
+audit failure in the error message and its `problems` tuple. This applies to
+`Machine.build(...)` and direct construction. The audit checks watchdogs,
+possible priority ties, valve-table contradictions, safe-outs and reachability.
+`machine.validate()` can recheck a machine after edits; the dispatcher retains
+its additional check before allowing automation. Validation is a static audit,
+not proof that arbitrary Python guards or callbacks are safe.
 
 The frontend supplies `ControlContext`, `Effector` and `ValveMap`, constructs
 `Dispatcher(machine, ctx, effector)`, then calls `tick()` each frame. The
