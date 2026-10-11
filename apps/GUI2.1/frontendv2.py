@@ -127,8 +127,8 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         control_context,
         GseEffector(gse_command_client),
     )
-    attach_manual_listener(dispatcher)
     state_machine_panel = StateMachinePanel(dispatcher, decay_sections=DECAY_SECTIONS)
+    attach_manual_listener(lambda button_id: state_machine_panel.dispatcher.note_manual_command(button_id))
 
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -153,7 +153,7 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         imgui.text_unformatted(f"FPS: {imgui.get_io().framerate:.1f}")
         imgui.separator()
         sync_gse2v1_command_buttons_from_echo(gse_command_client, echo_server)
-        dispatcher.tick()
+        state_machine_panel.dispatcher.tick()
         state_machine_panel.render(imgui)
         imgui.separator()
         draw_command_buttons(imgui, command_buttons, valve_states)

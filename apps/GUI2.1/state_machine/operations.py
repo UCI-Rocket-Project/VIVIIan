@@ -92,9 +92,10 @@ class GseValveMap:
         return GSE2V1_COMMAND_BUTTONS.get(button_id, {}).get("display_name", button_id)
 
 
-def attach_manual_listener(dispatcher) -> None:
+def attach_manual_listener(on_manual_command: Callable[[str], None]) -> None:
     """
-    Tell the dispatcher when the operator clicks a raw valve button.
+    Notify the active procedure when the operator clicks a raw valve button.
+    A callback lets the frontend follow procedure changes without stacking listeners.
     """
     for button_id, config in GSE2V1_COMMAND_BUTTONS.items():
         button = config.get("button")
@@ -107,7 +108,7 @@ def attach_manual_listener(dispatcher) -> None:
                 _inner(clicked)
             if clicked.momentary_seconds is not None and not clicked.state:
                 return  # momentary release, not a click
-            dispatcher.note_manual_command(_id)
+            on_manual_command(_id)
 
         button.on_click = wrapped
 

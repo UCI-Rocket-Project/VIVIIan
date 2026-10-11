@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 
 from captcha import Captcha67Gate
+from state_machine.procedures import pressure_decay, tank_pressurization
 from gui_elements import (
     BUTTON_STATE_MISMATCH_COLOR,
     BUTTON_STATUS_ON_COLOR,
@@ -30,6 +31,11 @@ COLOR_WARN = BUTTON_STATE_MISMATCH_COLOR
 
 LOG_VISIBLE_LINES = 8
 
+PROCEDURES = {
+    "pressure_decay": ("Pressure decay", pressure_decay.build_machine, pressure_decay.DECAY_SECTIONS),
+    "tank_pressurization": ("Tank pressurization", tank_pressurization.build_machine, ()),
+}
+
 
 def _fmt(value: float, unit: str = "") -> str:
     if value is None or not math.isfinite(value):
@@ -43,6 +49,38 @@ class StateMachinePanel:
         self.decay_sections = decay_sections
         self.captcha = Captcha67Gate()
         self.show_log = True
+        self.selection_error = ""
+
+    def can_select_procedure(self) -> bool:
+        d = self.dispatcher
+        return (
+            not d.armed
+            and d.mode in (DispatcherMode.IDLE, DispatcherMode.HALTED)
+            and d.active_op is None
+            and d.pending_manual is None
+            and not d._panic_requested
+            and not self.captcha.pending
+        )
+
+    def select_procedure(self, name: str) -> bool:
+        if name == self.dispatcher.machine.name or not self.can_select_procedure():
+            return False
+        _, build, sections = PROCEDURES[name]
+        old = self.dispatcher
+        # Build and audit before replacing the current procedure.
+        try:
+            replacement = Dispatcher(build(), old.ctx, old.effector,
+                                     period_s=old.period_s, interrupt_policy=old.interrupt_policy)
+        except (ValueError, LookupError, TypeError) as exc:
+            self.selection_error = str(exc)
+            return False
+        old.ctx.slopes.reset()
+        old.ctx.settle.reset()
+        self.dispatcher = replacement
+        self.decay_sections = sections
+        self.captcha.cancel()
+        self.selection_error = ""
+        return True
 
     # -- helpers ------------------------------------------------------------
 
@@ -65,6 +103,20 @@ class StateMachinePanel:
     # -- sections -----------------------------------------------------------
 
     def _header(self, imgui) -> None:
+        names = list(PROCEDURES)
+        if self.dispatcher.machine.name in PROCEDURES:
+            enabled = self.can_select_procedure()
+            imgui.begin_disabled(not enabled)
+            changed, index = imgui.combo(
+                "Procedure", names.index(self.dispatcher.machine.name),
+                [PROCEDURES[name][0] for name in names],
+            )
+            if changed:
+                self.select_procedure(names[index])
+            imgui.end_disabled()
+            self._text(imgui, COLOR_DIM, "Switch while disarmed and idle; selecting a procedure does not move valves.")
+        if self.selection_error:
+            self._text(imgui, COLOR_ALERT, self.selection_error)
         d = self.dispatcher
         imgui.text_unformatted(f"procedure: {d.machine.name}")
 

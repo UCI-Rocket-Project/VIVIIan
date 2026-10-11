@@ -7,6 +7,26 @@ and valve feedback goes through a `ValveMap`.
 
 ## A procedure in Python
 
+The GUI's **Procedure** selector offers pressure decay and tank pressurization.
+Selection creates a fresh, disarmed procedure without moving valves. Disarm and
+finish the current operation before switching; queued commands, a pending panic,
+an unresolved transition tie, and confirmation dialogs also prevent switching.
+Raw valve controls continue to notify the selected procedure.
+
+Tank pressurization follows the checklist embedded in `tank_pressurization.py`.
+Stabilization, personnel clearance, visual valve checks, MVAS position, and
+Table 21/22 readouts require operator confirmation: the source supplies no
+stabilization rate or tolerance around its exact pressure targets. Table 20
+leaves the tank vent solenoids unchecked until they are commanded closed.
+Automation must be armed for the 2000-psig minimum gate and the 4000-psig cutoff
+in the final fill state. PV 2's close operation rechecks the 2000-psig minimum
+before staging the command. Fills close at the target before the final readout
+acknowledgement, so an operator delay does not extend the fill. Both automatic
+wait states use the existing procedure's 900-second hung-fill allowance.
+A global 650-psig limit on either tank applies the abort table and alarm, including
+during an operation. The final state retains this watch. Temperatures are
+operator-monitored; no unstated temperature limits are encoded.
+
 A **state** describes a stable valve configuration. An **operation** names a
 destination and the actions needed to get there. A **guard** decides when an
 automatic operation may start. Manual operations wait for an operator request.
