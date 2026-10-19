@@ -82,26 +82,7 @@ Important details:
 - use `receiver.batch.copy()` when downstream code needs a stable snapshot
 - the receiver thread reconnects automatically if the sender disappears and returns later
 
-## The UCIRPLGUI Pattern
-
-The app code does not inline `StreamSpec` definitions everywhere.
-It centralizes the contracts in `config.py`, then builds specs from those
-contracts.
-
-```python
-from viviian.connector_utils import StreamSpec
-from ucirplgui import config
-
-
-def _stream_spec(stream_id: str) -> StreamSpec:
-    return StreamSpec(
-        stream_id=stream_id,
-        schema=config.SCHEMAS[stream_id],
-        shape=(config.ROWS_PER_FRAME, len(config.SCHEMAS[stream_id])),
-    )
-```
-
-That pattern is worth copying because it keeps four failure-prone values aligned:
+Keep four failure-prone values aligned in one place:
 
 - stream ID
 - schema
@@ -112,9 +93,8 @@ If you spread those across the codebase, drift is nearly guaranteed.
 
 ## Common Tasks
 
-### 1) Define a New Stream in App Config
+### 1) Define a New Stream
 
-Start in `apps/<app>/src/<app>/config.py`.
 Keep stream ID, columns, schema, and port assignment together.
 
 ```python
@@ -248,15 +228,7 @@ A fast debugging checklist:
 3. copy the batch before downstream mutation
 4. confirm the producer is not relying on queue semantics
 
-## UCIRPLGUI Equivalent
-
-The reference app uses telemetry in three different roles:
-
-- `device_interfaces/device_interfaces.py`: receives socket telemetry and publishes raw streams
-- `backend/pipeline.py`: reads raw streams and publishes frontend-facing streams
-- `frontend/frontend.py`: reads frontend-facing streams and primes widget readers
-
-That layering is intentional:
+Keep that layering:
 
 - device interfaces normalize board protocols
 - the backend emits the data products the UI wants

@@ -30,18 +30,17 @@ Run it from the repo root:
 python tests/gui_runnables/rocket_viewer_lab.py
 ```
 
-Before running it, place exactly one `.obj` file in:
+The viewer looks up assets next to the package:
 
 ```text
-gui_assets/cad/
+packages/viviian_core/src/gui_assets/cad/
+packages/viviian_core/src/gui_assets/compiled/
 ```
-
-The runnable defaults to the repo-root `gui_assets/` paths even though the repo also carries checked-in assets under `src/gui_assets/`.
 
 What it demonstrates:
 
-- discovery of exactly one CAD asset under `gui_assets/cad/`
-- a compile step that produces or reuses a mesh cache and manifest under `gui_assets/compiled/`
+- discovery of exactly one CAD asset under `packages/viviian_core/src/gui_assets/cad/`
+- a compile step that produces or reuses a mesh cache and manifest under `packages/viviian_core/src/gui_assets/compiled/`
 - named mesh bodies with explicit low/high color mappings, including `g_Body1:20` and `g_Body1:21`
 - one live pose stream using row-major 3x3 matrices
 - default-body styling for every unbound mesh part with a shared transparency

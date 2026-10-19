@@ -1,0 +1,4 @@
+support_server_ssh_config:
+  host: 10.0.0.3
+  username: testop
+  password: change-me

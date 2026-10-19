@@ -4,3 +4,7 @@ numpy
 toml
 scipy
 sympy
+pythusa
+watchdog
+asyncssh
+pyyaml

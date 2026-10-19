@@ -4,11 +4,11 @@ Use this page as your implementation index: find the right module first, then im
 
 ## Build Tasks -> Where To Work
 
-### I need to build an operator app like UCIRPLGUI
+### I need to build an operator desk
 
 - Start with [Build With VIVIIan](build-with-viviian.md)
 - Then read [Backend](build-backend.md), [Frontend](build-frontend.md), and [Device Interfaces](build-device-interfaces.md) as needed
-- Use `apps/ucirplgui` as your baseline layout
+- Use `tests/gui_runnables/` as the working examples
 - Keep reusable logic in `packages/viviian_core/src/viviian`
 
 ### I need to move telemetry between processes/machines
@@ -34,9 +34,7 @@ Use this page as your implementation index: find the right module first, then im
 
 - Start with [Frontend](build-frontend.md)
 - Read [Frontend Reference](frontend.md)
-- For UCIRPL-style dashboards, inspect:
-  - `apps/ucirplgui/src/ucirplgui/frontend/frontend.py`
-  - `apps/ucirplgui/src/ucirplgui/components/dashboard.py`
+- Inspect `tests/gui_runnables/frontend_lab.py` and `tests/test_frontend.py`
 
 ### I need storage/persistence work
 
@@ -46,7 +44,7 @@ Use this page as your implementation index: find the right module first, then im
 ### I need examples and baseline patterns
 
 - Read [Examples](examples.md)
-- Mirror structure from `apps/ucirplgui` and adapt stream config, pipeline, and UI surfaces
+- Mirror structure from `tests/gui_runnables/` and adapt stream config, pipeline, and UI surfaces
 
 ## Repository Map
 
@@ -64,11 +62,7 @@ Use this page as your implementation index: find the right module first, then im
 
 ### Apps
 
-- `apps/ucirplgui`
-  - `scripts`: launch entrypoints
-  - `src/ucirplgui`: app runtime, backend, frontend, components, config
-  - `src/device_simulations`: simulation-side device producers
-  - `tests`: app runtime and integration tests
+- `apps/GUI2.1`: local GSE operator app (connectors, storage, and GUI scripts in that directory)
 
 ### Docs
 
@@ -78,5 +72,4 @@ Use this page as your implementation index: find the right module first, then im
 
 - Put reusable code in `packages/`; keep app-specific composition in `apps/`.
 - Treat stream IDs, schemas, and shapes as explicit contracts.
-- Prefer deterministic startup paths via scripts under `apps/<app>/scripts`.
-- Add tests next to the layer you modify (`apps/<app>/tests` or package tests).
+- Add tests next to the layer you modify (`tests/` or package tests).

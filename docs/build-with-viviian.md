@@ -23,29 +23,30 @@ pip install -e "packages/pythusa" -e ".[gui]"
 
 Install `packages/pythusa` first so `from pythusa import ...` resolves to the in-repo runtime, not a missing optional extra.
 
-### Run the reference app
+### Run a working desk
 
 From repo root:
 
 ```bash
-python apps/ucirplgui/scripts/run_all.py
+python tests/gui_runnables/signal_graph_lab.py
+python tests/gui_runnables/frontend_lab.py
+python tests/gui_runnables/rocket_viewer_lab.py
 ```
 
 Expected outcome:
 
-- device-interface processes publish raw board telemetry
-- backend runtime derives frontend-facing streams
-- frontend window renders the operator dashboard
-- device-link status files update under `apps/ucirplgui/data/device_link/`
+- the signal lab renders graphs and buttons against simulated spectra
+- the frontend lab runs the shared frontend runtime
+- the model viewer renders the checked-in OBJ under `packages/viviian_core/src/gui_assets/cad/`
 
 ## Repo Mental Model
 
 | Layer | What it owns | Typical files |
 | --- | --- | --- |
-| Telemetry contracts | stream IDs, Arrow schemas, port assignments, batch shapes | `apps/<app>/src/<app>/config.py` |
-| Device interfaces | sockets, simulator links, protocol decode/encode, command echo | `apps/<app>/src/<app>/device_interfaces/` |
-| Backend | latest-batch ingestion, derived streams, persistence, process-local coordination | `apps/<app>/src/<app>/backend/` |
-| Frontend | widgets, readers, output-state snapshots, GLFW/headless runtime | `apps/<app>/src/<app>/frontend/`, `apps/<app>/src/<app>/components/` |
+| Telemetry contracts | stream IDs, Arrow schemas, port assignments, batch shapes | `viviian.connector_utils` |
+| Device interfaces | schema, batching, and transport into a sender | `viviian.deviceinterface` |
+| Backend | latest-batch ingestion, derived streams, persistence | `viviian.orchestrator`, `viviian.datastorage_utils` |
+| Frontend | widgets, readers, output-state snapshots, GLFW/headless runtime | `viviian.frontend`, `viviian.gui_utils` |
 | Reusable primitives | connectors, frontend runtime, shared widgets, storage helpers | `packages/viviian_core/src/viviian/` |
 | Local runtime substrate | in-process pipeline and shared-memory helpers | `packages/pythusa/` |
 
@@ -60,30 +61,16 @@ Use `apps/` when the behavior is deployment-specific.
 | derive new dashboard-facing values | [Backend](build-backend.md) | [Orchestrator](orchestrator.md), [Connectors](connectors.md) |
 | add a graph, gauge, or control | [Frontend](build-frontend.md) | [Frontend](frontend.md), [GUI Utils](gui-utils.md) |
 | integrate a board, socket feed, or simulator | [Device Interfaces](build-device-interfaces.md) | [Device Interface](deviceinterface.md), [Connectors](connectors.md) |
-| build an app like UCIRPLGUI | this page, then [Backend](build-backend.md) and [Frontend](build-frontend.md) | [Reference](reference.md) |
+| see a working operator desk | [Examples](examples.md) | [GUI Utils](gui-utils.md), [3D Viewer](3d-viewer.md) |
 
-## Reference App Layout
+## Working Examples
 
-If you are building a new app, the cleanest starting point is the current
-UCIRPLGUI layout:
-
-- `apps/ucirplgui/scripts/run_all.py`: starts the end-to-end app
-- `apps/ucirplgui/scripts/run_backend.py`: backend-only entrypoint
-- `apps/ucirplgui/scripts/run_frontend.py`: frontend-only entrypoint
-- `apps/ucirplgui/src/ucirplgui/config.py`: stream IDs, schemas, ports, UI constants
-- `apps/ucirplgui/src/ucirplgui/device_interfaces/device_interfaces.py`: board-facing runtime
-- `apps/ucirplgui/src/ucirplgui/backend/pipeline.py`: raw -> derived stream processing
-- `apps/ucirplgui/src/ucirplgui/frontend/frontend.py`: connector reads -> widget readers -> frontend task
-- `apps/ucirplgui/src/ucirplgui/components/dashboard.py`: actual dashboard composition
-- `apps/ucirplgui/tests/`: app-level regression tests
-
-That split is deliberate:
-
-- config defines contracts
-- device interfaces normalize hardware boundaries
-- backend derives data products
-- frontend renders and emits operator state
-- scripts provide deterministic launch paths
+- `tests/gui_runnables/signal_graph_lab.py`: graphs, buttons, and spectral simulators
+- `tests/gui_runnables/frontend_lab.py`: shared frontend runtime
+- `tests/gui_runnables/rocket_viewer_lab.py`: OBJ compile and model viewer
+- `tests/gui_runnables/gauge_lab.py`: analog and LED gauges
+- `packages/viviian_core/src/viviian/`: reusable primitives
+- `apps/GUI2.1/`: local GSE scripts that sit beside those primitives
 
 ## Recommended Workflow
 
@@ -106,14 +93,13 @@ not stable enough to support it cleanly.
 ### Runtime
 
 ```bash
-python apps/ucirplgui/scripts/run_all.py
+python tests/gui_runnables/frontend_lab.py
 ```
 
-### App tests
+### Tests
 
 ```bash
-PYTHONPATH="packages/viviian_core/src:apps/ucirplgui/src" \
-python -m unittest apps.ucirplgui.tests.test_dashboard_runtime
+python -m unittest tests.test_frontend tests.test_gui_utils tests.test_connector_utils
 ```
 
 ### Docs

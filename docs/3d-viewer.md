@@ -13,16 +13,15 @@ For internal architecture, maintenance constraints, and current performance risk
 
 ## Quick Start
 
-The default runtime asset layout is:
+The default runtime asset layout is next to the package source:
 
 ```text
-gui_assets/cad/
-gui_assets/compiled/
+packages/viviian_core/src/gui_assets/cad/
+packages/viviian_core/src/gui_assets/compiled/
 ```
 
-Put exactly one `.obj` file in `gui_assets/cad/`.
-The runnable discovers that file automatically, reuses an existing compiled cache under `gui_assets/compiled/` when possible, and otherwise compiles a fresh cache.
-The repository also includes checked-in sample assets under `src/gui_assets/`, but the runnable’s default lookup path is the repo-root `gui_assets/` directory shown above.
+Put exactly one `.obj` file in that `cad/` directory.
+The runnable discovers that file automatically, reuses an existing compiled cache under `compiled/` when possible, and otherwise compiles a fresh cache.
 
 The manual example is:
 
@@ -234,7 +233,7 @@ The runtime also performs a fit-distance adjustment so the full mesh stays in vi
 ## Common Failure Cases
 
 - `Expected exactly one asset ...`
-  `gui_assets/cad/` contains zero or more than one matching asset. The runnable intentionally fails early here.
+  `packages/viviian_core/src/gui_assets/cad/` contains zero or more than one matching asset. The runnable intentionally fails early here.
 - `mesh_part_name ... does not exist in ...`
   A `ModelBodyBinding.mesh_part_name` does not match the manifest. Check the compiled manifest, not the raw OBJ text, because names are normalized during compile.
 - `Reader ... must have shape ...`
@@ -260,8 +259,8 @@ These limits are documented in more detail for engineers in [3D Viewer Maintaine
 
 `tests/gui_runnables/rocket_viewer_lab.py` demonstrates:
 
-- discovery of exactly one OBJ asset under `gui_assets/cad/`
-- compile-or-reuse cache resolution under `gui_assets/compiled/`
+- discovery of exactly one OBJ asset under `packages/viviian_core/src/gui_assets/cad/`
+- compile-or-reuse cache resolution under `packages/viviian_core/src/gui_assets/compiled/`
 - two live highlighted bodies: `g_Body1:20` and `g_Body1:21`
 - one live pose stream using row-major 3x3 matrices
 - default-body styling for every unbound mesh body

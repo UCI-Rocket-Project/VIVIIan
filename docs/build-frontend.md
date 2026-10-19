@@ -216,7 +216,7 @@ task like this:
 ```python
 task = frontend.build_task(
     backend=GlfwBackend(width=1600, height=980, theme_name="tau_ceti"),
-    window_title="UCIRPLGUI",
+    window_title="My Desk",
     fill_backend_window=True,
 )
 ```
@@ -252,19 +252,12 @@ frontend.write_bindings("ui_state")
 Those are useful when an orchestrator or pipeline layer is mapping frontend
 requirements onto deployment-local stream names.
 
-## UCIRPLGUI Equivalent
-
-The frontend side of the reference app is split cleanly:
-
-- `apps/ucirplgui/src/ucirplgui/components/dashboard.py`
-  defines the actual dashboard surface
-- `apps/ucirplgui/src/ucirplgui/frontend/frontend.py`
-  opens connectors, primes per-widget readers, and runs the `FrontendTask`
-
-That split is worth keeping in your own apps:
+Keep that split in app code:
 
 - components own layout and widget composition
 - the frontend runtime owns stream binding and event loop setup
+
+The live example is `tests/gui_runnables/frontend_lab.py`.
 
 ## Failure Modes Worth Avoiding
 

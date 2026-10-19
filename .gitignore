@@ -35,6 +35,7 @@ Thumbs.db
 # Runtime/log/config-local artifacts
 *.log
 imgui.ini
+apps/GUI2.1/support_server.yaml
 
 UCIRPLGUI/data/device_link/
 

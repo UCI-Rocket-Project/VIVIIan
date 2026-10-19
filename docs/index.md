@@ -13,8 +13,8 @@ VIVIIan is a Python-first telemetry and control monorepo for operator tooling, h
 ## What This Repo Gives You
 
 - Reusable libraries in `packages/viviian_core/src/viviian` for frontend/runtime, connectors, storage, and device integration.
-- A production app baseline in `apps/ucirplgui` you can run, inspect, and fork into your own deployment.
 - In-repo pipeline/runtime support via `packages/pythusa` for deterministic stream processing workflows.
+- Runnable desks under `tests/gui_runnables/` for graphs, the frontend runtime, and the 3D viewer.
 
 ## Working Model
 

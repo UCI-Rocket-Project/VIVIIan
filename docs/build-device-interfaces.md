@@ -141,12 +141,8 @@ That is the right pattern for unit tests that care about:
 
 ## Pattern 2: App-Local Board Adapters
 
-When the boundary is an actual board protocol, the reference pattern is the
-UCIRPLGUI code in:
-
-- `apps/ucirplgui/src/ucirplgui/device_interfaces/device_interfaces.py`
-
-That module does work `DeviceInterface` should not try to own:
+When the boundary is an actual board protocol, keep that work in an app-local
+adapter. `DeviceInterface` should not own:
 
 - TCP connection management
 - binary packet reads
@@ -212,7 +208,7 @@ The important design choice is placement:
 After protocol decode, publish a NumPy batch whose shape matches the raw stream
 contract exactly.
 
-UCIRPLGUI uses one-row batches for board telemetry:
+One-row batches are the usual shape for board telemetry:
 
 ```python
 row = np.array([[packet_time_ms, pressure_psi, temperature_c]], dtype=np.float64)
@@ -239,9 +235,8 @@ belongs.
 
 #### Publish Connectivity State Separately
 
-UCIRPLGUI writes device-link snapshots to JSON files consumed by the frontend.
-That is app-specific state, so it belongs in the board adapter, not in the
-generic `DeviceInterface`.
+Link status is app-specific state, so it belongs in the board adapter, not in
+the generic `DeviceInterface`.
 
 If your app needs operator-visible link state, keep it as a separate contract
 from the raw telemetry stream.

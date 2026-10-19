@@ -23,11 +23,6 @@ A good backend does four things well:
 3. publish streams shaped for consumers, not for internal convenience
 4. degrade predictably when upstream data is temporarily missing
 
-UCIRPLGUI is a good example of this.
-Its backend reads raw GSE, ECU, EXTR_ECU, and loadcell telemetry, then produces
-dashboard-specific streams like tank pressures, line pressures, FFT magnitude,
-and scalar summaries.
-
 ## Smallest Working Example
 
 This is the smallest backend loop that reads one raw stream and publishes one
@@ -89,24 +84,6 @@ The key pattern is simple:
 - publish a new fixed-shape batch
 - sleep or otherwise pace the loop explicitly
 
-## The UCIRPLGUI Pattern
-
-The reference backend in `apps/ucirplgui/src/ucirplgui/backend/pipeline.py`
-follows the same structure, just with more streams:
-
-- `ReceiveConnector` for raw board feeds
-- `SendConnector` for frontend-facing outputs
-- one long-lived runtime object
-- one loop that:
-  - checks the latest raw batches
-  - derives dashboard-ready values
-  - publishes multiple output streams
-  - appends selected values to CSV storage
-
-That design is worth preserving.
-It keeps the UI from having to know about raw packet formats, smoothing rules,
-or FFT windows.
-
 ## Common Tasks
 
 ### 1) Add a New Derived Stream
@@ -119,36 +96,20 @@ The safest order is:
 4. publish a fixed-shape NumPy batch
 5. bind the new stream on the frontend side
 
-The app contract lives in config first.
 Do not invent new stream IDs ad hoc inside the backend file.
 
 ### 2) Combine Multiple Raw Sources
 
-UCIRPLGUI already does this when it smooths line-pressure channels with
-secondary EXTR_ECU data:
-
-```python
-inj_lox = float(ecu_row[4]) if ecu_row is not None else 0.0
-inj_lng = float(ecu_row[5]) if ecu_row is not None else 0.0
-
-if extr_row is not None:
-    inj_lox = (inj_lox + float(extr_row[3])) / 2.0
-    inj_lng = (inj_lng + float(extr_row[4])) / 2.0
-```
-
-The important design choice is not the math.
-It is the placement:
+Fusion belongs in the backend:
 
 - raw streams stay raw
-- fusion happens once in the backend
+- fusion happens once
 - the frontend receives a single clean stream to render
 
 ### 3) Persist Data Without Polluting the Frontend Contract
 
-The current backend appends selected values to CSV in the same loop that
-publishes frontend-facing streams.
-That is acceptable when persistence is a side effect of the derived runtime,
-not a UI concern.
+Persistence can sit in the same loop that publishes frontend-facing streams
+when it is a side effect of the derived runtime, not a UI concern.
 
 Keep that persistence path separate from the connector contract:
 
@@ -185,13 +146,7 @@ It gives you a stable path for:
 
 ### 5) Pick Predictable Missing-Data Behavior
 
-The current app generally falls back to `0.0` when an upstream batch has not
-arrived yet:
-
-```python
-copv = float(ecu_row[1]) if ecu_row is not None else 0.0
-```
-
+A common fallback is `0.0` when an upstream batch has not arrived yet.
 That is a valid choice if:
 
 - the UI can tolerate it
@@ -208,17 +163,6 @@ Reasonable alternatives are:
 
 Choose one policy per stream and document it.
 
-## UCIRPLGUI File Map
-
-When you are extending the reference app, the backend-relevant files are:
-
-- `apps/ucirplgui/src/ucirplgui/config.py`
-- `apps/ucirplgui/src/ucirplgui/backend/pipeline.py`
-- `apps/ucirplgui/scripts/run_backend.py`
-- `apps/ucirplgui/scripts/run_all.py`
-- `apps/ucirplgui/tests/test_dashboard_runtime.py`
-
-That is the path for most dashboard-facing data work.
 If the source is an actual board or simulator protocol, start one layer earlier
 in [Device Interfaces](build-device-interfaces.md).
 

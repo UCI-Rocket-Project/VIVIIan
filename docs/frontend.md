@@ -359,7 +359,6 @@ The best current examples in the repo are:
 
 - `tests/test_frontend.py` for compile-time and runtime semantics
 - `tests/gui_runnables/frontend_lab.py` for a minimal live frontend with ring-buffer output
-- `apps/ucirplgui/src/ucirplgui/frontend/frontend.py` for the full app integration path
 
 ## What To Read Next
 
