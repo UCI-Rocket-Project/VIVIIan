@@ -14,8 +14,6 @@ from .state_machine import (
     Action,
     ApplyTable,
     ControlContext,
-    DEFAULT_LEAD_TIME_SECONDS,
-    Dwell,
     Operation,
     PANIC_PRIORITY,
     Pulse,
@@ -24,9 +22,6 @@ from .state_machine import (
 
 from . import table_states
 
-# A table command moves several valves at once, so it gets longer to settle
-# than a single-valve move does.
-TABLE_LEAD_TIME_SECONDS = 1.5
 
 
 # Adapters
@@ -138,10 +133,6 @@ def pulse(button_id: str) -> Pulse:
     return Pulse(button_id)
 
 
-def countdown(seconds: float, label: str) -> Dwell:
-    return Dwell(seconds, label=label)
-
-
 # Operation factories
 
 
@@ -150,7 +141,6 @@ def manual_gate(
     dest: str,
     *,
     description: str = "",
-    lead_time_s: float = DEFAULT_LEAD_TIME_SECONDS,
 ) -> Operation:
     """
     A guard that waits for operator confirmation before proceeding.
@@ -162,7 +152,6 @@ def manual_gate(
         auto=False,
         name=label,
         description=description,
-        lead_time_s=lead_time_s,
     )
 
 
@@ -173,8 +162,6 @@ def manual_operation(
     *,
     description: str = "",
     requires_captcha: bool = False,
-    timeout_s: float | None = 30.0,
-    lead_time_s: float = DEFAULT_LEAD_TIME_SECONDS,
     verify_dest: bool = True,
 ) -> Operation:
     """An operator-commanded valve move."""
@@ -185,8 +172,6 @@ def manual_operation(
         name=label,
         description=description,
         requires_captcha=requires_captcha,
-        timeout_s=timeout_s,
-        lead_time_s=lead_time_s,
         verify_dest=verify_dest,
     )
 
@@ -200,9 +185,7 @@ def auto_operation(
     guard_text: str = "",
     priority: int = 0,
     description: str = "",
-    timeout_s: float | None = 30.0,
     mutually_exclusive_with: Sequence[str] = (),
-    lead_time_s: float = DEFAULT_LEAD_TIME_SECONDS,
     verify_dest: bool = True,
 ) -> Operation:
     """A sensor-driven transition. ``guard_text`` is shown live in the GUI."""
@@ -215,9 +198,7 @@ def auto_operation(
         guard_text=guard_text,
         priority=priority,
         description=description,
-        timeout_s=timeout_s,
         mutually_exclusive_with=tuple(mutually_exclusive_with),
-        lead_time_s=lead_time_s,
         verify_dest=verify_dest,
     )
 
@@ -236,6 +217,5 @@ def panic_operation(dest: str, *, label: str = "PANIC — abort configuration") 
         priority=PANIC_PRIORITY,
         overrides_abort=True,
         description="Vents open, MVAS closed, alarm on.",
-        lead_time_s=TABLE_LEAD_TIME_SECONDS,
         verify_dest=False,
     )

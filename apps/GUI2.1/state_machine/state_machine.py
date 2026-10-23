@@ -44,6 +44,22 @@ MISMATCH_GRACE_SECONDS = DEFAULT_LEAD_TIME_SECONDS
 VERIFY_FEED_GRACE_SECONDS = 5.0
 
 
+@dataclass(frozen=True)
+class DispatcherTiming:
+    """Runtime hardware allowances, supplied by the dispatcher through context."""
+
+    lead_time_s: float = DEFAULT_LEAD_TIME_SECONDS
+    table_lead_time_s: float = 1.5
+    mismatch_grace_s: float = MISMATCH_GRACE_SECONDS
+    verify_feed_grace_s: float = VERIFY_FEED_GRACE_SECONDS
+    confirm_timeout_s: float = 2.0
+
+    def __post_init__(self) -> None:
+        for name, value in vars(self).items():
+            if not math.isfinite(value) or value < 0:
+                raise ValueError(f"{name} must be finite and nonnegative")
+
+
 class OpStatus(Enum):
     RUNNING = "running"
     DONE = "done"
@@ -329,6 +345,9 @@ class ControlContext:
         self.valves = valves
         self.slopes = SlopeTracker(tuple(self.scales.keys()), window_seconds)
         self.settle = SlopeTracker(tuple(self.scales.keys()), settle_window_seconds)
+        self.timing = DispatcherTiming()
+        self.startup_at: float | None = None
+        self.procedure_started_at: float | None = None
         self.state_entered_at = time.monotonic()
         self.op_started_at: float | None = None
         self.snap = Snapshot(
@@ -364,6 +383,18 @@ class ControlContext:
         scaled = self.scaled_pressures()
         self.slopes.sample(scaled, self.snap.nidaq_generation, now)
         self.settle.sample(scaled, self.snap.nidaq_generation, now)
+
+    def start_procedure(self, now: float) -> None:
+        if self.startup_at is None:
+            self.startup_at = now
+        self.procedure_started_at = now
+        self.enter_state(now)
+
+    def since_startup(self) -> float:
+        return 0.0 if self.startup_at is None else self.snap.now - self.startup_at
+
+    def in_procedure_for(self) -> float:
+        return 0.0 if self.procedure_started_at is None else self.snap.now - self.procedure_started_at
 
     def enter_state(self, now: float) -> None:
         self.state_entered_at = now
@@ -514,13 +545,11 @@ class SetValve(Action):
         state: bool,
         *,
         confirm: bool = False,
-        confirm_timeout_s: float = 2.0,
     ) -> None:
         super().__init__()
         self.button_id = button_id
         self.state = bool(state)
         self.confirm = confirm
-        self.confirm_timeout_s = confirm_timeout_s
         self.name = f"{'open' if state else 'close'} {button_id}"
         self._started_at = 0.0
 
@@ -533,8 +562,8 @@ class SetValve(Action):
             return True
         if ctx.actual(self.button_id) is self.state:
             return True
-        if ctx.snap.now - self._started_at > self.confirm_timeout_s:
-            return self._fail(f"{self.button_id} did not reach {self.state} within {self.confirm_timeout_s}s")
+        if ctx.snap.now - self._started_at > ctx.timing.confirm_timeout_s:
+            return self._fail(f"{self.button_id} did not reach {self.state} within {ctx.timing.confirm_timeout_s}s")
         return False
 
     def buttons(self) -> tuple[str, ...]:
@@ -575,45 +604,20 @@ class Pulse(Action):
         return (self.button_id,)
 
 
-class Dwell(Action):
-    def __init__(self, seconds: float, label: str = "") -> None:
-        super().__init__()
-        self.seconds = float(seconds)
-        self.name = label or f"wait {seconds:g}s"
-        self._started_at = 0.0
-
-    def begin(self, ctx: ControlContext, effector: Effector) -> None:
-        self._started_at = ctx.snap.now
-
-    def poll(self, ctx: ControlContext) -> bool:
-        return ctx.snap.now - self._started_at >= self.seconds
-
-    def remaining(self, ctx: ControlContext) -> float:
-        return max(0.0, self.seconds - (ctx.snap.now - self._started_at))
-
-
 class WaitUntil(Action):
     def __init__(
         self,
         predicate: Callable[[ControlContext], bool],
         *,
-        timeout_s: float | None = None,
         label: str = "wait for condition",
     ) -> None:
         super().__init__()
         self.predicate = predicate
-        self.timeout_s = timeout_s
         self.name = label
-        self._started_at = 0.0
-
-    def begin(self, ctx: ControlContext, effector: Effector) -> None:
-        self._started_at = ctx.snap.now
 
     def poll(self, ctx: ControlContext) -> bool:
         if safe_guard(self.predicate, ctx, self.name):
             return True
-        if self.timeout_s is not None and ctx.snap.now - self._started_at > self.timeout_s:
-            return self._fail(f"timed out waiting for {self.name}")
         return False
 
 
@@ -708,13 +712,10 @@ class Operation:
     priority: int = DEFAULT_PRIORITY
     overrides_abort: bool = False
     requires_captcha: bool = False
-    timeout_s: float | None = None
+
     description: str = ""
     guard_text: str = ""
     mutually_exclusive_with: tuple[str, ...] = ()
-    # Settling time between the last action and the valve check; see
-    # DEFAULT_LEAD_TIME_SECONDS.
-    lead_time_s: float = DEFAULT_LEAD_TIME_SECONDS
     # Confirm the destination table before transitioning. Abort paths turn this
     # off: they have to land, and a failed check would only panic again.
     verify_dest: bool = True
@@ -753,6 +754,11 @@ class Operation:
             expected_hash=table_signature(self.dest_table()),
         )
 
+    def lead_time(self, ctx: ControlContext) -> float:
+        if any(isinstance(action, ApplyTable) for action in self.actions):
+            return ctx.timing.table_lead_time_s
+        return ctx.timing.lead_time_s
+
     def step(self, ctx: ControlContext, effector: Effector) -> OpStatus:
         # 1. Actions, one per cycle at most, so staging stays batched and a
         #    long chain can't monopolise a frame.
@@ -774,7 +780,7 @@ class Operation:
         # 2. Give the valves time to move and the board time to report them.
         if self._actions_done_at is None:
             self._actions_done_at = ctx.snap.now
-        remaining = self.lead_time_s - (ctx.snap.now - self._actions_done_at)
+        remaining = self.lead_time(ctx) - (ctx.snap.now - self._actions_done_at)
         if remaining > 0.0:
             return self._report(ctx, OpPhase.SETTLING, f"settling {remaining:.1f}s")
 
@@ -816,7 +822,7 @@ class Operation:
             # Zero is a valid timestamp (not an unset clock).
             actions_done_at = self._actions_done_at
             waited = ctx.snap.now - (actions_done_at if actions_done_at is not None else ctx.snap.now)
-            if not ctx.snap.gse_fresh and waited < self.lead_time_s + VERIFY_FEED_GRACE_SECONDS:
+            if not ctx.snap.gse_fresh and waited < self.lead_time(ctx) + ctx.timing.verify_feed_grace_s:
                 self._verify_detail = "waiting for board telemetry"
                 if feedback is not None:
                     feedback.verified = None
@@ -937,15 +943,10 @@ class State:
     operations: Sequence[Operation] = ()
     expected_state: ExpectedTable | None = None
     panic: Operation | None = None
-    max_seconds: float | None = None
     on_mismatch: MismatchPolicy = MismatchPolicy.ABORT
     description: str = ""
     entry_from: frozenset[str] | None = None
     start: bool = False
-    # Grace period after entry before the mismatch check bites. An operation
-    # already waited out its own lead time; this covers the ways into a state
-    # that skip one, like force_state() and startup.
-    mismatch_grace_s: float = MISMATCH_GRACE_SECONDS
 
     def __init__(
         self,
@@ -953,12 +954,10 @@ class State:
         *operations: Operation,
         expected_state: ExpectedTable | None = None,
         panic: Operation | None = None,
-        max_seconds: float | None = None,
         on_mismatch: MismatchPolicy = MismatchPolicy.ABORT,
         description: str = "",
         entry_from: frozenset[str] | None = None,
         start: bool = False,
-        mismatch_grace_s: float = MISMATCH_GRACE_SECONDS,
     ) -> None:
         """
         Define exits inline, with named state settings and no tuple wrapper.
@@ -974,12 +973,10 @@ class State:
         self.operations = operations
         self.expected_state = expected_state
         self.panic = panic
-        self.max_seconds = max_seconds
         self.on_mismatch = on_mismatch
         self.description = description
         self.entry_from = entry_from
         self.start = start
-        self.mismatch_grace_s = mismatch_grace_s
 
     def evaluate(self, ctx: ControlContext) -> list[Operation]:
         """Automatic exits whose criteria are met. Only this state's criteria run."""
@@ -1129,18 +1126,6 @@ class Machine:
                             f"{state.name}: operation {op.name!r} enters {dest.name} "
                             f"which does not accept entry from {state.name}"
                         )
-                if op.lead_time_s < 0.0:
-                    problems.append(
-                        f"{state.name}: operation {op.name!r} has a negative lead time"
-                    )
-                # A timeout inside the lead time kills the operation before the
-                # valve check ever gets a chance to run.
-                if op.timeout_s is not None and op.timeout_s <= op.lead_time_s:
-                    problems.append(
-                        f"{state.name}: operation {op.name!r} has timeout_s "
-                        f"{op.timeout_s:g}s at or below its lead time {op.lead_time_s:g}s"
-                    )
-
             if state.on_mismatch is MismatchPolicy.ABORT and state.expected_state:
                 safe_out = state.panic or self.default_panic
                 if safe_out is None:
@@ -1156,11 +1141,6 @@ class Machine:
                     )
 
             problems.extend(self._table_problems(state))
-
-            if auto_ops and state.max_seconds is None:
-                # A NaN guard never fires, so an auto state without a watchdog
-                # can hang silently on a dead sensor.
-                problems.append(f"{state.name}: has automatic exits but no max_seconds watchdog")
 
             if not state.operations and state.panic is None and self.default_panic is None:
                 problems.append(f"{state.name}: dead end (no operations, no panic)")
@@ -1258,10 +1238,13 @@ class Dispatcher:
         effector: Effector,
         *,
         period_s: float = CONTROL_PERIOD_SECONDS,
+        timing: DispatcherTiming | None = None,
         interrupt_policy: InterruptPolicy = InterruptPolicy.SUSPEND,
     ) -> None:
         self.machine = machine
         self.ctx = ctx
+        self.timing = timing if timing is not None else ctx.timing
+        ctx.timing = self.timing
         self.effector = effector
         self.period_s = period_s
         self.interrupt_policy = interrupt_policy
@@ -1359,6 +1342,7 @@ class Dispatcher:
         if self.interrupt_policy is InterruptPolicy.ABANDON:
             self._log(f"manual command {button_id!r} abandoned {self.active_op.name!r}")
             self.active_op = None
+            self.ctx.op_started_at = None
             self.mode = DispatcherMode.HALTED
             self.armed = False
             return
@@ -1395,10 +1379,6 @@ class Dispatcher:
         status = op.step(self.ctx, self.effector)
 
         if status is OpStatus.RUNNING:
-            if op.timeout_s is not None and self.ctx.in_operation_for() > op.timeout_s:
-                self.active_op = None
-                self.last_feedback = self.last_failure = op.feedback
-                self._panic_now(f"operation {op.name!r} timed out")
             return
 
         self.last_feedback = op.feedback
@@ -1432,6 +1412,7 @@ class Dispatcher:
                 "rather than repeating the panic"
             )
             self.active_op = None
+            self.ctx.op_started_at = None
             self.mode = DispatcherMode.HALTED
             return
         if op is None or self._panicking:
@@ -1440,6 +1421,7 @@ class Dispatcher:
             else:
                 self._log("no panic operation defined; halting without action")
             self.active_op = None
+            self.ctx.op_started_at = None
             self.mode = DispatcherMode.HALTED
             return
         self._panicking = True
@@ -1470,7 +1452,7 @@ class Dispatcher:
             # a caller may drive it from its own clock. Anchor state timing to
             # the first tick rather than to construction.
             self._clock_started = True
-            self.ctx.enter_state(now)
+            self.ctx.start_procedure(now)
         elif now - self._last_tick_at < self.period_s:
             return
         self._last_tick_at = now
@@ -1493,15 +1475,30 @@ class Dispatcher:
             self._panic_now("operator")
             return
 
-        # Abort-priority global criteria are evaluated before the AMBIGUOUS
-        # early-return, so an abort can always break a tie.
-        for op in self.machine.global_transitions:
-            if op.priority < ABORT_PRIORITY or not self._global_applies(op):
-                continue
-            if safe_guard(op.guard, ctx, f"global:{op.name}"):
-                self.tie_candidates = []
-                self._start_operation(op, forced=True)
+        # Abort-priority guards can interrupt an operation, even when the
+        # ordinary automation is disarmed or telemetry is stale. This applies
+        # equally to pressure guards and elapsed-time guards.
+        safety = [
+            op for op in (*self.machine.global_transitions, *self.current.operations)
+            if op.auto and op.priority >= ABORT_PRIORITY
+            and self._global_applies(op)
+            # Let a selected safe-out finish; a lower/equal-priority guard
+            # must not keep restarting it while the source state still holds.
+            and (self.active_op is None or self.active_op.priority < ABORT_PRIORITY
+                 or op.priority > self.active_op.priority)
+            and safe_guard(op.guard, ctx, f"safety:{op.name}")
+        ]
+        if safety:
+            top = max(op.priority for op in safety)
+            winners = [op for op in safety if op.priority == top]
+            if len(winners) > 1:
+                self.mode = DispatcherMode.AMBIGUOUS
+                self.tie_candidates = winners
                 return
+            self.tie_candidates = []
+            self.armed = False
+            self._start_operation(winners[0], forced=True)
+            return
 
         if self.mode is DispatcherMode.AMBIGUOUS:
             return  # frozen: stage nothing, wait for choose()
@@ -1524,7 +1521,7 @@ class Dispatcher:
 
         # 2. Invariants of the state we are actually sitting in. The grace
         #    period keeps a valve still travelling from reading as drift.
-        settled = ctx.in_state_for() >= self.current.mismatch_grace_s
+        settled = ctx.in_state_for() >= ctx.timing.mismatch_grace_s
         self.warnings = self.current.mismatches(ctx) if settled else []
         # Only while armed. Disarmed means the operator is hand-flying, and
         # slamming the abort table onto someone deliberately moving a valve is
@@ -1536,10 +1533,6 @@ class Dispatcher:
             )
             self._panic_now(f"{self.current.name} valve mismatch: {detail}")
             return
-        if self.current.max_seconds is not None and ctx.in_state_for() > self.current.max_seconds:
-            self._panic_now(f"{self.current.name} exceeded {self.current.max_seconds:g}s")
-            return
-
         # 3. Gather candidates from the current state only, plus globals and
         #    at most one queued manual request.
         candidates: list[Operation] = []
@@ -1549,7 +1542,7 @@ class Dispatcher:
             if safe_guard(op.guard, ctx, f"global:{op.name}"):
                 candidates.append(op)
         if self.armed and ctx.healthy():
-            candidates.extend(self.current.evaluate(ctx))
+            candidates.extend(op for op in self.current.evaluate(ctx) if op.priority < ABORT_PRIORITY)
         if self.pending_manual is not None:
             candidates.append(self.pending_manual)
             self.pending_manual = None

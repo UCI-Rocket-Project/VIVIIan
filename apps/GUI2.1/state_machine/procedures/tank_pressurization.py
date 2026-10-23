@@ -2,7 +2,7 @@ from ..state_machine import (
     ABORT_PRIORITY, Call, Machine, MismatchPolicy, Operation, SetValve, State, WaitUntil,
 )
 from ..operations import (
-    TABLE_LEAD_TIME_SECONDS, apply_table, auto_operation, close_valve,
+    apply_table, auto_operation, close_valve,
     manual_gate, manual_operation, open_valve, panic_operation,
 )
 from ..table_states import ALL_OFF, ABORT, FINAL, unchecked, valves
@@ -87,7 +87,14 @@ def build_machine() -> Machine:
                     guard=lambda ctx: ctx.psi("COPV") >= COPV_MINIMUM_PSI,
                     guard_text="COPV >= 2000 psig; stabilization still requires confirmation",
                 ),
-                expected_state=FILL_2, max_seconds=FILL_WATCHDOG_SECONDS,
+                auto_operation(
+                    "Abort on timing limit", "TP_ABORTED",
+                    actions=(apply_table("abort"), SetValve("alarm", True)),
+                    guard=lambda ctx: ctx.in_state_for() > FILL_WATCHDOG_SECONDS,
+                    guard_text="Timing limit exceeded",
+                    priority=ABORT_PRIORITY, verify_dest=False,
+                ),
+                expected_state=FILL_2,
             ),
             State(
                 "TP_07_STABILIZE_2",
@@ -131,7 +138,14 @@ def build_machine() -> Machine:
                     description="Read Table 22 pressures during fill; close fills at target without "
                     "waiting for operator acknowledgement.",
                 ),
-                expected_state=valves(FILL_3, sol_gn2_fill_4=True), max_seconds=FILL_WATCHDOG_SECONDS,
+                auto_operation(
+                    "Abort on timing limit", "TP_ABORTED",
+                    actions=(apply_table("abort"), SetValve("alarm", True)),
+                    guard=lambda ctx: ctx.in_state_for() > FILL_WATCHDOG_SECONDS,
+                    guard_text="Timing limit exceeded",
+                    priority=ABORT_PRIORITY, verify_dest=False,
+                ),
+                expected_state=valves(FILL_3, sol_gn2_fill_4=True),
             ),
             State(
                 "TP_12_VERIFY_PRESSURES",
@@ -159,7 +173,6 @@ def build_machine() -> Machine:
                     "Acknowledge abort — ALL OFF", "TP_00_CLEAR_STAND",
                     (apply_table("all_off"), SetValve("alarm", False),
                      Call(lambda ctx, effector: aborted.clear(), "clear abort latch")),
-                    lead_time_s=TABLE_LEAD_TIME_SECONDS,
                 ),
                 expected_state=ABORT, on_mismatch=MismatchPolicy.WARN,
             ),
@@ -173,6 +186,6 @@ def build_machine() -> Machine:
                 ctx.psi("LOXTANK") >= TANK_ABORT_PSI or ctx.psi("LNGTANK") >= TANK_ABORT_PSI
             ),
             guard_text="LOX or LNG tank >= 650 psig", priority=ABORT_PRIORITY,
-            overrides_abort=True, lead_time_s=TABLE_LEAD_TIME_SECONDS, verify_dest=False,
+            overrides_abort=True, verify_dest=False,
         ),),
     )

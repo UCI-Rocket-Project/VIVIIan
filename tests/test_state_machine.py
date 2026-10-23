@@ -22,6 +22,7 @@ from state_machine.state_machine import (  # noqa: E402
     ControlContext,
     DONT_CARE,
     Dispatcher,
+    DispatcherTiming,
     DispatcherMode,
     InterruptPolicy,
     Machine,
@@ -155,7 +156,6 @@ class TestDeterminism(unittest.TestCase):
             Operation((), 'C', True, name='right', guard=lambda ctx: True, mutually_exclusive_with=('left',)),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         b = State('B', Operation((), 'A', False, name='back'))
@@ -180,7 +180,7 @@ class TestDeterminism(unittest.TestCase):
         chosen = next(op for op in d.tie_candidates if op.name == "right")
 
         d.choose(chosen)
-        run_ticks(d, 3, start=2000.0)
+        run_ticks(d, 3, start=1003.0)
 
         self.assertEqual(d.current.name, "C")
 
@@ -191,7 +191,6 @@ class TestDeterminism(unittest.TestCase):
             Operation((), 'SAFE', True, name='abort', guard=lambda ctx: True, priority=500),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         machine = Machine.build(
@@ -293,7 +292,6 @@ class TestGuards(unittest.TestCase):
             Operation((), 'B', True, name='a->b', guard=guard_a),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         b = State(
@@ -301,7 +299,6 @@ class TestGuards(unittest.TestCase):
             Operation((), 'A', True, name='b->a', guard=guard_b),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
         )
         d = Dispatcher(Machine.build("scoped", [a, b]), make_context(), FakeEffector())
         d.armed = True
@@ -327,7 +324,6 @@ class TestCycle(unittest.TestCase):
             Operation((Counter(), Counter()), 'B', True, name='a->b', guard=lambda ctx: True),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         b = State(
@@ -335,7 +331,6 @@ class TestCycle(unittest.TestCase):
             Operation((), 'C', True, name='b->c', guard=b_guard),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
         )
         c = State('C', Operation((), 'A', False, name='restart'))
         d = Dispatcher(Machine.build("chain", [a, b, c]), make_context(), FakeEffector())
@@ -367,7 +362,6 @@ class TestCycle(unittest.TestCase):
             Operation((SetValve('v1', True), SetValve('v2', True)), 'B', True, name='two valves', guard=lambda ctx: True),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         machine = Machine.build("flush", [a, State('B', Operation((), 'A', False, name='back'))])
@@ -385,7 +379,6 @@ class TestCycle(unittest.TestCase):
             Operation((counter,), 'B', True, name='go', guard=lambda ctx: True),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         machine = Machine.build("rate", [a, State('B', Operation((), 'A', False, name='back'))])
@@ -402,9 +395,10 @@ class TestCycle(unittest.TestCase):
         a = State(
             'A',
             Operation((), 'B', True, name='never', guard=lambda ctx: False),
+            Operation((SetValve('vent', True),), 'SAFE', auto=True,
+                      guard=lambda ctx: ctx.in_state_for() > 5.0, priority=ABORT_PRIORITY),
             expected_state=None,
             panic=panic,
-            max_seconds=5.0,
             start=True,
         )
         machine = Machine.build(
@@ -417,7 +411,7 @@ class TestCycle(unittest.TestCase):
         d.armed = True
 
         d.tick(1000.0)
-        d.tick(1010.0)                     # past max_seconds
+        d.tick(1010.0)                     # past the state watchdog
         d.tick(1011.0)
 
         self.assertEqual(d.current.name, "SAFE")
@@ -433,10 +427,9 @@ class TestManualControl(unittest.TestCase):
         never = WaitUntil(lambda ctx: False, label="never")
         a = State(
             'A',
-            Operation((SetValve('v1', True), never), 'B', True, name='slow', guard=lambda ctx: True, timeout_s=None),
+            Operation((SetValve('v1', True), never), 'B', True, name='slow', guard=lambda ctx: True,),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         machine = Machine.build("slow", [a, State('B', Operation((), 'A', False, name='back'))])
@@ -484,7 +477,6 @@ class TestManualControl(unittest.TestCase):
             Operation((SetValve('v1', True),), 'B', True, name='go', guard=lambda ctx: True),
             expected_state=None,
             panic=None,
-            max_seconds=1000.0,
             start=True,
         )
         machine = Machine.build("abort", [a, State('B', Operation((), 'A', False, name='back'))])
@@ -518,7 +510,6 @@ class TestMachineAudit(unittest.TestCase):
             Operation((), 'B', True, name='right', guard=lambda ctx: True),
             expected_state=None,
             panic=None,
-            max_seconds=10.0,
             start=True,
         )
         with self.assertRaisesRegex(MachineValidationError, "share priority"):
@@ -531,16 +522,15 @@ class TestMachineAudit(unittest.TestCase):
             Operation((), 'B', True, name='right', guard=lambda ctx: True, mutually_exclusive_with=('left',)),
             expected_state=None,
             panic=None,
-            max_seconds=10.0,
             start=True,
         )
         machine = Machine.build("declared", [a, State('B', Operation((), 'A', False, name='back'))])
         self.assertEqual([p for p in machine.validate() if "share priority" in p], [])
 
-    def test_validate_requires_a_watchdog_on_automatic_states(self):
+    def test_automatic_states_use_only_ordinary_guards(self):
         a = State('A', Operation((), 'B', True, name='go', guard=lambda ctx: True), start=True)
-        with self.assertRaisesRegex(MachineValidationError, "max_seconds"):
-            Machine.build("nowatchdog", [a, State('B', Operation((), 'A', False, name='back'))])
+        machine = Machine.build("guards", [a, State('B', Operation((), 'A', False, name='back'))])
+        self.assertEqual(machine.validate(), [])
 
     def test_validate_flags_unreachable_states(self):
         a = State('A', Operation((), 'B', False, name='go'), start=True)
@@ -623,17 +613,11 @@ class TestMachineAudit(unittest.TestCase):
             "must halt after one panic, not repeat it every cycle",
         )
 
-    def test_validate_flags_a_timeout_below_the_lead_time(self):
-        a = State('A', Operation((), 'B', False, name='go', lead_time_s=2.0, timeout_s=1.0), start=True)
-        with self.assertRaisesRegex(MachineValidationError, "lead time"):
-            Machine.build("timeout", [a, State('B', Operation((), 'A', False, name='back'))])
-
     def test_dispatcher_refuses_to_arm_with_outstanding_problems(self):
-        a = State('A', Operation((), 'B', True, name='go', guard=lambda ctx: True),
-                  max_seconds=10.0, start=True)
+        a = State('A', Operation((), 'B', True, name='go', guard=lambda ctx: True), start=True)
         machine = Machine.build("unsafe", [a, State('B', Operation((), 'A', False, name='back'))])
         # Retain the runtime defense if a valid machine is subsequently edited.
-        a.max_seconds = None
+        a.operations[0].guard = None
         d = Dispatcher(machine, make_context(), FakeEffector())
 
         d.arm()
@@ -751,16 +735,14 @@ class TestExpectedState(unittest.TestCase):
 # --- Operation feedback and the destination table check ---------------------
 
 
-def move_machine(dest_expected, *, lead_time_s=1.0, verify_dest=True):
+def move_machine(dest_expected, *, verify_dest=True):
     """One operation that opens valve_a on the way into B."""
     move = Operation(
         (SetValve("valve_a", True),),
         "B",
         False,
         name="open valve_a",
-        lead_time_s=lead_time_s,
         verify_dest=verify_dest,
-        timeout_s=None,
     )
     return Machine.build(
         "move",
@@ -787,7 +769,8 @@ class TestOperationFeedback(unittest.TestCase):
 
     def test_operation_waits_the_lead_time_before_it_transitions(self):
         ctx = make_context()
-        d = self._request_move(move_machine(None, lead_time_s=5.0), ctx)
+        ctx.timing = DispatcherTiming(lead_time_s=5.0)
+        d = self._request_move(move_machine(None), ctx)
 
         self.assertIs(d.active_op.phase, OpPhase.SETTLING)
         self.assertEqual(d.current.name, "A")
@@ -875,7 +858,8 @@ class TestOperationFeedback(unittest.TestCase):
 
     def test_feedback_reports_each_phase(self):
         ctx = make_context()
-        machine = move_machine({"valve_a": True}, lead_time_s=5.0)
+        ctx.timing = DispatcherTiming(lead_time_s=5.0)
+        machine = move_machine({"valve_a": True})
         d = Dispatcher(machine, ctx, FakeEffector())
         d.tick(1000.0)
         d.request(machine.states["A"].operations[0])

@@ -10,12 +10,14 @@ import math
 
 from captcha import Captcha67Gate
 from state_machine.procedures import pressure_decay, tank_pressurization
+from state_machine.table_states import DISPLAY_NAMES
 from gui_elements import (
     BUTTON_STATE_MISMATCH_COLOR,
     BUTTON_STATUS_ON_COLOR,
     COLOR_WHITE,
 )
 from state_machine.state_machine import (
+    DONT_CARE,
     Dispatcher,
     DispatcherMode,
     MismatchPolicy,
@@ -70,7 +72,8 @@ class StateMachinePanel:
         # Build and audit before replacing the current procedure.
         try:
             replacement = Dispatcher(build(), old.ctx, old.effector,
-                                     period_s=old.period_s, interrupt_policy=old.interrupt_policy)
+                                     period_s=old.period_s, timing=old.timing,
+                                     interrupt_policy=old.interrupt_policy)
         except (ValueError, LookupError, TypeError) as exc:
             self.selection_error = str(exc)
             return False
@@ -174,6 +177,43 @@ class StateMachinePanel:
                 if not ok
             ]
             self._text(imgui, COLOR_WARN, f"feeds not healthy: {', '.join(missing)}")
+
+    def _start_conditions(self, imgui) -> None:
+        d = self.dispatcher
+        start = d.machine.states[d.machine.initial]
+        imgui.text_unformatted(f"Expected start conditions: {start.name}")
+        if start.description:
+            self._text(imgui, COLOR_DIM, start.description)
+        if not start.expected_state:
+            self._text(imgui, COLOR_DIM, "No starting valve conditions specified.")
+            return
+
+        at_start = d.current is start and d.active_op is None
+        if not at_start:
+            self._text(imgui, COLOR_DIM, "Starting configuration for reference; procedure has advanced.")
+        for valve_id, expected in start.expected_state.items():
+            name = DISPLAY_NAMES.get(valve_id, d.ctx.valves.display_name(valve_id))
+            if expected is DONT_CARE:
+                self._text(imgui, COLOR_DIM, f"  {name}: not checked")
+                continue
+
+            # Tables and board feedback contain solenoid states. The normally
+            # open valves invert those bits when shown as physical positions.
+            def position(value):
+                return "OPEN" if value != (valve_id in ("pv2", "tank_vent")) else "CLOSED"
+
+            line = f"  {name}: expected {position(expected)}"
+            color = COLOR_DIM
+            if at_start:
+                actual = d.ctx.actual(valve_id)
+                if actual is None:
+                    line += " | board UNKNOWN"
+                    color = COLOR_WARN
+                else:
+                    matches = actual == expected
+                    line += f" | board {position(actual)} | {'MATCH' if matches else 'MISMATCH'}"
+                    color = COLOR_OK if matches else COLOR_WARN
+            self._text(imgui, color, line)
 
     def _problems(self, imgui) -> None:
         for problem in self.dispatcher.problems:
@@ -287,10 +327,6 @@ class StateMachinePanel:
             self._text(imgui, color, f"  {'MET' if met else '   '}  {text}  -> {op.dest_name()}")
             self._tooltip(imgui, op.description)
 
-        if d.current.max_seconds is not None:
-            remaining = d.current.max_seconds - d.ctx.in_state_for()
-            self._text(imgui, COLOR_DIM, f"  watchdog: {remaining:.0f}s remaining")
-
     def _decay(self, imgui) -> None:
         from state_machine.procedures.pressure_decay import DECAY_RESULT
 
@@ -333,6 +369,8 @@ class StateMachinePanel:
     def render(self, imgui) -> None:
         self._header(imgui)
         self._problems(imgui)
+        self._start_conditions(imgui)
+        imgui.spacing()
         self._controls(imgui)
         self._mismatches(imgui)
         self._active_operation(imgui)

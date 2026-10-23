@@ -4,6 +4,13 @@ For current authoring syntax, examples and runtime behavior, see the
 [State Machine API](state-machine-api.md). The notes below preserve the design
 history and open engineering questions.
 
+Timing API update: state and operation constructors no longer accept numeric
+durations (`max_seconds`, `timeout_s`, or `lead_time_s`). Watchdogs use ordinary
+transition guards against dispatcher context clocks. Hardware settling and feedback
+allowances come from `DispatcherTiming` through `ctx.timing`. Context exposes
+elapsed operation, state, procedure and startup time. The historical notes below
+describe the earlier API; see the API reference for current examples.
+
 Running working notes for the GSE control / state machine work.
 This document should be transitioned into a proper design doc once the design is stable.
 

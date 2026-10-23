@@ -68,8 +68,14 @@ def build_machine():
                     guard=lambda ctx: ctx.psi("COPV") >= 200.0,
                     guard_text="COPV >= 200 psig",
                 ),
+                auto_operation(
+                    "Fill timeout", dest="ABORTED",
+                    actions=[apply_table("abort")],
+                    guard=lambda ctx: ctx.in_state_for() > 900.0,
+                    guard_text="Fill exceeded 900 seconds",
+                    priority=1000, verify_dest=False,
+                ),
                 expected_state=table_states.valves(sol_gn2_fill_1=True),
-                max_seconds=900.0,
             ),
             State(
                 "DONE",
@@ -81,7 +87,6 @@ def build_machine():
                 manual_operation(
                     "Return to ALL OFF", dest="READY",
                     actions=[apply_table("all_off")],
-                    lead_time_s=1.5,
                 ),
                 expected_state=table_states.ABORT,
                 on_mismatch=MismatchPolicy.WARN,
@@ -105,9 +110,7 @@ start name.
 | `expected_state` | Solenoid feedback table; `None` disables table verification for this state. |
 | `start=False` | Marks the single initial state. |
 | `panic=None` | Per-state safe-out; omission inherits `Machine.default_panic`. `None` does not disable that default. |
-| `max_seconds=None` | Time allowed in this state. Required for local automatic exits. Expiry requests panic, including while disarmed. |
 | `on_mismatch=MismatchPolicy.ABORT` | `ABORT`, `WARN` or `IGNORE`; automatic mismatch panic occurs only while armed. |
-| `mismatch_grace_s=0.75` | Entry grace before checking steady-state valve disagreement. |
 | `entry_from=None` | Optional set of permitted source names, checked for local operations by the static audit. |
 | `description=""` | Operator-facing explanation. |
 
@@ -127,11 +130,27 @@ Factories in `state_machine.operations` return ordinary engine `Operation` objec
 | `auto_operation(label, dest=..., actions=[...], guard=...)` | Sensor-driven exit; `guard_text` explains its criterion in the panel. |
 | `panic_operation(dest)` | Abort table plus alarm; bypasses destination verification and the abort latch. |
 
-Manual and automatic operations accept `description`, `timeout_s` (default
-30 seconds; `None` disables it), `lead_time_s` (default 0.75 seconds), and
-`verify_dest` (default `True`). The timeout covers the operation, including
-actions, lead time and verification. Whole-table moves should use
-`TABLE_LEAD_TIME_SECONDS` (1.5 seconds). Gates accept description and lead time.
+State and operation constructors accept no duration or lead-time parameters.
+Timing conditions belong in ordinary `guard` predicates, just like pressure
+conditions. Use `guard=lambda ctx: ctx.in_state_for() > 900.0` for a state
+watchdog or `guard=lambda ctx: ctx.in_operation_for() > 45.0` for an operation
+deadline, on a transition with an explicit destination and actions. There is
+no dedicated timeout parameter or implicit operation timeout.
+
+Local and global automatic transitions at `ABORT_PRIORITY` or higher are
+evaluated before advancing an operation, including during suspension, disarmed
+operation, and stale telemetry. A unique highest-priority transition disarms
+automation and runs; an equal-priority tie asks the operator. Use this priority
+for timing guards that must interrupt an in-flight operation. Ordinary-priority
+local guards run only while armed, healthy, and between operations.
+
+`Dispatcher(..., timing=DispatcherTiming(...))` owns hardware allowances:
+`lead_time_s` (0.75 s), `table_lead_time_s` (1.5 s), `mismatch_grace_s` (0.75 s),
+`verify_feed_grace_s` (5 s), and `confirm_timeout_s` (2 s).
+Operations read these through `ctx.timing`;
+operations containing `ApplyTable` automatically use the table allowance.
+The policy rejects negative/nonfinite values.
+These settings persist when the panel switches procedures.
 
 Manual operations also accept `requires_captcha`; the GUI implements the
 confirmation gate. Automatic operations accept `priority` (higher wins) and
@@ -152,16 +171,17 @@ Actions execute in order, at most one per control cycle:
 - `apply_table(name)` applies a named operator table, such as `"all_off"` or
   `"abort"`.
 - `pulse(id)` stages a momentary command; the hardware adapter handles release.
-- `countdown(seconds, label)` waits while displaying a label.
-- Engine `WaitUntil(predicate, ...)` waits for a condition; use a bounded timeout.
+- Engine `WaitUntil(predicate, label=...)` waits for a condition. For a countdown,
+  use `WaitUntil(lambda ctx: ctx.in_operation_for() >= 10.0, label="countdown")`.
+  Add an ordinary abort-priority guard when the wait needs a deadline.
 - Engine `ResetSlopeWindow()` starts a fresh decay measurement.
 - Engine `Call(callback, label)` calls `callback(ctx, effector)` for bookkeeping.
 - Engine `SetValve(id, bool)` uses raw solenoid state, not physical open/closed.
 
 An operation completes only after actions, lead time and destination verification.
 Disagreement fails the operation and invokes the source state's safe-out. Stale
-board telemetry holds verification for up to five additional seconds (subject
-to the operation timeout); a missing field on a healthy feed fails immediately.
+board telemetry holds verification for up to five additional seconds;
+a missing field on a healthy feed fails immediately.
 Abort operations use `verify_dest=False` so failed feedback cannot prevent landing.
 
 ## Valve expectations and sensor guards
@@ -184,12 +204,21 @@ Every guard receives a `ControlContext` backed by one snapshot per control cycle
 | `ctx.psi("COPV")` | Calibrated pressure; missing/stale data is NaN. |
 | `ctx.actual("pv1")` | Reported solenoid state, or `None` if unavailable. |
 | `ctx.in_state_for()` | Seconds since state entry. |
-| `ctx.in_operation_for()` | Seconds since operation start. |
+| `ctx.in_operation_for()` | Seconds since operation start; zero when no operation is active. |
+| `ctx.in_procedure_for()` | Seconds since the selected procedure's first dispatcher tick. |
+| `ctx.since_startup()` | Seconds since the first dispatcher tick for this context, preserved across procedure selection. |
 | `ctx.slope_ready()` | Whether the decay tracker has a full measurement window. |
 | `ctx.slope_psi_per_min(field)` | Signed rate of pressure change. |
 | `ctx.decay_psi_per_min(field)` | Pressure loss rate (negative of signed slope). |
 | `ctx.worst_slope(fields)` | Largest absolute slope; NaN if any requested section is unreadable. |
 | `ctx.settled(fields, limit)` | Whether all sections are within the separate settling-window limit. |
+
+All four clocks use the current control-cycle snapshot, so guards and actions
+see consistent elapsed times. State entry resets the state and operation clocks;
+starting an operation resets only its clock. Selecting a procedure resets its
+clock on the new dispatcher's first tick, while preserving the startup epoch.
+Disarming and suspension do not pause elapsed time. Resuming keeps the original
+operation start time; rearming does not restart the procedure.
 
 Write positive comparisons: `value <= limit` is false for NaN;
 `not (value > limit)` incorrectly passes NaN. Guards should only read data;
@@ -200,7 +229,7 @@ put mutations in actions. Exceptions in guards are logged and treated as false.
 Machine construction automatically links destinations and runs the static audit.
 Invalid definitions raise `MachineValidationError` (a `ValueError`) with every
 audit failure in the error message and its `problems` tuple. This applies to
-`Machine.build(...)` and direct construction. The audit checks watchdogs,
+`Machine.build(...)` and direct construction. The audit checks
 possible priority ties, valve-table contradictions, safe-outs and reachability.
 `machine.validate()` can recheck a machine after edits; the dispatcher retains
 its additional check before allowing automation. Validation is a static audit,

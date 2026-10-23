@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "apps" / "GUI2.1"))
 
 from state_machine.state_machine import (
-    Dispatcher, Machine, MismatchPolicy, Operation, OpStatus, State,
+    DispatcherTiming, Dispatcher, Machine, MismatchPolicy, Operation, OpStatus, State,
     VERIFY_FEED_GRACE_SECONDS,
 )
 from tests.test_state_machine import FakeEffector, make_context
@@ -41,29 +41,30 @@ class TestProcedureAPI(unittest.TestCase):
                 self.assertIs(State("A", on_mismatch=policy).on_mismatch, policy)
 
     def test_inline_exits_link_and_execute_in_order(self):
-        first = Operation((), "B", name="continue", lead_time_s=0)
-        alternate = Operation((), "C", name="alternate", lead_time_s=0)
+        first = Operation((), "B", name="continue")
+        alternate = Operation((), "C", name="alternate")
         machine = Machine.build("inline", [
             State("A", first, alternate, start=True),
             State("B", Operation((), "A")),
             State("C", Operation((), "A")),
         ])
         self.assertEqual(machine.validate(), [])
-        dispatcher = Dispatcher(machine, make_context(), FakeEffector())
+        dispatcher = Dispatcher(machine, make_context(), FakeEffector(),
+                                timing=DispatcherTiming(lead_time_s=0, mismatch_grace_s=0))
         self.assertEqual(dispatcher.current.manual_operations(), (first, alternate))
         dispatcher.request(first)
         dispatcher.tick(1.0)
         self.assertIs(dispatcher.current, machine.states["B"])
 
     def test_default_panic_is_a_reachable_exit_and_runs(self):
-        panic = Operation((), "SAFE", name="panic", verify_dest=False, lead_time_s=0)
+        panic = Operation((), "SAFE", name="panic", verify_dest=False)
         machine = Machine.build("shared panic", [
-            State("A", expected_state={"valve_a": True}, start=True,
-                         mismatch_grace_s=0),
+            State("A", expected_state={"valve_a": True}, start=True),
             State("SAFE", Operation((), "A"), on_mismatch=MismatchPolicy.WARN),
         ], default_panic=panic)
         self.assertEqual(machine.validate(), [])
-        dispatcher = Dispatcher(machine, make_context(), FakeEffector())
+        dispatcher = Dispatcher(machine, make_context(), FakeEffector(),
+                                timing=DispatcherTiming(lead_time_s=0, mismatch_grace_s=0))
         dispatcher.arm()
         dispatcher.tick(1.0)
         self.assertEqual(dispatcher.current.name, "SAFE")
@@ -71,20 +72,22 @@ class TestProcedureAPI(unittest.TestCase):
 
     def test_state_panic_overrides_default_in_reachability_and_runtime(self):
         machine = Machine.build("override", [
-            State("A", start=True, panic=Operation((), "LOCAL", lead_time_s=0)),
+            State("A", start=True, panic=Operation((), "LOCAL")),
             State("LOCAL", Operation((), "A")),
             State("DEFAULT", Operation((), "A")),
-        ], default_panic=Operation((), "DEFAULT", lead_time_s=0))
+        ], default_panic=Operation((), "DEFAULT"))
         self.assertEqual(machine.validate(), [])
-        dispatcher = Dispatcher(machine, make_context(), FakeEffector())
+        dispatcher = Dispatcher(machine, make_context(), FakeEffector(),
+                                timing=DispatcherTiming(lead_time_s=0, mismatch_grace_s=0))
         dispatcher.panic()
         dispatcher.tick(1.0)
         self.assertEqual(dispatcher.current.name, "LOCAL")
 
     def test_stale_feed_grace_expires_when_actions_finish_at_zero(self):
         destination = State("B", expected_state={"valve_a": True})
-        operation = Operation((), destination, lead_time_s=0)
+        operation = Operation((), destination)
         context = make_context(healthy=False)
+        context.timing = DispatcherTiming(lead_time_s=0)
         context.begin_cycle(0.0)
         operation.start(context)
         self.assertIs(operation.step(context, FakeEffector()), OpStatus.RUNNING)
@@ -165,7 +168,8 @@ class TestPressureDecayBookkeeping(unittest.TestCase):
             (True, 3.01, "PD_15_DECAY_FAIL"),
         ):
             with self.subTest(ready=ready, slope=slope):
-                context = SimpleNamespace(slope_ready=lambda: ready, worst_slope=lambda fields: slope)
+                context = SimpleNamespace(slope_ready=lambda: ready, worst_slope=lambda fields: slope,
+                                          in_state_for=lambda: 0.0)
                 self.assertEqual(
                     [op.dest_name() for op in state.evaluate(context)],
                     [] if destination is None else [destination],

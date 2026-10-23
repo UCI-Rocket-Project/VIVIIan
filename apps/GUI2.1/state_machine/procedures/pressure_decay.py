@@ -28,15 +28,14 @@ from ..state_machine import (
     ResetSlopeWindow,
     SetValve,
     State,
+    WaitUntil,
 )
 
 from .. import table_states
 from ..operations import (
-    TABLE_LEAD_TIME_SECONDS,
     apply_table,
     auto_operation,
     close_valve,
-    countdown,
     manual_gate,
     manual_operation,
     open_valve,
@@ -141,7 +140,6 @@ def build_machine() -> Machine:
         priority=ABORT_PRIORITY,
         overrides_abort=True,
         description="Procedure §12.1 Tank Overpressurization Event.",
-        lead_time_s=TABLE_LEAD_TIME_SECONDS,
         verify_dest=False,
     )
 
@@ -197,11 +195,16 @@ def build_machine() -> Machine:
                 guard_text=f"COPV PT >= {COPV_OVERPRESSURE_LIMIT_PSI:.0f} psig",
                 priority=500,
                 # Same reasoning as the global abort: it has to land.
-                lead_time_s=TABLE_LEAD_TIME_SECONDS,
                 verify_dest=False,
             ),
+            auto_operation(
+                "Abort on timing limit", "PD_ABORTED",
+                actions=(apply_table("abort"), SetValve("alarm", True)),
+                guard=lambda ctx: ctx.in_state_for() > FILL_WATCHDOG_SECONDS,
+                guard_text="Timing limit exceeded",
+                priority=ABORT_PRIORITY, verify_dest=False,
+            ),
             expected_state=valves(sol_gn2_fill_1=True),
-            max_seconds=FILL_WATCHDOG_SECONDS,
             description="§3 steps 7-8: pressurising COPV, crew leak-checking fittings.",
         ),
         State(
@@ -277,8 +280,14 @@ def build_machine() -> Machine:
                     "safe levels."
                 ),
             ),
+            auto_operation(
+                "Abort on timing limit", "PD_ABORTED",
+                actions=(apply_table("abort"), SetValve("alarm", True)),
+                guard=lambda ctx: ctx.in_state_for() > SETTLE_WATCHDOG_SECONDS,
+                guard_text="Timing limit exceeded",
+                priority=ABORT_PRIORITY, verify_dest=False,
+            ),
             expected_state=TANKS_PRESSURIZING,
-            max_seconds=SETTLE_WATCHDOG_SECONDS,
         ),
         State(
             "PD_07R_VENT_RECOVER",
@@ -290,8 +299,14 @@ def build_machine() -> Machine:
                 guard_text=f"Vent PT >= {VENT_RECOVERY_TARGET_PSI:.0f} psig",
                 description="§3 step 11.2, then repeat tank press.",
             ),
+            auto_operation(
+                "Abort on timing limit", "PD_ABORTED",
+                actions=(apply_table("abort"), SetValve("alarm", True)),
+                guard=lambda ctx: ctx.in_state_for() > VENT_WATCHDOG_SECONDS,
+                guard_text="Timing limit exceeded",
+                priority=ABORT_PRIORITY, verify_dest=False,
+            ),
             expected_state=valves(tank_vent=True, sol_gn2_fill_1=True),
-            max_seconds=VENT_WATCHDOG_SECONDS,
         ),
         State(
             "PD_08_TANKS_STABLE",
@@ -322,8 +337,14 @@ def build_machine() -> Machine:
                 ),
                 description="§3 steps 13.1-13.2: whichever limit is reached first.",
             ),
+            auto_operation(
+                "Abort on timing limit", "PD_ABORTED",
+                actions=(apply_table("abort"), SetValve("alarm", True)),
+                guard=lambda ctx: ctx.in_state_for() > FILL_WATCHDOG_SECONDS,
+                guard_text="Timing limit exceeded",
+                priority=ABORT_PRIORITY, verify_dest=False,
+            ),
             expected_state=valves(tank_vent=True, pv2=True, pv1=True, sol_gn2_fill_1=True),
-            max_seconds=FILL_WATCHDOG_SECONDS,
         ),
         State(
             "PD_10_SYSTEM_CHARGED",
@@ -387,8 +408,14 @@ def build_machine() -> Machine:
                 guard_text=f"a section exceeds {DECAY_LIMIT_PSI_PER_MIN:.0f} psi/min",
                 mutually_exclusive_with=("Decay within limit — PASS",),
             ),
+            auto_operation(
+                "Abort on timing limit", "PD_ABORTED",
+                actions=(apply_table("abort"), SetValve("alarm", True)),
+                guard=lambda ctx: ctx.in_state_for() > DECAY_WATCHDOG_SECONDS,
+                guard_text="Timing limit exceeded",
+                priority=ABORT_PRIORITY, verify_dest=False,
+            ),
             expected_state=GSE_VENTED_HOLD,
-            max_seconds=DECAY_WATCHDOG_SECONDS,
             description=(
                 f"§3 steps 17-18. Measuring over a {DECAY_WINDOW_SECONDS:.0f}s window; "
                 "the verdict is taken from the slope at that moment."
@@ -439,11 +466,20 @@ def build_machine() -> Machine:
                 "Open MVAS — 5...4...3...2...1...EARS",
                 "PD_19_DEPRESSURIZING",
                 (
-                    countdown(MVAS_COUNTDOWN_SECONDS, "countdown to MVAS"),
+                    WaitUntil(
+                        lambda ctx: ctx.in_operation_for() >= MVAS_COUNTDOWN_SECONDS,
+                        label="countdown to MVAS",
+                    ),
                     Pulse("mvas_open"),
                 ),
                 description="§3 step 24.1.",
-                timeout_s=MVAS_COUNTDOWN_SECONDS + 15.0,
+            ),
+            auto_operation(
+                "Abort on timing limit", "PD_ABORTED",
+                actions=(apply_table("abort"), SetValve("alarm", True)),
+                guard=lambda ctx: ctx.in_operation_for() > MVAS_COUNTDOWN_SECONDS + 15.0,
+                guard_text="Timing limit exceeded",
+                priority=ABORT_PRIORITY, verify_dest=False,
             ),
             expected_state=GSE_VENTED_HOLD,
         ),
@@ -460,10 +496,15 @@ def build_machine() -> Machine:
                 ),
                 guard_text=f"COPV, LOX and LNG all <= {DEPRESSURISED_LIMIT_PSI:.0f} psig",
                 description="§3 steps 25-26: confirm depressurised, then ALL OFF (Table 16).",
-                lead_time_s=TABLE_LEAD_TIME_SECONDS,
+            ),
+            auto_operation(
+                "Abort on timing limit", "PD_ABORTED",
+                actions=(apply_table("abort"), SetValve("alarm", True)),
+                guard=lambda ctx: ctx.in_state_for() > VENT_WATCHDOG_SECONDS,
+                guard_text="Timing limit exceeded",
+                priority=ABORT_PRIORITY, verify_dest=False,
             ),
             expected_state=GSE_VENTED_HOLD,
-            max_seconds=VENT_WATCHDOG_SECONDS,
         ),
         State(
             "PD_20_COMPLETE",
@@ -493,7 +534,6 @@ def build_machine() -> Machine:
                     "from the top. Without this the overpressure watch, having fired once, "
                     "would stay latched for the rest of the session."
                 ),
-                lead_time_s=TABLE_LEAD_TIME_SECONDS,
             ),
             expected_state=table_states.ABORT,
             # WARN, not ABORT. The safe-out from here is the abort table, which
