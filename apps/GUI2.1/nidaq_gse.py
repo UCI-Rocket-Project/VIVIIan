@@ -11,8 +11,8 @@ from functools import partial
 
 
 # --- Constants for NIDAQ Backend ---
-NIDAQ_FLIGHT_BIND = "grpc://127.0.0.1:8825"
-#NIDAQ_FLIGHT_BIND = "grpc://10.0.0.3:8825"
+#NIDAQ_FLIGHT_BIND = "grpc://127.0.0.1:8825"
+NIDAQ_FLIGHT_BIND = "grpc://10.0.0.2:8825"
 NIDAQ_ROWS_PER_FRAME = 1000
 
 # --- Packet DEFINITIONS ---
