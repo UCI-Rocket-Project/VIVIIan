@@ -5,6 +5,8 @@ import threading
 from gse21connector import (
     GSE2V1_ECHO_FIELD_NAMES,
     GSE2V1_FIELD_NAMES,
+    GSE2V1_EXTERNAL_ADC_FIELDS,
+    gse2v1_field_valid,
 )
 from nidaq_gse import NIDAQ_FIELD_NAMES
 from generic_connector import LatestServer
@@ -12,6 +14,7 @@ from gui_elements import (
     APP_BACKGROUND_COLOR,
     Button,
     NidaqGraph,
+    SensorGraph,
     MVAS_STATE,
     draw_table,
     valve_state,
@@ -72,6 +75,13 @@ PT_SCALES = {
     "Thrust": (1,0),
 }
 
+# Firmware pressure/force units pass through until channel calibrations are supplied.
+GSE_SCALES = {field: (1.0, 0.0) for field in GSE2V1_EXTERNAL_ADC_FIELDS}
+# Remove a field from this set to enable its trace and graph readouts again.
+GSE_DISABLED_FIELDS = {
+    "loadCellForce2", "loadCellForce3", "loadCellForce4", "loadCellForce5",
+}
+
 
 
 
@@ -96,11 +106,19 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
     echo_server = next(server for server in servers if server.name == "echo")
     nidaq_server = next(server for server in servers if server.name == "nidaq")
     
-    nidaq_graph_general = NidaqGraph(
-        nidaq_server,
-        title="nidaq graph",
-        graph_id="nidaq_graph_general",
-        field_names=PT_SCALES,
+    sensor_graph = SensorGraph(
+        {
+            "NI-DAQ": NidaqGraph(nidaq_server, field_names=PT_SCALES),
+            "GSE": NidaqGraph(
+                gse_server,
+                field_names={
+                    field: scale for field, scale in GSE_SCALES.items()
+                    if field not in GSE_DISABLED_FIELDS
+                },
+                field_validity=gse2v1_field_valid,
+            ),
+        },
+        title="Sensors: NI-DAQ + GSE Ext ADC",
     )
 
   
@@ -138,12 +156,13 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
         imgui.separator()
         mvas_state.render(imgui)
         imgui.separator()
-        for server in servers: 
-            if server.name == "nidaq":
-                nidaq_graph_general.draw(imgui)
-                imgui.separator()
+        sensor_graph.draw(imgui)
+        imgui.separator()
         for server in servers:
-            draw_table(imgui, server)
+            draw_table(
+                imgui, server,
+                field_validity=gse2v1_field_valid if server.name == "gse" else None,
+            )
             imgui.separator()
         imgui.end()
         imgui.pop_style_var(2)

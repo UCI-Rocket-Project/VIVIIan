@@ -31,7 +31,7 @@ GSE2V1_CMD_FLIGHT_BIND = "grpc://0.0.0.0:8827"
 GSE2V1_HEADER_ALIGN_BYTES = b"\xef\xbe\xad\xde"
 
 # The wire packet is serialized without C++ struct padding.
-GSE2V1_DATA_FORMAT = "<I I 18? 14f 3I 8f I"
+GSE2V1_DATA_FORMAT = "<I I 18? 14f 3I B 8f I"
 GSE2V1_DATA_SIZE = struct.calcsize(GSE2V1_DATA_FORMAT)
 
 GSE2V1_COMMAND_FORMAT = "<I 15? I"
@@ -132,6 +132,7 @@ GSE2V1_FIELD_NAME_MAP = {
     "temperature0": "temperature0",
     "temperature1": "temperature1",
     "temperature2": "temperature2",
+    "externalAdcValidBitmask": "externalAdcValidBitmask",
     "pressure0": "pressure0",
     "pressure1": "pressure1",
     "pressure2": "pressure2",
@@ -147,6 +148,31 @@ GSE2V1_FIELDS = tuple(GSE2V1_FIELD_NAME_MAP.keys())
 GSE2V1_FIELD_NAMES = tuple(GSE2V1_FIELD_NAME_MAP.values())
 GSE2V1_NUM_SIGNALS = len(GSE2V1_FIELD_NAMES)
 GSE2V1_FIELD_INDEX = {field: i for i, field in enumerate(GSE2V1_FIELDS)}
+
+# Bit 0 is pressure0; bit 7 is loadCellForce5.
+GSE2V1_EXTERNAL_ADC_FIELDS = (
+    "pressure0", "pressure1", "pressure2", "pressure3",
+    "loadCellForce2", "loadCellForce3", "loadCellForce4", "loadCellForce5",
+)
+GSE2V1_EXTERNAL_ADC_BITS = {
+    field: 1 << channel for channel, field in enumerate(GSE2V1_EXTERNAL_ADC_FIELDS)
+}
+
+
+def gse2v1_field_valid(latest: dict[str, float], field: str) -> bool:
+    """External ADC readings require a finite value and their channel validity bit."""
+    bit = GSE2V1_EXTERNAL_ADC_BITS.get(field)
+    if bit is None:
+        return True
+    try:
+        mask = float(latest["externalAdcValidBitmask"])
+        value = float(latest[field])
+        return bool(
+            np.isfinite(mask) and mask.is_integer() and 0 <= mask <= 255
+            and (int(mask) & bit) and np.isfinite(value)
+        )
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return False
 
 GSE2V1_COMMAND_ECHO_FIELDS = (
     "igniterInternalState0",

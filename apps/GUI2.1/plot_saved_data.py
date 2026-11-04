@@ -3,10 +3,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from gse21connector import GSE2V1_EXTERNAL_ADC_BITS
 
 DATA_ROOT = Path(__file__).resolve().parent / "data"
 DATASETS = {
-    # "gse": "gse2v1_raw_telemetry_data",
+    "gse": "gse2v1_raw_telemetry_data",
     "nidaq": "nidaq_raw_telemetry_data",
 }
 DEFAULT_X_COLUMN = "storageTimestamp"
@@ -15,7 +16,7 @@ SKIP_DEFAULT_COLUMNS = {"magicHeader", "timestamp", "storageTimestamp", "crc"}
 
 def is_default_signal(dataset_name: str, column: str) -> bool:
     if dataset_name == "gse":
-        return "InternalState" in column
+        return "InternalState" in column or column in GSE2V1_EXTERNAL_ADC_BITS
     if dataset_name == "nidaq":
         return column not in SKIP_DEFAULT_COLUMNS
     return column not in SKIP_DEFAULT_COLUMNS
@@ -148,8 +149,10 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     tables = []
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
+    FILE_BEGIN_OFFSET = 1000
+    FILE_END_OFFSET = 0
     for index, file in enumerate(files, start=1):
-        if index < total_files - 500 or index > total_files - 350:
+        if index < total_files - FILE_BEGIN_OFFSET or index > total_files - FILE_END_OFFSET:
             continue
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
@@ -189,9 +192,7 @@ def numeric_columns(table) -> list[str]:
 
 def plottable_columns(table, dataset_name: str) -> list[str]:
     columns = numeric_columns(table)
-    if dataset_name == "nidaq":
-        return [column for column in columns if column not in SKIP_DEFAULT_COLUMNS]
-    return [column for column in columns if is_default_signal(dataset_name, column)]
+    return [column for column in columns if column not in SKIP_DEFAULT_COLUMNS]
 
 
 def split_csv(value: str | None) -> list[str]:
@@ -223,7 +224,7 @@ def parse_columns(value: str | None, disabled_value: str | None, table, dataset_
         if missing:
             raise ValueError(f"Columns not found for {dataset_name}: {', '.join(missing)}")
     else:
-        columns = available
+        columns = [column for column in available if is_default_signal(dataset_name, column)]
 
     return [
         column
@@ -254,6 +255,20 @@ def rolling_average(values, window_samples: int):
 
 def signal_as_float(table, dataset_name: str, name: str):
     values = column_as_float(table, name)
+    if dataset_name == "gse" and name in GSE2V1_EXTERNAL_ADC_BITS:
+        import numpy as np
+
+        if "externalAdcValidBitmask" not in table.column_names:
+            print(f"Warning: {name}: no externalAdcValidBitmask recorded; samples marked invalid.")
+            return np.full(values.shape, np.nan)
+        masks = column_as_float(table, "externalAdcValidBitmask")
+        valid_masks = np.isfinite(masks) & (masks >= 0) & (masks <= 255) & (masks == np.floor(masks))
+        safe_masks = np.where(valid_masks, masks, 0).astype(np.uint8)
+        valid = np.isfinite(values) & ((safe_masks & GSE2V1_EXTERNAL_ADC_BITS[name]) != 0)
+        invalid_count = int((~valid).sum())
+        if invalid_count:
+            print(f"{name}: {invalid_count}/{values.size} invalid samples shown as gaps.")
+        return np.where(valid, values, np.nan)
     if dataset_name == "nidaq" and name in PT_SCALES:
         scale, offset = PT_SCALES[name]
         values = values * scale + offset
@@ -320,6 +335,32 @@ def enable_legend_toggling(fig, legend, lines) -> None:
     fig.canvas.mpl_connect("button_press_event", on_click)
 
 
+def gse_plot_axes(axis, columns: list[str], *, combined: bool):
+    """Keep analog readings separate from the fixed 0/1 internal-state axis."""
+    has_states = any("InternalState" in column for column in columns)
+    has_sensors = any("InternalState" not in column for column in columns)
+    axes = {}
+    if has_states:
+        states = axis.twinx() if combined or has_sensors else axis
+        states.set_ylabel("GSE internal state")
+        states.set_ylim(-0.05, 1.05)
+        axes[True] = states
+    if has_sensors:
+        sensors = axis.twinx() if combined else axis
+        if combined and has_states:
+            sensors.spines["right"].set_position(("outward", 60))
+        sensors.set_ylabel("GSE sensor value (recorded units)")
+        axes[False] = sensors
+    return axes
+
+
+def saved_signal_label(dataset_name: str, column: str, values) -> str:
+    import numpy as np
+
+    label = f"{dataset_name}.{column}"
+    return label if np.isfinite(values).any() else f"{label} (INVALID)"
+
+
 def plot_dataset(
     *,
     session_dir: Path,
@@ -343,13 +384,15 @@ def plot_dataset(
     print(f"Plotted {len(columns)} {dataset_name} signals from {x.size} samples.")
 
     fig, axis = plt.subplots(figsize=(14, 7))
+    gse_axes = gse_plot_axes(axis, columns, combined=False) if dataset_name == "gse" else {}
 
     for column in columns:
-        axis.plot(
+        target_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
+        target_axis.plot(
             x,
             ys[column],
             linewidth=1.0,
-            label=f"{dataset_name}.{column}",
+            label=saved_signal_label(dataset_name, column, ys[column]),
             **plot_style(dataset_name, column),
         )
 
@@ -357,10 +400,10 @@ def plot_dataset(
     if dataset_name == "nidaq":
         format_nidaq_pressure_axis(axis)
     else:
-        axis.set_ylabel("value")
         axis.grid(True, alpha=0.3)
-    legend = axis.legend(loc="upper left", fontsize="small", ncols=2)
-    enable_legend_toggling(fig, legend, axis.get_lines())
+    lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
+    legend = axis.legend(lines, [line.get_label() for line in lines], loc="upper left", fontsize="small", ncols=2)
+    enable_legend_toggling(fig, legend, lines)
     fig.suptitle(f"{dataset_name} data: {session_dir.name}")
     fig.tight_layout()
 
@@ -385,7 +428,6 @@ def plot_combined_datasets(
     import matplotlib.pyplot as plt
 
     fig, axis = plt.subplots(figsize=(14, 7))
-    gse_axis = axis.twinx()
     x_label = x_name
     plotted = 0
 
@@ -400,13 +442,14 @@ def plot_combined_datasets(
         x, ys = downsample(x, ys, max_points)
         print(f"Plotted {len(columns)} {dataset_name} signals from {x.size} samples.")
 
+        gse_axes = gse_plot_axes(axis, columns, combined=True) if dataset_name == "gse" else {}
         for column in columns:
-            target_axis = gse_axis if dataset_name == "gse" else axis
+            target_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
             target_axis.plot(
                 x,
                 ys[column],
                 linewidth=1.0,
-                label=f"{dataset_name}.{column}",
+                label=saved_signal_label(dataset_name, column, ys[column]),
                 **plot_style(dataset_name, column),
             )
             plotted += 1
@@ -417,12 +460,8 @@ def plot_combined_datasets(
 
     axis.set_xlabel(x_label)
     format_nidaq_pressure_axis(axis)
-    gse_axis.set_ylabel("gse internal state")
-    gse_axis.set_ylim(-0.05, 1.05)
-    handles, labels = axis.get_legend_handles_labels()
-    gse_handles, gse_labels = gse_axis.get_legend_handles_labels()
-    lines = handles + gse_handles
-    legend = axis.legend(lines, labels + gse_labels, loc="upper left", fontsize="small", ncols=3)
+    lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
+    legend = axis.legend(lines, [line.get_label() for line in lines], loc="upper left", fontsize="small", ncols=3)
     enable_legend_toggling(fig, legend, lines)
     fig.suptitle(f"combined data: {session_dir.name}")
     fig.tight_layout()

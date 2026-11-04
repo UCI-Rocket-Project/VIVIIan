@@ -27,11 +27,12 @@ from gse21connector import (
     GSE2V1_COMMAND_MAGIC,
     GSE2V1_COMMAND_SIZE,
     GSE2V1_DATA_SIZE,
+    GSE2V1_DATA_FORMAT,
     GSE2V1_HEADER_ALIGN_BYTES,
 )
 
 _MAGIC_HEADER = struct.unpack('<I', GSE2V1_HEADER_ALIGN_BYTES)[0]
-_DATA_BODY_FORMAT = '<I I 18? 2x 14f 3I 8f'  # telemetry body without trailing CRC uint32
+_DATA_BODY_FORMAT = GSE2V1_DATA_FORMAT.rsplit(' ', 1)[0]  # without trailing CRC
 _CMD_BODY_FORMAT = '<I 15?'             # GSE2V1_COMMAND_FORMAT without trailing CRC
 
 DATA_SIZE = GSE2V1_DATA_SIZE
@@ -53,6 +54,7 @@ class _SimState:
     igniter1_fire: bool = False
     alarm: bool = False
     solenoid_states: list = field(default_factory=lambda: [False] * 12)
+    external_adc_valid_bitmask: int = 0xFF
 
 
 def _pack_telemetry(seq: int, state: _SimState) -> bytes:
@@ -80,6 +82,7 @@ def _pack_telemetry(seq: int, state: _SimState) -> bytes:
         300,                     # temperature0
         310,                     # temperature1
         295,                     # temperature2
+        state.external_adc_valid_bitmask,  # externalAdcValidBitmask
         100.0,                   # pressure0
         101.0,                   # pressure1
         102.0,                   # pressure2

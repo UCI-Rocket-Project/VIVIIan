@@ -309,7 +309,10 @@ def _draw_centered_text(
         text,
     )
 
-def draw_table(imgui, server: LatestServer) -> None:
+def draw_table(
+    imgui, server: LatestServer,
+    field_validity: Callable[[dict[str, float], str], bool] | None = None,
+) -> None:
     imgui.text_unformatted(server.name)
     latest = server.latest
     if latest is None:
@@ -320,7 +323,10 @@ def draw_table(imgui, server: LatestServer) -> None:
     for field in server.fields:
         imgui.text_unformatted(field)
         imgui.next_column()
-        imgui.text_unformatted(str(latest.get(field, "")))
+        if field_validity is not None and not field_validity(latest, field):
+            imgui.text_colored(imgui.ImVec4(*BUTTON_STATE_MISMATCH_COLOR), "INVALID")
+        else:
+            imgui.text_unformatted(str(latest.get(field, "")))
         imgui.next_column()
     imgui.columns(1)
 
@@ -339,19 +345,19 @@ class NidaqGraph:
         max_points: int = 30000,
         title: str = "nidaq graph",
         graph_id: str | None = None,
+        field_validity: Callable[[dict[str, float], str], bool] | None = None,
     ) -> None:
         self.server = server
         self.max_points = max_points
         self.title = title
         self.graph_id = graph_id or title
+        self.field_validity = field_validity
 
 
         self.history: deque[list[float]] = deque(maxlen=max_points)
         self.times: deque[float] = deque(maxlen=max_points)
 
         self._last_seen: dict[str, float] | None = None
-        self._reset_view: bool = True
-        self._scroll_enabled: bool = False
         if field_names == None: 
             self.fields = list(self.server.fields)
             self.scales = [(1,0)]*len(self.fields)
@@ -365,60 +371,30 @@ class NidaqGraph:
 
 
     def update(self) -> None:
+        now = time.monotonic()
+        cutoff = now - self.WINDOW_SECONDS
+        while self.times and self.times[0] < cutoff:
+            self.times.popleft()
+            self.history.popleft()
+
         latest = self.server.latest
         if latest is None or latest is self._last_seen:
             return
 
         self._last_seen = latest
 
-        now = time.monotonic()
-
-        self.times.append(now)
+        # Both receivers use the same host monotonic clock.
+        received_at = getattr(self.server, "latest_update_time", None)
+        self.times.append(received_at if received_at is not None else now)
 
         self.history.append(
             [
                 (float(latest[field]) * scale[0]) + scale[1]
+                if self.field_validity is None or self.field_validity(latest, field)
+                else float("nan")
                 for field, scale in zip(self.fields, self.scales)
             ]
         )
-
-        # Keep only the last 300 seconds of data
-        cutoff = now - self.WINDOW_SECONDS
-        while self.times and self.times[0] < cutoff:
-            self.times.popleft()
-            self.history.popleft()
-
-    def _get_width(self, imgui) -> float:
-        available = imgui.get_content_region_avail()
-
-        if isinstance(available, tuple):
-            return float(available[0])
-
-        return float(available.x)
-
-    def _cond_always(self, imgui):
-        if hasattr(imgui, "Cond_"):
-            return imgui.Cond_.always
-
-        return imgui.ALWAYS
-
-    def _axis_x1(self):
-        if hasattr(implot, "ImAxis_"):
-            return implot.ImAxis_.x1
-
-        return implot.ImAxis_X1
-
-    def _axis_y1(self):
-        if hasattr(implot, "ImAxis_"):
-            return implot.ImAxis_.y1
-
-        return implot.ImAxis_Y1
-
-    def _plot_no_inputs_flag(self):
-        if hasattr(implot, "Flags_"):
-            return implot.Flags_.no_inputs
-
-        return implot.ImPlotFlags_NoInputs
 
     def _clear_regression_values(self) -> None:
         self._regression_started_at = None
@@ -499,59 +475,103 @@ class NidaqGraph:
         return float(np.trapz(thrust, times))
 
     def draw(self, imgui) -> None:
+        if not hasattr(self, "_view"):
+            self._view = SensorGraph({"": self}, title=self.title, graph_id=self.graph_id)
+        self._view.draw(imgui)
+
+
+class SensorGraph:
+    """Plot independently sampled sources on a shared time axis."""
+
+    WINDOW_SECONDS = NidaqGraph.WINDOW_SECONDS
+
+    def __init__(
+        self,
+        sources: dict[str, NidaqGraph],
+        title: str = "Sensors",
+        graph_id: str = "sensor_graph",
+    ) -> None:
+        self.sources = sources
+        self.title = title
+        self.graph_id = graph_id
+        self._reset_view = True
+        self._scroll_enabled = False
+
+    def _get_width(self, imgui) -> float:
+        available = imgui.get_content_region_avail()
+
+        if isinstance(available, tuple):
+            return float(available[0])
+
+        return float(available.x)
+
+    def _cond_always(self, imgui):
+        if hasattr(imgui, "Cond_"):
+            return imgui.Cond_.always
+
+        return imgui.ALWAYS
+
+    def _axis_x1(self):
+        if hasattr(implot, "ImAxis_"):
+            return implot.ImAxis_.x1
+
+        return implot.ImAxis_X1
+
+    def _axis_y1(self):
+        if hasattr(implot, "ImAxis_"):
+            return implot.ImAxis_.y1
+
+        return implot.ImAxis_Y1
+
+    def _plot_no_inputs_flag(self):
+        if hasattr(implot, "Flags_"):
+            return implot.Flags_.no_inputs
+
+        return implot.ImPlotFlags_NoInputs
+
+    @staticmethod
+    def _label(source: str, field: str) -> str:
+        return f"{source} · {field}" if source else field
+
+    def draw(self, imgui) -> None:
         imgui.push_id(self.graph_id)
-        self.update()
+        for graph in self.sources.values():
+            graph.update()
 
         imgui.text_unformatted(self.title)
         imgui.same_line()
-
         if imgui.button("Reset View"):
             self._reset_view = True
-
         imgui.same_line()
         if imgui.button("Scroll: On" if self._scroll_enabled else "Scroll: Off"):
             self._scroll_enabled = not self._scroll_enabled
 
-        if len(self.history) < 2:
+        now = time.monotonic()
+        snapshots = []
+        for source, graph in self.sources.items():
+            times = list(graph.times)
+            history = list(graph.history)
+            graph._update_regression_timer(now, times, history)
+            data = np.asarray(history, dtype=np.float64).reshape(-1, len(graph.fields))
+            snapshots.append((source, graph, times, data))
+
+        if not any(len(times) >= 2 for _, _, times, _ in snapshots):
             imgui.text_disabled("waiting")
             imgui.pop_id()
             return
 
-        now = time.monotonic()
-
-        times_list = list(self.times)
-        history_list = list(self.history)
-        self._update_regression_timer(now, times_list, history_list)
-
-        # x-axis:
-        # -300 = oldest visible edge on the LEFT
-        # 0 = now/latest value on the RIGHT
-        xs = np.ascontiguousarray(
-            [t - now for t in times_list],
-            dtype=np.float64,
-        )
-
-        data = np.asarray(history_list, dtype=np.float64)
-        latest_values = data[-1]
-
-        scale_min = float(data.min())
-        scale_max = float(data.max())
-
-        if scale_min == scale_max:
-            scale_min -= 1.0
-            scale_max += 1.0
-        else:
-            padding = (scale_max - scale_min) * 0.10
-            scale_min -= padding
-            scale_max += padding
+        finite_values = np.concatenate([data[np.isfinite(data)] for _, _, _, data in snapshots])
+        scale_min = float(finite_values.min()) if finite_values.size else 0.0
+        scale_max = float(finite_values.max()) if finite_values.size else 1.0
+        padding = (scale_max - scale_min) * 0.10 if scale_min != scale_max else 1.0
+        scale_min -= padding
+        scale_max += padding
 
         width = self._get_width(imgui)
-        height = 600
-        value_panel_width = 220.0
+        value_panel_width = 300.0
         plot_width = max(200.0, width - value_panel_width)
 
         cond_always = self._cond_always(imgui)
-
         if self._reset_view:
             implot.set_next_axes_limits(
                 -self.WINDOW_SECONDS,
@@ -561,66 +581,75 @@ class NidaqGraph:
                 cond_always,
             )
             self._reset_view = False
-
         plot_flags = 0 if self._scroll_enabled else self._plot_no_inputs_flag()
-
         if implot.begin_plot(
             f"{self.title} plot##{self.graph_id}",
-            size=imgui.ImVec2(plot_width, height),
-            flags=plot_flags,
+            size=imgui.ImVec2(plot_width, 600), flags=plot_flags,
         ):
             implot.setup_axes("seconds from now", "value")
-
-            implot.setup_axis_limits_constraints(
-                self._axis_x1(),
-                -self.WINDOW_SECONDS,
-                0.0,
-            )
-
-            implot.setup_axis_limits(
-                self._axis_y1(),
-                scale_min,
-                scale_max,
-                cond_always,
-            )
-
-            for i, field in enumerate(self.fields):
-                ys = np.ascontiguousarray(data[:, i], dtype=np.float64)
-                implot.plot_line(field, xs, ys)
-
+            implot.setup_axis_limits_constraints(self._axis_x1(), -self.WINDOW_SECONDS, 0.0)
+            implot.setup_axis_limits(self._axis_y1(), scale_min, scale_max, cond_always)
+            for source, graph, times, data in snapshots:
+                if not times:
+                    continue
+                xs = np.ascontiguousarray([t - now for t in times], dtype=np.float64)
+                for i, field in enumerate(graph.fields):
+                    ys = np.ascontiguousarray(data[:, i], dtype=np.float64)
+                    implot.plot_line(self._label(source, field), xs, ys)
             implot.end_plot()
 
         imgui.same_line()
-        imgui.begin_group()
+        # Keep all channels within the graph's height.
+        imgui.begin_child("sensor_values", imgui.ImVec2(value_panel_width, 600))
         imgui.text_unformatted("Latest")
-        for field, value in zip(self.fields, latest_values):
-            imgui.text_unformatted(f"{field}: {value:.2f}")
+        for source, graph, times, data in snapshots:
+            for i, field in enumerate(graph.fields):
+                label = self._label(source, field)
+                if not times:
+                    imgui.text_disabled(f"{label}: waiting")
+                elif not np.isfinite(data[-1, i]):
+                    imgui.text_colored(
+                        imgui.ImVec4(*BUTTON_STATE_MISMATCH_COLOR), f"{label}: INVALID",
+                    )
+                else:
+                    imgui.text_unformatted(f"{label}: {data[-1, i]:.2f}")
 
         imgui.separator()
         if imgui.button("Start 3m avg"):
-            self._regression_started_at = now
-            self._regression_values_per_min = [float("nan")] * len(self.fields)
+            for graph in self.sources.values():
+                graph._regression_started_at = now
+                graph._regression_values_per_min = [float("nan")] * len(graph.fields)
         imgui.same_line()
         if imgui.button("Clear"):
-            self._clear_regression_values()
-        if self._regression_started_at is not None:
-            remaining = max(0.0, self.WINDOW_SECONDS - (now - self._regression_started_at))
-            imgui.text_unformatted(f"Timer: {remaining:.0f}s")
+            for graph in self.sources.values():
+                graph._clear_regression_values()
+        for graph in self.sources.values():
+            if graph._regression_started_at is not None:
+                remaining = max(0.0, self.WINDOW_SECONDS - (now - graph._regression_started_at))
+                imgui.text_unformatted(f"Timer: {remaining:.0f}s")
+                break
         imgui.text_unformatted("Avg change/min")
-        for field, value in zip(self.fields, self._regression_values_per_min):
-            imgui.text_unformatted(f"{field}: {self._format_regression_value(value)}")
+        for source, graph, _, _ in snapshots:
+            for field, value in zip(graph.fields, graph._regression_values_per_min):
+                imgui.text_unformatted(
+                    f"{self._label(source, field)}: {graph._format_regression_value(value)}",
+                )
 
         imgui.separator()
         imgui.text_unformatted("3 min change")
-        for i, (field, value) in enumerate(zip(self.fields, latest_values)):
-            oldest_value = data[0, i]
-            imgui.text_unformatted(f"{field}: {value - oldest_value:.2f}")
+        for source, graph, times, data in snapshots:
+            for i, field in enumerate(graph.fields):
+                value = data[-1, i] - data[0, i] if times else float("nan")
+                imgui.text_unformatted(f"{self._label(source, field)}: {value:.2f}")
 
         imgui.separator()
         imgui.text_unformatted("3 min impulse")
-        thrust_impulse = self._calculate_thrust_impulse(times_list, data)
-        imgui.text_unformatted(f"Thrust: {thrust_impulse if not np.isnan(thrust_impulse) else "NAN"} lbf s")
-        imgui.end_group()
+        for source, graph, times, data in snapshots:
+            if "Thrust" in graph.fields:
+                impulse = graph._calculate_thrust_impulse(times, data)
+                value = f"{impulse:.2f}" if np.isfinite(impulse) else "NAN"
+                imgui.text_unformatted(f"{self._label(source, 'Thrust')}: {value} lbf s")
+        imgui.end_child()
         imgui.pop_id()
 
 
