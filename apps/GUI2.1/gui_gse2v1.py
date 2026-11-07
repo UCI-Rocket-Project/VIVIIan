@@ -401,7 +401,7 @@ TABLE_BUTTONS: dict[str, dict[str, Any]] = {
             "pv2": False,
             "tank_vent": False,
             "mvas_open": False,
-            "mvas_close": False,
+            "mvas_close": True,
         }
     },
     "purge_1_t18": {
