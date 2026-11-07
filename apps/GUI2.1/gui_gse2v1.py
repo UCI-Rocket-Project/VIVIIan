@@ -374,26 +374,20 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": True,
     },
-    "all_off_t12_t13_t16": {
-        "display_name": "All Off (T12, T13, T16)",
+    "all_off_t13_t14_t17": {
+        "display_name": "All Off (T13, T14, T17)",
         "command_field": None,
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": abort_is_inactive,
     },
-    "purge_1_t17": {
-        "display_name": "Purge #1 (T17)",
+    "purge_1_t18": {
+        "display_name": "Purge #1 (T18)",
         "command_field": None,
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": abort_is_inactive,
     },
-    "purge_2_t18": {
-        "display_name": "Purge #2 (T18)",
-        "command_field": None,
-        "sync_button_to_client_row": _sync_noop_to_client_row,
-        "enabled": abort_is_inactive,
-    },
-    "t19": {
-        "display_name": "T19",
+    "purge_2_t19": {
+        "display_name": "Purge #2 (T19)",
         "command_field": None,
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": abort_is_inactive,
@@ -404,8 +398,14 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": abort_is_inactive,
     },
-    "final_t23": {
-        "display_name": "Final (T23)",
+    "t21": {
+        "display_name": "T21",
+        "command_field": None,
+        "sync_button_to_client_row": _sync_noop_to_client_row,
+        "enabled": abort_is_inactive,
+    },
+    "final_t24": {
+        "display_name": "Final (T24)",
         "command_field": None,
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": abort_is_inactive,
@@ -431,7 +431,7 @@ TABLE_BUTTONS: dict[str, dict[str, Any]] = {
             "alarm": True,
         }
     },
-    "all_off_t12_t13_t16": {
+    "all_off_t13_t14_t17": {
         "table_states": {
             "sol_gn2_fill_1": False,
             "sol_gn2_fill_2": False,
@@ -443,10 +443,10 @@ TABLE_BUTTONS: dict[str, dict[str, Any]] = {
             "pv2": False,
             "tank_vent": False,
             "mvas_open": False,
-            "mvas_close": False,
+            "mvas_close": True,
         }
     },
-    "purge_1_t17": {
+    "purge_1_t18": {
         "table_states": {
             "sol_gn2_fill_1": False,
             "sol_gn2_fill_2": False,
@@ -461,7 +461,7 @@ TABLE_BUTTONS: dict[str, dict[str, Any]] = {
             "mvas_close": False,
         }
     },
-    "purge_2_t18": {
+    "purge_2_t19": {
         "table_states": {
             "sol_gn2_fill_1": False,
             "sol_gn2_fill_2": False,
@@ -476,7 +476,7 @@ TABLE_BUTTONS: dict[str, dict[str, Any]] = {
             "mvas_close": False,
         }
     },
-    "t19": {
+    "t20": {
         "table_states": {
             "sol_gn2_fill_1": True,
             "sol_gn2_fill_2": False,
@@ -491,7 +491,7 @@ TABLE_BUTTONS: dict[str, dict[str, Any]] = {
             "mvas_close": False,
         }
     },
-    "t20": {
+    "t21": {
         "table_states": {
             "sol_gn2_fill_1": False,
             "sol_gn2_fill_2": False,
@@ -505,7 +505,7 @@ TABLE_BUTTONS: dict[str, dict[str, Any]] = {
             "mvas_close": False,
         }
     },
-    "final_t23": {
+    "final_t24": {
         "table_states": {
             "sol_gn2_fill_1": False,
             "sol_gn2_fill_2": False,

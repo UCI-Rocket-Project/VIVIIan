@@ -48,18 +48,18 @@ def find_latest_common_session(data_root: Path, dataset_names: list[str]) -> Pat
 PT_SCALES = {
     # "ai0": (402.45048,0), # this is wrong
     # "ai1": (1,0),
-    "LNGTANK": (1,0),
-    "LOXTANK": (1,0),
+    "LNGTANK": (402.45048,-0.471844),
+    "LOXTANK": (402.45048,-0.471844),
     
-    "VENT": (1,0),
-    "COPV": (1,0),#(24471.303,5.4077),
+    "VENT": (402.45048,0),
+    "COPV": (1255.98144,0),#(24471.303,5.4077),
     # "ai7": (1,0),
-    "LOXING": (1,0),
-    "LNGING": (1,0),
+    "LOXING": (402.45048,0),
+    "LNGING": (402.45048,0),
     # "ai10": (1,0),
-    "LOXPOT": (1,0),
-    "LNGPOT": (1,0),
-    # "PT10": (1,0),
+    "LOXPOT": (402.45048,0),
+    "LNGPOT": (402.45048,0),
+    "PT10": (1,0),
     "Thrust": (1,0),
 }
 
@@ -74,14 +74,14 @@ SIGNAL_COLORS = {
     "LOXPOT": "tab:gray",
 }
 SIGNAL_LINESTYLES = {
-    # "VENT": "--",
-    # "COPV": "--",
-    # "LOXING": "-.",
-    # "LNGING": "-.",
-    # "LNGTANK": "-",
-    # "LOXTANK": "-",
-    # "LNGPOT": ":",
-    # "LOXPOT": ":",
+    "VENT": "--",
+    "COPV": "--",
+    "LOXING": "-.",
+    "LNGING": "-.",
+    "LNGTANK": "-",
+    "LOXTANK": "-",
+    "LNGPOT": ":",
+    "LOXPOT": ":",
 }
 ROLLING_AVERAGE_SAMPLES = {
     "COPV": 0,
@@ -149,7 +149,7 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
     for index, file in enumerate(files, start=1):
-        if index < total_files - 350 or index > total_files - 150:
+        if index < total_files - 500 or index > total_files - 350:
             continue
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
@@ -297,6 +297,29 @@ def downsample(x, ys: dict[str, object], max_points: int):
     return downsampled_x, {name: y[::stride] for name, y in ys.items()}
 
 
+def enable_legend_toggling(fig, legend, lines) -> None:
+    """Click a legend label or line sample to toggle its plotted signal."""
+    entries = list(zip(legend.get_lines(), legend.get_texts(), lines))
+    for sample, _, _ in entries:
+        sample.set_pickradius(5)
+
+    def on_click(event):
+        if event.button != 1:
+            return
+        for sample, text, line in entries:
+            if sample.contains(event)[0] or text.contains(event)[0]:
+                visible = not line.get_visible()
+                line.set_visible(visible)
+                alpha = 1.0 if visible else 0.2
+                sample.set_alpha(alpha)
+                text.set_alpha(alpha)
+                fig.canvas.draw_idle()
+                break
+
+    # Canvas clicks also work when the legend overlaps a twinned axis.
+    fig.canvas.mpl_connect("button_press_event", on_click)
+
+
 def plot_dataset(
     *,
     session_dir: Path,
@@ -336,7 +359,8 @@ def plot_dataset(
     else:
         axis.set_ylabel("value")
         axis.grid(True, alpha=0.3)
-    axis.legend(loc="upper left", fontsize="small", ncols=2)
+    legend = axis.legend(loc="upper left", fontsize="small", ncols=2)
+    enable_legend_toggling(fig, legend, axis.get_lines())
     fig.suptitle(f"{dataset_name} data: {session_dir.name}")
     fig.tight_layout()
 
@@ -397,7 +421,9 @@ def plot_combined_datasets(
     gse_axis.set_ylim(-0.05, 1.05)
     handles, labels = axis.get_legend_handles_labels()
     gse_handles, gse_labels = gse_axis.get_legend_handles_labels()
-    axis.legend(handles + gse_handles, labels + gse_labels, loc="upper left", fontsize="small", ncols=3)
+    lines = handles + gse_handles
+    legend = axis.legend(lines, labels + gse_labels, loc="upper left", fontsize="small", ncols=3)
+    enable_legend_toggling(fig, legend, lines)
     fig.suptitle(f"combined data: {session_dir.name}")
     fig.tight_layout()
 
