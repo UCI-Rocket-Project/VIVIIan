@@ -594,7 +594,9 @@ class SensorGraph:
                     continue
                 xs = np.ascontiguousarray([t - now for t in times], dtype=np.float64)
                 for i, field in enumerate(graph.fields):
-                    ys = np.ascontiguousarray(data[:, i], dtype=np.float64)
+                    # ImPlot requires packed elements to consider them fully contiguous; using numpy.contiguous
+                    # doesn't work for single samples with multiple channels
+                    ys = np.array(data[:, i], dtype=np.float64, order="C", copy=True)
                     implot.plot_line(self._label(source, field), xs, ys)
             implot.end_plot()
 
