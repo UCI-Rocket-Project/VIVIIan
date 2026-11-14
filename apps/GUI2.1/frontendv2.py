@@ -63,7 +63,7 @@ PT_SCALES = {
     "LNGTANK": (402.45048,-0.471844),
     "LOXTANK": (402.45048,-0.471844),
     
-    "VENT": (402.45048,0),
+    # "VENT": (402.45048,0),
     "COPV": (1255.98144,0),#(24471.303,5.4077),
     # "ai7": (1,0),
     "LOXING": (402.45048,0),
@@ -71,12 +71,17 @@ PT_SCALES = {
     # "ai10": (1,0),
     "LOXPOT": (402.45048,0),
     "LNGPOT": (402.45048,0),
-    "PT10": (1,0),
+    # "PT10": (1,0),
     "Thrust": (1,0),
 }
 
 # Firmware pressure/force units pass through until channel calibrations are supplied.
-GSE_SCALES = {field: (1.0, 0.0) for field in GSE2V1_EXTERNAL_ADC_FIELDS}
+GSE_SCALES = {
+    "Tank Vent": (402.94591, 1.87778),
+    "pressure1": (1.0, 0.0),
+    "pressure2": (1.0, 0.0),
+    "pressure3": (1.0, 0.0),
+}
 # Remove a field from this set to enable its trace and graph readouts again.
 GSE_DISABLED_FIELDS = {
     "loadCellForce2", "loadCellForce3", "loadCellForce4", "loadCellForce5",

@@ -133,7 +133,7 @@ GSE2V1_FIELD_NAME_MAP = {
     "temperature1": "temperature1",
     "temperature2": "temperature2",
     "externalAdcValidBitmask": "externalAdcValidBitmask",
-    "pressure0": "pressure0",
+    "pressure0": "Tank Vent",
     "pressure1": "pressure1",
     "pressure2": "pressure2",
     "pressure3": "pressure3",
@@ -150,10 +150,13 @@ GSE2V1_NUM_SIGNALS = len(GSE2V1_FIELD_NAMES)
 GSE2V1_FIELD_INDEX = {field: i for i, field in enumerate(GSE2V1_FIELDS)}
 
 # Bit 0 is pressure0; bit 7 is loadCellForce5.
-GSE2V1_EXTERNAL_ADC_FIELDS = (
+GSE2V1_EXTERNAL_ADC_FIELDS_RAW = {
     "pressure0", "pressure1", "pressure2", "pressure3",
     "loadCellForce2", "loadCellForce3", "loadCellForce4", "loadCellForce5",
-)
+}
+GSE2V1_EXTERNAL_ADC_FIELDS = dict.fromkeys([
+    value for key, value in GSE2V1_FIELD_NAME_MAP.items() if key in GSE2V1_EXTERNAL_ADC_FIELDS_RAW
+])
 GSE2V1_EXTERNAL_ADC_BITS = {
     field: 1 << channel for channel, field in enumerate(GSE2V1_EXTERNAL_ADC_FIELDS)
 }
