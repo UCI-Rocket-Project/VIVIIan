@@ -58,29 +58,17 @@ def draw_command_buttons(
     imgui.columns(1)
 
 PT_SCALES = {
-    # "ai0": (402.45048,0), # this is wrong
-    # "ai1": (1,0),
     "LNGTANK": (402.45048,-0.471844),
-    "LOXTANK": (402.45048,-0.471844),
-    
-    # "VENT": (402.45048,0),
-    "COPV": (1255.98144,0),#(24471.303,5.4077),
-    # "ai7": (1,0),
-    "LOXING": (402.45048,0),
+    "WATERFLOW": (22.70313,-18.1625),
     "LNGING": (402.45048,0),
-    # "ai10": (1,0),
-    "LOXPOT": (402.45048,0),
-    "LNGPOT": (402.45048,0),
-    # "PT10": (1,0),
-    "Thrust": (1,0),
 }
 
 # Firmware pressure/force units pass through until channel calibrations are supplied.
 GSE_SCALES = {
-    "Tank Vent": (402.94591, 1.87778),
-    "pressure1": (1.0, 0.0),
-    "pressure2": (1.0, 0.0),
-    "pressure3": (1.0, 0.0),
+    "Tank Vent": (0, 0),
+    "pressure1": (0.0, 0.0),
+    "pressure2": (0.0, 0.0),
+    "pressure3": (0.0, 0.0),
 }
 # Remove a field from this set to enable its trace and graph readouts again.
 GSE_DISABLED_FIELDS = {
