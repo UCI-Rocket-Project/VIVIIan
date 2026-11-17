@@ -19,7 +19,7 @@ NIDAQ_ROWS_PER_FRAME = 1000
 NIDAQ_FIELD_NAME_MAP = {
     "ai9": "LNGTANK",# "PT3",
     "ai11": "WATERFLOW",# "PT6",
-    "ai3": "LNGING",# "PT7",
+    "ai8": "LNGING",# "PT7",
 }
 
 
