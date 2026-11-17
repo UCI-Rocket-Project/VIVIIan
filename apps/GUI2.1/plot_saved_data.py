@@ -3,7 +3,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+<<<<<<< Updated upstream
 from gse21connector import GSE2V1_EXTERNAL_ADC_BITS
+=======
+#from gse21connector import GSE2V1_EXTERNAL_ADC_BITS
+>>>>>>> Stashed changes
 
 DATA_ROOT = Path(__file__).resolve().parent / "data"
 DATASETS = {
@@ -16,7 +20,11 @@ SKIP_DEFAULT_COLUMNS = {"magicHeader", "timestamp", "storageTimestamp", "crc"}
 
 def is_default_signal(dataset_name: str, column: str) -> bool:
     if dataset_name == "gse":
+<<<<<<< Updated upstream
         return "InternalState" in column or column in GSE2V1_EXTERNAL_ADC_BITS
+=======
+        return "InternalState" in column# or column in GSE2V1_EXTERNAL_ADC_BITS
+>>>>>>> Stashed changes
     if dataset_name == "nidaq":
         return column not in SKIP_DEFAULT_COLUMNS
     return column not in SKIP_DEFAULT_COLUMNS
@@ -137,7 +145,15 @@ def columns_to_read(column_names: list[str], dataset_name: str, x_name: str) -> 
     ]
 
 
-def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
+def read_dataset(
+    session_dir: Path,
+    dataset_name: str,
+    x_name: str,
+    from_end: int,
+    to_end: int,
+    *,
+    file_starts: list[tuple[int, int]] | None = None,
+) -> pa.Table:
     import pyarrow as pa
     import pyarrow.parquet as pq
 
@@ -149,10 +165,16 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     tables = []
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
+<<<<<<< Updated upstream
     FILE_BEGIN_OFFSET = 1000
     FILE_END_OFFSET = 0
     for index, file in enumerate(files, start=1):
         if index < total_files - FILE_BEGIN_OFFSET or index > total_files - FILE_END_OFFSET:
+=======
+    total_rows = 0
+    for index, file in enumerate(files, start=1):
+        if index < total_files - from_end or index > total_files - to_end:
+>>>>>>> Stashed changes
             continue
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
@@ -161,7 +183,11 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
             if not selected_columns:
                 skipped.append((file, "No PT_SCALES columns found"))
                 continue
-            tables.append(pq.read_table(file, columns=selected_columns))
+            table = pq.read_table(file, columns=selected_columns)
+            if file_starts is not None and table.num_rows:
+                file_starts.append((total_files - index, total_rows))
+            total_rows += table.num_rows
+            tables.append(table)
         except (pa.lib.ArrowInvalid, OSError, EOFError) as exc:
             skipped.append((file, str(exc)))
     print()
@@ -255,6 +281,7 @@ def rolling_average(values, window_samples: int):
 
 def signal_as_float(table, dataset_name: str, name: str):
     values = column_as_float(table, name)
+<<<<<<< Updated upstream
     if dataset_name == "gse" and name in GSE2V1_EXTERNAL_ADC_BITS:
         import numpy as np
 
@@ -269,6 +296,22 @@ def signal_as_float(table, dataset_name: str, name: str):
         if invalid_count:
             print(f"{name}: {invalid_count}/{values.size} invalid samples shown as gaps.")
         return np.where(valid, values, np.nan)
+=======
+    # if dataset_name == "gse" and name in GSE2V1_EXTERNAL_ADC_BITS:
+    #     import numpy as np
+
+    #     if "externalAdcValidBitmask" not in table.column_names:
+    #         print(f"Warning: {name}: no externalAdcValidBitmask recorded; samples marked invalid.")
+    #         return np.full(values.shape, np.nan)
+    #     masks = column_as_float(table, "externalAdcValidBitmask")
+    #     valid_masks = np.isfinite(masks) & (masks >= 0) & (masks <= 255) & (masks == np.floor(masks))
+    #     safe_masks = np.where(valid_masks, masks, 0).astype(np.uint8)
+    #     valid = np.isfinite(values) & ((safe_masks & GSE2V1_EXTERNAL_ADC_BITS[name]) != 0)
+    #     invalid_count = int((~valid).sum())
+    #     if invalid_count:
+    #         print(f"{name}: {invalid_count}/{values.size} invalid samples shown as gaps.")
+    #     return np.where(valid, values, np.nan)
+>>>>>>> Stashed changes
     if dataset_name == "nidaq" and name in PT_SCALES:
         scale, offset = PT_SCALES[name]
         values = values * scale + offset
@@ -315,8 +358,11 @@ def downsample(x, ys: dict[str, object], max_points: int):
 def enable_legend_toggling(fig, legend, lines) -> None:
     """Click a legend label or line sample to toggle its plotted signal."""
     entries = list(zip(legend.get_lines(), legend.get_texts(), lines))
-    for sample, _, _ in entries:
+    for sample, text, line in entries:
         sample.set_pickradius(5)
+        alpha = 1.0 if line.get_visible() else 0.2
+        sample.set_alpha(alpha)
+        text.set_alpha(alpha)
 
     def on_click(event):
         if event.button != 1:
@@ -335,6 +381,35 @@ def enable_legend_toggling(fig, legend, lines) -> None:
     fig.canvas.mpl_connect("button_press_event", on_click)
 
 
+<<<<<<< Updated upstream
+=======
+def add_file_markers(
+    axis, x, file_starts: list[tuple[int, int]], to_end: int, every: int, dataset_name: str
+) -> None:
+    """Mark file starts, counting backward from the selected end before downsampling."""
+    import numpy as np
+
+    if every <= 0:
+        return
+    marked_offsets = []
+    for offset, row in reversed(file_starts):
+        if (offset - to_end) % every == 0 and np.isfinite(x[row]):
+            axis.axvline(
+                x[row], color="black", linestyle=":", linewidth=1.6,
+                alpha=0.9, label="_file_marker", zorder=5,
+            )
+            axis.annotate(
+                f"{dataset_name}: {offset} files back",
+                xy=(x[row], 0.02 if dataset_name == "gse" else 0.22),
+                xycoords=axis.get_xaxis_transform(), xytext=(3, 0), textcoords="offset points",
+                rotation=90, ha="left", va="bottom", fontsize=8, color="black",
+                bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1), zorder=6,
+            )
+            marked_offsets.append(offset)
+    print(f"Added {len(marked_offsets)} {dataset_name} file markers (every {every} files backward from offset {to_end}).")
+
+
+>>>>>>> Stashed changes
 def gse_plot_axes(axis, columns: list[str], *, combined: bool):
     """Keep analog readings separate from the fixed 0/1 internal-state axis."""
     has_states = any("InternalState" in column for column in columns)
@@ -369,23 +444,33 @@ def plot_dataset(
     disabled_arg: str | None,
     x_name: str,
     max_points: int,
+    from_end: int,
+    to_end: int,
     output: Path | None,
+    file_marker_every: int = 0,
 ) -> None:
     import matplotlib.pyplot as plt
 
-    table = read_dataset(session_dir, dataset_name, x_name)
+    file_starts: list[tuple[int, int]] = []
+    table = read_dataset(session_dir, dataset_name, x_name, from_end, to_end, file_starts=file_starts)
     columns = parse_columns(columns_arg, disabled_arg, table, dataset_name)
     if not columns:
         raise ValueError("No numeric columns selected to plot")
 
     x, x_label = make_x(table, x_name)
+    fig, axis = plt.subplots(figsize=(14, 7))
+    gse_axes = gse_plot_axes(axis, columns, combined=False) if dataset_name == "gse" else {}
+    add_file_markers(fig.axes[-1], x, file_starts, to_end, file_marker_every, dataset_name)
     ys = {column: signal_as_float(table, dataset_name, column) for column in columns}
     x, ys = downsample(x, ys, max_points)
     print(f"Plotted {len(columns)} {dataset_name} signals from {x.size} samples.")
 
+<<<<<<< Updated upstream
     fig, axis = plt.subplots(figsize=(14, 7))
     gse_axes = gse_plot_axes(axis, columns, combined=False) if dataset_name == "gse" else {}
 
+=======
+>>>>>>> Stashed changes
     for column in columns:
         target_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
         target_axis.plot(
@@ -401,7 +486,11 @@ def plot_dataset(
         format_nidaq_pressure_axis(axis)
     else:
         axis.grid(True, alpha=0.3)
+<<<<<<< Updated upstream
     lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
+=======
+    lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines() if line.get_label() != "_file_marker"]
+>>>>>>> Stashed changes
     legend = axis.legend(lines, [line.get_label() for line in lines], loc="upper left", fontsize="small", ncols=2)
     enable_legend_toggling(fig, legend, lines)
     fig.suptitle(f"{dataset_name} data: {session_dir.name}")
@@ -423,7 +512,10 @@ def plot_combined_datasets(
     disabled_arg: str | None,
     x_name: str,
     max_points: int,
+    from_end: int,
+    to_end: int,
     output: Path | None,
+    file_marker_every: int = 0,
 ) -> None:
     import matplotlib.pyplot as plt
 
@@ -432,12 +524,15 @@ def plot_combined_datasets(
     plotted = 0
 
     for dataset_name in dataset_names:
-        table = read_dataset(session_dir, dataset_name, x_name)
+        file_starts: list[tuple[int, int]] = []
+        table = read_dataset(session_dir, dataset_name, x_name, from_end, to_end, file_starts=file_starts)
         columns = parse_columns(columns_arg, disabled_arg, table, dataset_name)
         if not columns:
             continue
 
         x, x_label = make_x(table, x_name)
+        gse_axes = gse_plot_axes(axis, columns, combined=True) if dataset_name == "gse" else {}
+        add_file_markers(fig.axes[-1], x, file_starts, to_end, file_marker_every, dataset_name)
         ys = {column: signal_as_float(table, dataset_name, column) for column in columns}
         x, ys = downsample(x, ys, max_points)
         print(f"Plotted {len(columns)} {dataset_name} signals from {x.size} samples.")
@@ -460,7 +555,11 @@ def plot_combined_datasets(
 
     axis.set_xlabel(x_label)
     format_nidaq_pressure_axis(axis)
+<<<<<<< Updated upstream
     lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
+=======
+    lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines() if line.get_label() != "_file_marker"]
+>>>>>>> Stashed changes
     legend = axis.legend(lines, [line.get_label() for line in lines], loc="upper left", fontsize="small", ncols=3)
     enable_legend_toggling(fig, legend, lines)
     fig.suptitle(f"combined data: {session_dir.name}")
@@ -475,16 +574,29 @@ def plot_combined_datasets(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Plot saved GUI2.1 Parquet data.")
+    parser = argparse.ArgumentParser(
+        description="Plot saved GUI2.1 Parquet data. Click legend entries to show/hide signals."
+    )
     parser.add_argument("--data-root", type=Path, default=DATA_ROOT)
     parser.add_argument("--session", type=Path, default=None, help="Session folder. Defaults to newest in data-root.")
     parser.add_argument("--dataset", choices=[*sorted(DATASETS), "both"], default="both")
     parser.add_argument("--columns", default=None, help="Comma-separated columns to plot. Prefix with gse. or nidaq. when needed.")
     parser.add_argument("--disable", "--exclude", dest="disabled", default=None, help="Comma-separated signals to hide. Prefix with gse. or nidaq. when needed.")
     parser.add_argument("--x", default=DEFAULT_X_COLUMN, help="X column name, or 'index'. Defaults to storageTimestamp.")
-    parser.add_argument("--max-points", type=int, default=0, help="Downsample to at most this many points. Defaults to 0, which plots all raw samples.")
+    parser.add_argument("--max-points", type=int, default=0, help="Limit displayed points per signal by keeping every Nth sample (no averaging). All selected files are still loaded. Defaults to 0: no downsampling.")
+    parser.add_argument("--from-end", "--file-begin-offset", dest="from_end", type=int, default=100, help="Start this many files before the last sorted Parquet file, inclusive (default: 100).")
+    parser.add_argument("--to-end", "--file-end-offset", dest="to_end", type=int, default=0, help="Stop this many files before the last sorted Parquet file, inclusive (default: 0, the last file).")
+    parser.add_argument("--file-marker-every", type=int, default=0, help="Draw dotted vertical lines every N Parquet files, counting backward from --to-end toward --from-end, separately for each dataset. Marks file starts. Default: 0 (off).")
     parser.add_argument("--output", type=Path, default=None, help="PNG path. If omitted, opens an interactive window.")
     args = parser.parse_args()
+    if args.from_end < 0 or args.to_end < 0:
+        parser.error("--from-end and --to-end must be nonnegative")
+    if args.from_end < args.to_end:
+        parser.error("--from-end must be greater than or equal to --to-end")
+    if args.max_points < 0:
+        parser.error("--max-points must be nonnegative (0 disables downsampling)")
+    if args.file_marker_every < 0:
+        parser.error("--file-marker-every must be nonnegative (0 disables file markers)")
 
     dataset_names = sorted(DATASETS) if args.dataset == "both" else [args.dataset]
     session_dir = (
@@ -507,7 +619,10 @@ def main() -> None:
             disabled_arg=args.disabled,
             x_name=args.x,
             max_points=args.max_points,
+            from_end=args.from_end,
+            to_end=args.to_end,
             output=args.output,
+            file_marker_every=args.file_marker_every,
         )
     else:
         plot_dataset(
@@ -517,7 +632,10 @@ def main() -> None:
             disabled_arg=args.disabled,
             x_name=args.x,
             max_points=args.max_points,
+            from_end=args.from_end,
+            to_end=args.to_end,
             output=args.output,
+            file_marker_every=args.file_marker_every,
         )
 
 
