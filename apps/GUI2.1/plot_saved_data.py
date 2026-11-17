@@ -3,11 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-<<<<<<< Updated upstream
 from gse21connector import GSE2V1_EXTERNAL_ADC_BITS
-=======
-#from gse21connector import GSE2V1_EXTERNAL_ADC_BITS
->>>>>>> Stashed changes
 
 DATA_ROOT = Path(__file__).resolve().parent / "data"
 DATASETS = {
@@ -20,11 +16,7 @@ SKIP_DEFAULT_COLUMNS = {"magicHeader", "timestamp", "storageTimestamp", "crc"}
 
 def is_default_signal(dataset_name: str, column: str) -> bool:
     if dataset_name == "gse":
-<<<<<<< Updated upstream
         return "InternalState" in column or column in GSE2V1_EXTERNAL_ADC_BITS
-=======
-        return "InternalState" in column# or column in GSE2V1_EXTERNAL_ADC_BITS
->>>>>>> Stashed changes
     if dataset_name == "nidaq":
         return column not in SKIP_DEFAULT_COLUMNS
     return column not in SKIP_DEFAULT_COLUMNS
@@ -165,16 +157,9 @@ def read_dataset(
     tables = []
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
-<<<<<<< Updated upstream
-    FILE_BEGIN_OFFSET = 1000
-    FILE_END_OFFSET = 0
-    for index, file in enumerate(files, start=1):
-        if index < total_files - FILE_BEGIN_OFFSET or index > total_files - FILE_END_OFFSET:
-=======
     total_rows = 0
     for index, file in enumerate(files, start=1):
         if index < total_files - from_end or index > total_files - to_end:
->>>>>>> Stashed changes
             continue
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
@@ -281,7 +266,6 @@ def rolling_average(values, window_samples: int):
 
 def signal_as_float(table, dataset_name: str, name: str):
     values = column_as_float(table, name)
-<<<<<<< Updated upstream
     if dataset_name == "gse" and name in GSE2V1_EXTERNAL_ADC_BITS:
         import numpy as np
 
@@ -296,22 +280,6 @@ def signal_as_float(table, dataset_name: str, name: str):
         if invalid_count:
             print(f"{name}: {invalid_count}/{values.size} invalid samples shown as gaps.")
         return np.where(valid, values, np.nan)
-=======
-    # if dataset_name == "gse" and name in GSE2V1_EXTERNAL_ADC_BITS:
-    #     import numpy as np
-
-    #     if "externalAdcValidBitmask" not in table.column_names:
-    #         print(f"Warning: {name}: no externalAdcValidBitmask recorded; samples marked invalid.")
-    #         return np.full(values.shape, np.nan)
-    #     masks = column_as_float(table, "externalAdcValidBitmask")
-    #     valid_masks = np.isfinite(masks) & (masks >= 0) & (masks <= 255) & (masks == np.floor(masks))
-    #     safe_masks = np.where(valid_masks, masks, 0).astype(np.uint8)
-    #     valid = np.isfinite(values) & ((safe_masks & GSE2V1_EXTERNAL_ADC_BITS[name]) != 0)
-    #     invalid_count = int((~valid).sum())
-    #     if invalid_count:
-    #         print(f"{name}: {invalid_count}/{values.size} invalid samples shown as gaps.")
-    #     return np.where(valid, values, np.nan)
->>>>>>> Stashed changes
     if dataset_name == "nidaq" and name in PT_SCALES:
         scale, offset = PT_SCALES[name]
         values = values * scale + offset
@@ -381,8 +349,6 @@ def enable_legend_toggling(fig, legend, lines) -> None:
     fig.canvas.mpl_connect("button_press_event", on_click)
 
 
-<<<<<<< Updated upstream
-=======
 def add_file_markers(
     axis, x, file_starts: list[tuple[int, int]], to_end: int, every: int, dataset_name: str
 ) -> None:
@@ -409,7 +375,6 @@ def add_file_markers(
     print(f"Added {len(marked_offsets)} {dataset_name} file markers (every {every} files backward from offset {to_end}).")
 
 
->>>>>>> Stashed changes
 def gse_plot_axes(axis, columns: list[str], *, combined: bool):
     """Keep analog readings separate from the fixed 0/1 internal-state axis."""
     has_states = any("InternalState" in column for column in columns)
@@ -465,12 +430,9 @@ def plot_dataset(
     x, ys = downsample(x, ys, max_points)
     print(f"Plotted {len(columns)} {dataset_name} signals from {x.size} samples.")
 
-<<<<<<< Updated upstream
     fig, axis = plt.subplots(figsize=(14, 7))
     gse_axes = gse_plot_axes(axis, columns, combined=False) if dataset_name == "gse" else {}
 
-=======
->>>>>>> Stashed changes
     for column in columns:
         target_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
         target_axis.plot(
@@ -486,11 +448,7 @@ def plot_dataset(
         format_nidaq_pressure_axis(axis)
     else:
         axis.grid(True, alpha=0.3)
-<<<<<<< Updated upstream
-    lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
-=======
     lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines() if line.get_label() != "_file_marker"]
->>>>>>> Stashed changes
     legend = axis.legend(lines, [line.get_label() for line in lines], loc="upper left", fontsize="small", ncols=2)
     enable_legend_toggling(fig, legend, lines)
     fig.suptitle(f"{dataset_name} data: {session_dir.name}")
@@ -555,11 +513,7 @@ def plot_combined_datasets(
 
     axis.set_xlabel(x_label)
     format_nidaq_pressure_axis(axis)
-<<<<<<< Updated upstream
-    lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
-=======
     lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines() if line.get_label() != "_file_marker"]
->>>>>>> Stashed changes
     legend = axis.legend(lines, [line.get_label() for line in lines], loc="upper left", fontsize="small", ncols=3)
     enable_legend_toggling(fig, legend, lines)
     fig.suptitle(f"combined data: {session_dir.name}")
