@@ -17,15 +17,15 @@ NIDAQ_ROWS_PER_FRAME = 1000
 
 # --- Packet DEFINITIONS ---
 NIDAQ_FIELD_NAME_MAP = { 
-    "ai1": "VENT",# "PT0",
-    "ai0": "PT10",# "PT1", WAS LOX TANK
+    # "ai1": "VENT",# "PT0",
+    # "ai0": "PT1",# "PT1", WAS LOX TANK
     "ai8": "COPV",
     "ai9": "LNGTANK",# "PT3",
     "ai2": "LNGPOT",# "PT4",
     "ai10": "LOXPOT",# "PT5",
     "ai11": "LOXING",# "PT6",
     "ai3": "LNGING",# "PT7",
-    "ai12": "LOXTANK",# "PT10", WAS PT10
+    "ai12": "LOXTANK",# "PT10"
     "ai7": "Thrust",# "LC0"
 }
 
