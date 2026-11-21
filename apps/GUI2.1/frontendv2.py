@@ -78,8 +78,8 @@ PT_SCALES = {
 # Firmware pressure/force units pass through until channel calibrations are supplied.
 GSE_SCALES = {
     "Tank Vent": (402.94591, 1.87778),
-    "pressure1": (1.0, 0.0),
-    "pressure2": (1.0, 0.0),
+    "LOX Venturi In": (402.94591, 1.87778),
+    "LOX Venturi Throat": (157.31395, -126.83654),
     "pressure3": (1.0, 0.0),
 }
 # Remove a field from this set to enable its trace and graph readouts again.
