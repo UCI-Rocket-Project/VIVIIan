@@ -21,9 +21,11 @@ NIDAQ_FIELD_NAME_MAP = {
     # "ai0": "PT1",# "PT1", WAS LOX TANK
     "ai8": "COPV",
     "ai9": "LNGTANK",# "PT3",
-    "ai2": "LNGPOT",# "PT4",
-    "ai10": "LOXPOT",# "PT5",
-    "ai11": "LOXING",# "PT6",
+    # "ai2": "LNGPOT",# "PT4",
+    # "ai10": "LOXPOT",# "PT5",
+    # "ai11": "LOXING",# "PT6",
+    # "ai3": "LNGING",# "PT7",
+    "ai10": "LOXING",# "PT6",
     "ai3": "LNGING",# "PT7",
     "ai12": "LOXTANK",# "PT10"
     "ai7": "Thrust",# "LC0"
