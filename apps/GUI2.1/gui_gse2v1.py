@@ -190,6 +190,116 @@ def _sync_alarm_to_client_row(client: GseCommandClient) -> None:
 def _sync_noop_to_client_row(client: GseCommandClient) -> None:
     return
 
+TABLE_BUTTONS: dict[str, dict[str, Any]] = {
+    f"{ABORT_BUTTON_ID}": {
+        "table_states": {
+            "sol_gn2_fill_1": False,
+            "sol_gn2_fill_2": False,
+            "sol_gn2_fill_3": False,
+            "sol_gn2_fill_4": False,
+            "sol_gn2_vent": True,
+            "copv_vent": True,
+            "pv1": False,
+            "pv2": False,
+            "tank_vent": False,
+            "mvas_open": False,
+            "mvas_close": True,
+            "igniter_0": False,
+            "igniter_1": False,
+            "alarm": True,
+        }
+    },
+    "all_off_t13_t14_t17": {
+        "table_states": {
+            "sol_gn2_fill_1": False,
+            "sol_gn2_fill_2": False,
+            "sol_gn2_fill_3": False,
+            "sol_gn2_fill_4": False,
+            "sol_gn2_vent": False,
+            "copv_vent": False,
+            "pv1": False,
+            "pv2": False,
+            "tank_vent": False,
+            "mvas_open": False,
+            "mvas_close": True,
+        }
+    },
+    "purge_1_t18": {
+        "table_states": {
+            "sol_gn2_fill_1": False,
+            "sol_gn2_fill_2": False,
+            "sol_gn2_fill_3": False,
+            "sol_gn2_fill_4": False,
+            "sol_gn2_vent": False,
+            "copv_vent": False,
+            "pv1": False,
+            "pv2": False,
+            "tank_vent": False,
+            "mvas_open": True,
+            "mvas_close": False,
+        }
+    },
+    "purge_2_t19": {
+        "table_states": {
+            "sol_gn2_fill_1": False,
+            "sol_gn2_fill_2": False,
+            "sol_gn2_fill_3": False,
+            "sol_gn2_fill_4": False,
+            "sol_gn2_vent": False,
+            "copv_vent": False,
+            "pv1": False,
+            "pv2": False,
+            "tank_vent": True,
+            "mvas_open": True,
+            "mvas_close": False,
+        }
+    },
+    "t20": {
+        "table_states": {
+            "sol_gn2_fill_1": True,
+            "sol_gn2_fill_2": False,
+            "sol_gn2_fill_3": False,
+            "sol_gn2_fill_4": False,
+            "sol_gn2_vent": False,
+            "copv_vent": False,
+            "pv1": False,
+            "pv2": False,
+            "tank_vent": False,
+            "mvas_open": False,
+            "mvas_close": False,
+        }
+    },
+    "t21": {
+        "table_states": {
+            "sol_gn2_fill_1": False,
+            "sol_gn2_fill_2": False,
+            "sol_gn2_fill_3": False,
+            "sol_gn2_fill_4": False,
+            "sol_gn2_vent": False,
+            "copv_vent": False,
+            "pv1": False,
+            "pv2": False,
+            "mvas_open": False,
+            "mvas_close": False,
+        }
+    },
+    "final_t24": {
+        "table_states": {
+            "sol_gn2_fill_1": False,
+            "sol_gn2_fill_2": False,
+            "sol_gn2_fill_3": False,
+            "sol_gn2_fill_4": False,
+            "sol_gn2_vent": True,
+            "copv_vent": False,
+            "pv1": True,
+            "pv2": True,
+            "tank_vent": True,
+            "mvas_open": False,
+            "mvas_close": False,
+        }
+    },
+}
+
 GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
     "sol_gn2_fill_1": {
         "display_name": "GN2 Fill 1",
@@ -335,6 +445,7 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
     "all_off_t13_t14_t17": {
         "display_name": "All Off (T13, T14, T17)",
         "command_field": None,
+        "status_field": [key if value else f"!{key}" for key, value in enumerate(TABLE_BUTTONS["all_off_t13_t14_t17"]["table_states"])],
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": abort_is_inactive,
     },
@@ -367,116 +478,6 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "command_field": None,
         "sync_button_to_client_row": _sync_noop_to_client_row,
         "enabled": abort_is_inactive,
-    },
-}
-
-TABLE_BUTTONS: dict[str, dict[str, Any]] = {
-    f"{ABORT_BUTTON_ID}": {
-        "table_states": {
-            "sol_gn2_fill_1": False,
-            "sol_gn2_fill_2": False,
-            "sol_gn2_fill_3": False,
-            "sol_gn2_fill_4": False,
-            "sol_gn2_vent": True,
-            "copv_vent": True,
-            "pv1": False,
-            "pv2": False,
-            "tank_vent": False,
-            "mvas_open": False,
-            "mvas_close": True,
-            "igniter_0": False,
-            "igniter_1": False,
-            "alarm": True,
-        }
-    },
-    "all_off_t13_t14_t17": {
-        "table_states": {
-            "sol_gn2_fill_1": False,
-            "sol_gn2_fill_2": False,
-            "sol_gn2_fill_3": False,
-            "sol_gn2_fill_4": False,
-            "sol_gn2_vent": False,
-            "copv_vent": False,
-            "pv1": False,
-            "pv2": False,
-            "tank_vent": False,
-            "mvas_open": False,
-            "mvas_close": True,
-        }
-    },
-    "purge_1_t18": {
-        "table_states": {
-            "sol_gn2_fill_1": False,
-            "sol_gn2_fill_2": False,
-            "sol_gn2_fill_3": False,
-            "sol_gn2_fill_4": False,
-            "sol_gn2_vent": False,
-            "copv_vent": False,
-            "pv1": False,
-            "pv2": False,
-            "tank_vent": False,
-            "mvas_open": True,
-            "mvas_close": False,
-        }
-    },
-    "purge_2_t19": {
-        "table_states": {
-            "sol_gn2_fill_1": False,
-            "sol_gn2_fill_2": False,
-            "sol_gn2_fill_3": False,
-            "sol_gn2_fill_4": False,
-            "sol_gn2_vent": False,
-            "copv_vent": False,
-            "pv1": False,
-            "pv2": False,
-            "tank_vent": True,
-            "mvas_open": True,
-            "mvas_close": False,
-        }
-    },
-    "t20": {
-        "table_states": {
-            "sol_gn2_fill_1": True,
-            "sol_gn2_fill_2": False,
-            "sol_gn2_fill_3": False,
-            "sol_gn2_fill_4": False,
-            "sol_gn2_vent": False,
-            "copv_vent": False,
-            "pv1": False,
-            "pv2": False,
-            "tank_vent": False,
-            "mvas_open": False,
-            "mvas_close": False,
-        }
-    },
-    "t21": {
-        "table_states": {
-            "sol_gn2_fill_1": False,
-            "sol_gn2_fill_2": False,
-            "sol_gn2_fill_3": False,
-            "sol_gn2_fill_4": False,
-            "sol_gn2_vent": False,
-            "copv_vent": False,
-            "pv1": False,
-            "pv2": False,
-            "mvas_open": False,
-            "mvas_close": False,
-        }
-    },
-    "final_t24": {
-        "table_states": {
-            "sol_gn2_fill_1": False,
-            "sol_gn2_fill_2": False,
-            "sol_gn2_fill_3": False,
-            "sol_gn2_fill_4": False,
-            "sol_gn2_vent": True,
-            "copv_vent": False,
-            "pv1": True,
-            "pv2": True,
-            "tank_vent": True,
-            "mvas_open": False,
-            "mvas_close": False,
-        }
     },
 }
 

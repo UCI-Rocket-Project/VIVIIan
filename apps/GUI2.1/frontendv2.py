@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from concurrent.futures import Future, ThreadPoolExecutor
+import re
 import threading
+
+import pyarrow as pa
+import pyarrow.flight as flight
 
 from gse21connector import (
     GSE2V1_ECHO_FIELD_NAMES,
@@ -28,6 +33,67 @@ from gui_gse2v1 import (
 
 BUTTON_STATES = {} #dictionary of all button states
 COMMAND_STATES = {} #dictionary of all command states this is things from the different boards 
+
+TEST_NAME_FLIGHT_CONNECT = "grpc://127.0.0.1:1629"
+
+
+def sanitize_test_name(name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_-]", "", name)
+
+
+class TestNameControl:
+    def __init__(self, address: str = TEST_NAME_FLIGHT_CONNECT) -> None:
+        self.name = ""
+        self.status = ""
+        self._client = flight.connect(address)
+        self._schema = pa.schema([("test_name", pa.string())])
+        self._descriptor = flight.FlightDescriptor.for_path("test_name")
+        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="test-name-send")
+        self._pending: Future[str] | None = None
+
+    def _send(self, name: str) -> str:
+        batch = pa.record_batch([[name]], schema=self._schema)
+        writer, _ = self._client.do_put(
+            self._descriptor, self._schema, options=flight.FlightCallOptions(timeout=2.0),
+        )
+        with writer:
+            writer.write_batch(batch)
+        return name
+
+    def send(self) -> None:
+        if self._pending is not None:
+            return
+        self.name = sanitize_test_name(self.name)
+        if not self.name:
+            self.status = "Enter a test name."
+            return
+        self.status = f"Sending test name: {self.name}"
+        self._pending = self._executor.submit(self._send, self.name)
+
+    def draw(self, imgui) -> None:
+        if self._pending is not None and self._pending.done():
+            try:
+                self.status = f"Sent test name: {self._pending.result()}"
+            except Exception as exc:
+                self.status = f"Could not send test name: {exc}"
+            self._pending = None
+
+        _, entered_name = imgui.input_text("Test name", self.name)
+        self.name = sanitize_test_name(entered_name)
+        imgui.same_line()
+        imgui.begin_disabled(self._pending is not None)
+        if imgui.button("Set test name"):
+            self.send()
+        imgui.end_disabled()
+        imgui.text_unformatted("Letters, numbers, underscores and dashes only.")
+        if self.status:
+            imgui.text_unformatted(self.status)
+
+    def close(self) -> None:
+        self._executor.shutdown(wait=True, cancel_futures=True)
+        self._client.close()
+
+
 def make_valve_states(gse_server: LatestServer) -> dict[str, valve_state]:
     return {
         button_id: valve_state(
@@ -74,6 +140,8 @@ PT_SCALES = {
     "LNGPOT": (402.45048,0),
     # "PT10": (1,0),
     "Thrust": (1,0),
+    "1": (1,0),
+    "2": (1,0),
 }
 
 # Firmware pressure/force units pass through until channel calibrations are supplied.
@@ -93,7 +161,7 @@ GSE_DISABLED_FIELDS = {
 
 
 
-def run_imgui(servers: tuple[LatestServer, ...]) -> None:
+def run_imgui(servers: tuple[LatestServer, ...], test_name_control: TestNameControl) -> None:
     import glfw
     from imgui_bundle import imgui, implot
     from imgui_bundle.python_backends.glfw_backend import GlfwRenderer
@@ -170,6 +238,8 @@ def run_imgui(servers: tuple[LatestServer, ...]) -> None:
                 field_validity=gse2v1_field_valid if server.name == "gse" else None,
             )
             imgui.separator()
+        imgui.separator()
+        test_name_control.draw(imgui)
         imgui.end()
         imgui.pop_style_var(2)
 
@@ -198,7 +268,11 @@ def main() -> None:
         threading.Thread(target=server.serve, daemon=True).start()
         print(f"{server.name} listening")
 
-    run_imgui(servers)
+    test_name_control = TestNameControl()
+    try:
+        run_imgui(servers, test_name_control)
+    finally:
+        test_name_control.close()
 
 
 if __name__ == "__main__":

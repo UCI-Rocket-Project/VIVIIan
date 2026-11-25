@@ -26,9 +26,11 @@ NIDAQ_FIELD_NAME_MAP = {
     # "ai11": "LOXING",# "PT6",
     # "ai3": "LNGING",# "PT7",
     "ai10": "LOXING",# "PT6",
-    "ai3": "COPV",# "PT7", WAS LNGING
     "ai12": "LOXPOT",# "PT10"
     "ai7": "Thrust",# "LC0"
+    "ai2": "1",# "PT4",
+    "ai11": "2",# "PT6",
+    "ai3": "COPV",# "PT7", WAS LNGING
 }
 
 
@@ -38,7 +40,7 @@ NIDAQ_FIELD_NAMES = tuple(NIDAQ_FIELD_NAME_MAP.values())
 # --- Constants for NIDAQ Connector ---
 DEVICE = "Dev1"
 NUM_FIELDS = len(NIDAQ_FIELD_NAMES)
-RATE = 250000 // NUM_FIELDS
+RATE = 80000 // NUM_FIELDS
 NIDAQ_NUM_SIGNALS = NUM_FIELDS
 NIDAQ_AVERAGE_OVER = 1000
 
@@ -62,6 +64,8 @@ def read_nidaq_data(*, outstream) -> None:
             sample_mode=AcquisitionType.CONTINUOUS,
             samps_per_chan=NIDAQ_ROWS_PER_FRAME * 20,
         )
+
+        task.timing.ai_conv_rate = 81000
 
         task.start()
         while True:

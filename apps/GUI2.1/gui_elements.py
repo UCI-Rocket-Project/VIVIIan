@@ -254,12 +254,16 @@ class valve_state:
         fields = (self.field,) if isinstance(self.field, str) else tuple(self.field)
         states = []
         for field in fields:
+            #inverted = field[0] == "!"
+            inverted = False
+            if inverted:
+                field = field[1:]
             if field not in latest:
                 return None
             state = self._read_state(latest.get(field))
             if state is None:
                 return None
-            states.append(state)
+            states.append(state if not inverted else not state)
 
         return all(states) if states else None
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import multiprocessing
 import time
 from pathlib import Path
 from datetime import datetime
@@ -50,7 +51,7 @@ def backend_run_flight_server(
         num_signals=num_signals,
     )
     server.serve()
-
+    
 
 def nidaq_decimate_signals(
     *,
@@ -77,26 +78,38 @@ def nidaq_decimate_signals(
         time.sleep(0.01)
 
 
-def gse2v1_raw_telemetry_storage_write(*, stream) -> None:
+def gse2v1_raw_telemetry_storage_write(*, stream, test_name_state) -> None:
     write_from_stream(
         stream,
-        DATA_DIR / "gse2v1_raw_telemetry_data",
+        DATA_DIR,
+        "gse2v1_raw_telemetry_data",
         list(GSE2V1_STORAGE_FIELD_NAMES),
         [pa.float64() for _ in range(GSE2V1_NUM_SIGNALS + 1)],
         rollover_seconds=5.0,
+        test_name_state=test_name_state,
     )
 
 
-def nidaq_raw_telemetry_storage_write(*, stream) -> None:
+def nidaq_raw_telemetry_storage_write(*, stream, test_name_state) -> None:
     write_from_stream(
         stream,
-        DATA_DIR / "nidaq_raw_telemetry_data",
+        DATA_DIR,
+        "nidaq_raw_telemetry_data",
         list(NIDAQ_STORAGE_FIELD_NAMES),
         [pa.float64() for _ in range(NIDAQ_NUM_SIGNALS + 1)],
+        test_name_state=test_name_state,
+        start_test_name_server=False,
     )
 
 
 def main() -> None:
+    with multiprocessing.Manager() as manager:
+        test_name_state = manager.Namespace()
+        test_name_state.latest = None
+        _run_pipeline(test_name_state)
+
+
+def _run_pipeline(test_name_state) -> None:
     gse2v1_flight_fn = functools.partial(
         backend_run_flight_server,
         grpc_bind=GSE2V1_FLIGHT_BIND,
@@ -154,7 +167,10 @@ def main() -> None:
         )
         pipeline.add_task(
             "gse2v1_raw_telemetry_storage_write",
-            fn=gse2v1_raw_telemetry_storage_write,
+            fn=functools.partial(
+                gse2v1_raw_telemetry_storage_write,
+                test_name_state=test_name_state,
+            ),
             reads={"stream": "gse2v1_received_data"},
         )
         pipeline.add_task(
@@ -175,7 +191,10 @@ def main() -> None:
         )
         pipeline.add_task(
             "nidaq_raw_telemetry_storage_write",
-            fn=nidaq_raw_telemetry_storage_write,
+            fn=functools.partial(
+                nidaq_raw_telemetry_storage_write,
+                test_name_state=test_name_state,
+            ),
             reads={"stream": "nidaq_received_data"},
         )
         pipeline.add_task(

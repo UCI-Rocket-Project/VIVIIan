@@ -19,7 +19,7 @@ SKIP_DEFAULT_COLUMNS = {"magicHeader", "timestamp", "storageTimestamp", "crc"}
 # These rules change the loaded table only; the Parquet files stay unchanged.
 FIELD_RENAMES = {
     "gse": [
-        {"pressure3": "LOX Tank", "LOX Tank": "pressure2"},
+        # {"pressure3": "LOX Tank", "LOX Tank": "pressure2"},
     ],
     "nidaq": [],
 }
@@ -199,8 +199,8 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     tables = []
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
-    FILE_BEGIN_OFFSET = 70
-    FILE_END_OFFSET = 50
+    FILE_BEGIN_OFFSET = 20
+    FILE_END_OFFSET = 0
     for index, file in enumerate(files, start=1):
         if index < total_files - FILE_BEGIN_OFFSET or index > total_files - FILE_END_OFFSET:
             continue
