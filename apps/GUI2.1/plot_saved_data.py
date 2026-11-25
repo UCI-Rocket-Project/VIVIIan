@@ -13,6 +13,13 @@ DATASETS = {
 DEFAULT_X_COLUMN = "storageTimestamp"
 SKIP_DEFAULT_COLUMNS = {"magicHeader", "timestamp", "storageTimestamp", "crc"}
 
+# File offsets count backwards from the final Parquet file (0 = final file).
+# Both endpoints are included. Set begin=None to start with the first file.
+FILE_OFFSETS = {
+    "gse": {"begin": 200, "end": 180},
+    "nidaq": {"begin": 100, "end": 0},
+}
+
 # Manual saved-column renames, grouped by dataset.
 # Each dictionary is applied simultaneously, only if ALL its source fields exist.
 # Use the resulting names in scales, styles, --columns, and --disable.
@@ -187,6 +194,19 @@ def columns_to_read(column_names: list[str], dataset_name: str, x_name: str) -> 
     ]
 
 
+def select_dataset_files(files: list[Path], dataset_name: str) -> list[tuple[int, Path]]:
+    offsets = FILE_OFFSETS[dataset_name]
+    begin_offset, end_offset = offsets["begin"], offsets["end"]
+    if end_offset < 0 or (begin_offset is not None and begin_offset < end_offset):
+        raise ValueError(f"Invalid FILE_OFFSETS for {dataset_name}: require begin >= end >= 0, or begin=None.")
+    first = 1 if begin_offset is None else max(1, len(files) - begin_offset)
+    last = len(files) - end_offset
+    selected = [(index, file) for index, file in enumerate(files, start=1) if first <= index <= last]
+    if not selected:
+        raise ValueError(f"FILE_OFFSETS selected no {dataset_name} files: {len(files)} files, {offsets}.")
+    return selected
+
+
 def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     import pyarrow as pa
     import pyarrow.parquet as pq
@@ -198,12 +218,7 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
 
     tables = []
     skipped: list[tuple[Path, str]] = []
-    total_files = len(files)
-    FILE_BEGIN_OFFSET = 20
-    FILE_END_OFFSET = 0
-    for index, file in enumerate(files, start=1):
-        if index < total_files - FILE_BEGIN_OFFSET or index > total_files - FILE_END_OFFSET:
-            continue
+    for index, file in select_dataset_files(files, dataset_name):
         print(f"\rOpening {dataset_name} parquet files: {index}/{len(files)}", end="", flush=True)
         try:
             column_names = pq.read_schema(file).names
