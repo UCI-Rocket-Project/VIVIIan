@@ -19,15 +19,15 @@ NIDAQ_ROWS_PER_FRAME = 1000
 NIDAQ_FIELD_NAME_MAP = { 
     # "ai1": "VENT",# "PT0",
     # "ai0": "PT1",# "PT1", WAS LOX TANK
-    "ai8": "COPV",
-    "ai9": "LNGTANK",# "PT3",
-    # "ai2": "LNGPOT",# "PT4",
-    # "ai10": "LOXPOT",# "PT5",
+    "ai8": "LNGING", # "PT2", WAS COPV
+    "ai9": "LNGPOT",# "PT3",
+    # "ai2": "LNGTANK",# "PT4",
+    # "ai10": "LOXTANK",# "PT5",
     # "ai11": "LOXING",# "PT6",
     # "ai3": "LNGING",# "PT7",
     "ai10": "LOXING",# "PT6",
-    "ai3": "LNGING",# "PT7",
-    "ai12": "LOXTANK",# "PT10"
+    "ai3": "COPV",# "PT7", WAS LNGING
+    "ai12": "LOXPOT",# "PT10"
     "ai7": "Thrust",# "LC0"
 }
 

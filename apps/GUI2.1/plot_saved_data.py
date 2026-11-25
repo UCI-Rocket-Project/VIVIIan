@@ -13,6 +13,28 @@ DATASETS = {
 DEFAULT_X_COLUMN = "storageTimestamp"
 SKIP_DEFAULT_COLUMNS = {"magicHeader", "timestamp", "storageTimestamp", "crc"}
 
+# Manual saved-column renames, grouped by dataset.
+# Each dictionary is applied simultaneously, only if ALL its source fields exist.
+# Use the resulting names in scales, styles, --columns, and --disable.
+# These rules change the loaded table only; the Parquet files stay unchanged.
+FIELD_RENAMES = {
+    "gse": [
+        {"pressure3": "LOX Tank", "LOX Tank": "pressure2"},
+    ],
+    "nidaq": [],
+}
+
+
+def renamed_field_names(column_names: list[str], dataset_name: str) -> list[str]:
+    names = list(column_names)
+    for renames in FIELD_RENAMES.get(dataset_name, []):
+        if not all(source in names for source in renames):
+            continue
+        names = [renames.get(name, name) for name in names]
+        if len(names) != len(set(names)):
+            raise ValueError(f"FIELD_RENAMES creates duplicate column names for {dataset_name}: {names}")
+    return names
+
 
 def is_default_signal(dataset_name: str, column: str) -> bool:
     if dataset_name == "gse":
@@ -46,41 +68,69 @@ def find_latest_common_session(data_root: Path, dataset_names: list[str]) -> Pat
         raise FileNotFoundError(f"No data sessions containing all requested datasets: {names}")
     return max(sessions, key=lambda path: path.stat().st_mtime)
 
-PT_SCALES = {
+# Each calibration is (scale, offset): plotted = recorded * scale + offset.
+NIDAQ_SCALES = {
     # "ai0": (402.45048,0), # this is wrong
     # "ai1": (1,0),
-    "LNGTANK": (402.45048,-0.471844),
-    "LOXTANK": (402.45048,-0.471844),
+    # "LNGTANK": (402.45048,-0.471844),
+    # "LOXTANK": (402.45048,-0.471844),
     
-    "VENT": (402.45048,0),
-    "COPV": (1255.98144,0),#(24471.303,5.4077),
+    # "VENT": (402.45048,0),
+    # "COPV": (1255.98144,0),#(24471.303,5.4077),
+    # # "ai7": (1,0),
+    # "LOXING": (402.45048,0),
+    # "LNGING": (402.45048,0),
+    # # "ai10": (1,0),
+    # "LOXPOT": (402.45048,0),
+    # "LNGPOT": (402.45048,0),
+    # "PT10": (1,0),
+    # "Thrust": (1,0),
+    "COPV": (2284.4816,-45.4223),#(24471.303,5.4077),
     # "ai7": (1,0),
     "LOXING": (402.45048,0),
     "LNGING": (402.45048,0),
     # "ai10": (1,0),
     "LOXPOT": (402.45048,0),
     "LNGPOT": (402.45048,0),
-    "PT10": (1,0),
-    "Thrust": (1,0),
+    # "PT10": (1,0),
+}
+
+GSE_SCALES = {
+    "Tank Vent": (402.94591, 1.87778),
+    "LNG Tank": (402.94591, 1.87778),
+    "LOX Tank": (402.94591, 1.87778),
+    "pressure2": (402.94591, 1.87778),
+}
+
+# Extra y-axes share the main plot's height and time axis.
+# Add signals to a group to share its range, or add another group for a new axis.
+# Signal names use FIELD_RENAMES results; dataset prefixes are optional.
+# Calibration still comes from NIDAQ_SCALES / GSE_SCALES above.
+ALT_Y_AXES = {
+    "COPV": {
+        "signals": ["nidaq.COPV"],
+        "limits": (0, 5000),
+        "label": "COPV pressure (psi)",
+    },
 }
 
 SIGNAL_COLORS = {
-    "LNGTANK": "tab:blue",
-    "VENT": "tab:orange",
+    "LNG Tank": "tab:blue",
+    "Tank Vent": "tab:orange",
     "COPV": "tab:green",
     "LOXING": "tab:red",
     "LNGING": "tab:purple",
-    "LOXTANK": "tab:brown",
+    "LOX Tank": "tab:brown",
     "LNGPOT": "tab:pink",
     "LOXPOT": "tab:gray",
 }
 SIGNAL_LINESTYLES = {
-    "VENT": "--",
+    "Tank Vent": "--",
     "COPV": "--",
     "LOXING": "-.",
     "LNGING": "-.",
-    "LNGTANK": "-",
-    "LOXTANK": "-",
+    "LNG Tank": "-",
+    "LOX Tank": "-",
     "LNGPOT": ":",
     "LOXPOT": ":",
 }
@@ -110,7 +160,7 @@ def plot_style(dataset_name: str, column: str) -> dict[str, str]:
     return style
 
 
-def format_nidaq_pressure_axis(axis) -> None:
+def format_pressure_axis(axis) -> None:
     from matplotlib.ticker import MultipleLocator
 
     axis.set_ylabel("pressure (psi)")
@@ -132,8 +182,8 @@ def columns_to_read(column_names: list[str], dataset_name: str, x_name: str) -> 
 
     return [
         column
-        for column in column_names
-            if column in PT_SCALES or column in x_columns
+        for column, renamed in zip(column_names, renamed_field_names(column_names, dataset_name))
+        if renamed in NIDAQ_SCALES or renamed in x_columns
     ]
 
 
@@ -149,8 +199,8 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
     tables = []
     skipped: list[tuple[Path, str]] = []
     total_files = len(files)
-    FILE_BEGIN_OFFSET = 1000
-    FILE_END_OFFSET = 0
+    FILE_BEGIN_OFFSET = 70
+    FILE_END_OFFSET = 50
     for index, file in enumerate(files, start=1):
         if index < total_files - FILE_BEGIN_OFFSET or index > total_files - FILE_END_OFFSET:
             continue
@@ -159,9 +209,13 @@ def read_dataset(session_dir: Path, dataset_name: str, x_name: str) -> pa.Table:
             column_names = pq.read_schema(file).names
             selected_columns = columns_to_read(column_names, dataset_name, x_name)
             if not selected_columns:
-                skipped.append((file, "No PT_SCALES columns found"))
+                skipped.append((file, "No columns selected to read"))
                 continue
-            tables.append(pq.read_table(file, columns=selected_columns))
+            # Resolve names from the full schema before selecting columns, so a
+            # rename group also works when only some of its fields are loaded.
+            renamed = dict(zip(column_names, renamed_field_names(column_names, dataset_name)))
+            table = pq.read_table(file, columns=selected_columns)
+            tables.append(table.rename_columns([renamed[name] for name in table.column_names]))
         except (pa.lib.ArrowInvalid, OSError, EOFError) as exc:
             skipped.append((file, str(exc)))
     print()
@@ -268,10 +322,14 @@ def signal_as_float(table, dataset_name: str, name: str):
         invalid_count = int((~valid).sum())
         if invalid_count:
             print(f"{name}: {invalid_count}/{values.size} invalid samples shown as gaps.")
-        return np.where(valid, values, np.nan)
-    if dataset_name == "nidaq" and name in PT_SCALES:
-        scale, offset = PT_SCALES[name]
+        values = np.where(valid, values, np.nan)
+
+    scales = {"nidaq": NIDAQ_SCALES, "gse": GSE_SCALES}.get(dataset_name, {})
+    if name in scales:
+        scale, offset = scales[name]
         values = values * scale + offset
+
+    if dataset_name == "nidaq" and name in NIDAQ_SCALES:
         window_samples = ROLLING_AVERAGE_SAMPLES.get(name)
         if window_samples is not None:
             values = rolling_average(values, window_samples)
@@ -335,22 +393,50 @@ def enable_legend_toggling(fig, legend, lines) -> None:
     fig.canvas.mpl_connect("button_press_event", on_click)
 
 
+def new_right_axis(axis):
+    """Space additional right-hand axes so their ticks and labels stay readable."""
+    offset = 60 * (len(axis.figure.axes) - 1)
+    extra = axis.twinx()
+    extra.spines["right"].set_position(("outward", offset))
+    return extra
+
+
+def signal_plot_axis(axis, default_axis, dataset_name: str, column: str, alt_axes: dict):
+    for group, config in ALT_Y_AXES.items():
+        if not any(signal_matches(pattern, dataset_name, column) for pattern in config["signals"]):
+            continue
+        if group not in alt_axes:
+            extra = new_right_axis(axis)
+            extra.set_ylabel(config["label"])
+            extra.set_ylim(*config["limits"])
+            color = plot_style(dataset_name, column).get("color")
+            if color is not None:
+                extra.yaxis.label.set_color(color)
+                extra.tick_params(axis="y", colors=color)
+                extra.spines["right"].set_color(color)
+            alt_axes[group] = extra
+        return alt_axes[group]
+    return default_axis
+
+
 def gse_plot_axes(axis, columns: list[str], *, combined: bool):
     """Keep analog readings separate from the fixed 0/1 internal-state axis."""
     has_states = any("InternalState" in column for column in columns)
     has_sensors = any("InternalState" not in column for column in columns)
     axes = {}
     if has_states:
-        states = axis.twinx() if combined or has_sensors else axis
+        states = new_right_axis(axis) if combined or has_sensors else axis
         states.set_ylabel("GSE internal state")
         states.set_ylim(-0.05, 1.05)
         axes[True] = states
     if has_sensors:
-        sensors = axis.twinx() if combined else axis
-        if combined and has_states:
-            sensors.spines["right"].set_position(("outward", 60))
-        sensors.set_ylabel("GSE sensor value (recorded units)")
-        axes[False] = sensors
+        if not combined:
+            sensor_columns = [column for column in columns if "InternalState" not in column]
+            if all(column in GSE_SCALES for column in sensor_columns):
+                format_pressure_axis(axis)
+            else:
+                axis.set_ylabel("GSE sensor value (scaled where configured)")
+        axes[False] = axis
     return axes
 
 
@@ -385,9 +471,11 @@ def plot_dataset(
 
     fig, axis = plt.subplots(figsize=(14, 7))
     gse_axes = gse_plot_axes(axis, columns, combined=False) if dataset_name == "gse" else {}
+    alt_axes = {}
 
     for column in columns:
-        target_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
+        default_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
+        target_axis = signal_plot_axis(axis, default_axis, dataset_name, column, alt_axes)
         target_axis.plot(
             x,
             ys[column],
@@ -398,7 +486,7 @@ def plot_dataset(
 
     axis.set_xlabel(x_label)
     if dataset_name == "nidaq":
-        format_nidaq_pressure_axis(axis)
+        format_pressure_axis(axis)
     else:
         axis.grid(True, alpha=0.3)
     lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
@@ -430,6 +518,7 @@ def plot_combined_datasets(
     fig, axis = plt.subplots(figsize=(14, 7))
     x_label = x_name
     plotted = 0
+    alt_axes = {}
 
     for dataset_name in dataset_names:
         table = read_dataset(session_dir, dataset_name, x_name)
@@ -444,7 +533,8 @@ def plot_combined_datasets(
 
         gse_axes = gse_plot_axes(axis, columns, combined=True) if dataset_name == "gse" else {}
         for column in columns:
-            target_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
+            default_axis = gse_axes["InternalState" in column] if dataset_name == "gse" else axis
+            target_axis = signal_plot_axis(axis, default_axis, dataset_name, column, alt_axes)
             target_axis.plot(
                 x,
                 ys[column],
@@ -459,7 +549,7 @@ def plot_combined_datasets(
     print(f"Plotted {plotted} signals total.")
 
     axis.set_xlabel(x_label)
-    format_nidaq_pressure_axis(axis)
+    format_pressure_axis(axis)
     lines = [line for plot_axis in fig.axes for line in plot_axis.get_lines()]
     legend = axis.legend(lines, [line.get_label() for line in lines], loc="upper left", fontsize="small", ncols=3)
     enable_legend_toggling(fig, legend, lines)

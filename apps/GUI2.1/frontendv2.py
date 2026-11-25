@@ -60,17 +60,18 @@ def draw_command_buttons(
 PT_SCALES = {
     # "ai0": (402.45048,0), # this is wrong
     # "ai1": (1,0),
-    "LNGTANK": (402.45048,-0.471844),
-    "LOXTANK": (402.45048,-0.471844),
+    # "LNGTANK": (402.45048,-0.471844),
+    # "LOXTANK": (402.45048,-0.471844),
     
     # "VENT": (402.45048,0),
-    "COPV": (1255.98144,0),#(24471.303,5.4077),
+    # "COPV": (1255.98144,0),#(24471.303,5.4077),
+    "COPV": (2284.4816,-45.4223),#(24471.303,5.4077),
     # "ai7": (1,0),
     "LOXING": (402.45048,0),
     "LNGING": (402.45048,0),
     # "ai10": (1,0),
-    # "LOXPOT": (402.45048,0),
-    # "LNGPOT": (402.45048,0),
+    "LOXPOT": (402.45048,0),
+    "LNGPOT": (402.45048,0),
     # "PT10": (1,0),
     "Thrust": (1,0),
 }
@@ -78,9 +79,9 @@ PT_SCALES = {
 # Firmware pressure/force units pass through until channel calibrations are supplied.
 GSE_SCALES = {
     "Tank Vent": (402.94591, 1.87778),
-    "LOX Venturi In": (402.94591, 1.87778),
-    "LOX Venturi Throat": (157.31395, -126.83654),
-    "pressure3": (1.0, 0.0),
+    "LNG Tank": (402.94591, 1.87778),
+    "pressure2": (1.0, 0.0),
+    "LOX Tank": (402.94591, 1.87778),
 }
 # Remove a field from this set to enable its trace and graph readouts again.
 GSE_DISABLED_FIELDS = {
