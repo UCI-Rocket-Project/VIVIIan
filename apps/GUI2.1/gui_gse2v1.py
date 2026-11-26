@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+import math
 import socket
 import time
 from typing import Any
@@ -23,6 +25,14 @@ GSE2V1_ECHO_STALE_SECONDS = 2.0
 GSE2V1_ECHO_GRACE_SECONDS = 0.5
 
 
+@dataclass
+class _MomentaryPulse:
+    field_index: int
+    starts_at: float
+    seconds: float
+    off_at: float | None = None
+
+
 class GseCommandClient:
     def __init__(self) -> None:
         self.row = [0.0] * GSE2V1_NUM_COMMAND_SIGNALS
@@ -33,6 +43,7 @@ class GseCommandClient:
         self._last_echo_generation = -1
         self._last_echo_connected: bool | None = None
         self._ignore_echo_until = 0.0
+        self._momentary_pulses: dict[str, list[_MomentaryPulse]] = {}
 
     def send(self) -> bool:
         batch = pa.RecordBatch.from_arrays(
@@ -381,7 +392,9 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "status_value": ["solenoidCurrent4", "solenoidCurrent5"],
         "sync_button_to_client_row": _sync_mvas_open_to_client_row,
         "enabled": abort_is_inactive,
-        "momentary_seconds": 1.0,
+        # Timing entries follow command_field order: LOX, then LNG.
+        "offsets_from_press": [0.0, 0.15],
+        "momentary_seconds": [1.0, 1.0],
     },
     "open_mvas_lox": {
         "display_name": "Open Mvas Lox",
@@ -390,7 +403,8 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "status_value": "solenoidCurrent4",
         "sync_button_to_client_row": _sync_open_mvas_lox_to_client_row,
         "enabled": abort_is_inactive,
-        "momentary_seconds": 1.0,
+        "offsets_from_press": [0.0],
+        "momentary_seconds": [1.0],
     },
     "open_mvas_lng": {
         "display_name": "Open Mvas Lng",
@@ -399,7 +413,8 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "status_value": "solenoidCurrent5",
         "sync_button_to_client_row": _sync_open_mvas_lng_to_client_row,
         "enabled": abort_is_inactive,
-        "momentary_seconds": 1.0,
+        "offsets_from_press": [0.0],
+        "momentary_seconds": [1.0],
     },
     "mvas_close": {
         "display_name": "Mvas Close",
@@ -408,7 +423,8 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "status_value": "solenoidCurrent6",
         "sync_button_to_client_row": _sync_mvas_close_to_client_row,
         "enabled": abort_is_inactive,
-        "momentary_seconds": 1.0,
+        "offsets_from_press": [0.0],
+        "momentary_seconds": [1.0],
     },
     "igniter_0": {
         "display_name": "Igniter 0",
@@ -417,7 +433,8 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "status_value": "igniter0Continuity",
         "sync_button_to_client_row": _sync_igniter_0_to_client_row,
         "enabled": abort_is_inactive,
-        "momentary_seconds": IGNITER_MOMENTARY_SECONDS,
+        "offsets_from_press": [0.0],
+        "momentary_seconds": [IGNITER_MOMENTARY_SECONDS],
     },
     "igniter_1": {
         "display_name": "Igniter 1",
@@ -426,7 +443,8 @@ GSE2V1_COMMAND_BUTTONS: dict[str, dict[str, Any]] = {
         "status_value": "igniter1Continuity",
         "sync_button_to_client_row": _sync_igniter_1_to_client_row,
         "enabled": abort_is_inactive,
-        "momentary_seconds": IGNITER_MOMENTARY_SECONDS,
+        "offsets_from_press": [0.0],
+        "momentary_seconds": [IGNITER_MOMENTARY_SECONDS],
     },
     "alarm": {
         "display_name": "Alarm",
@@ -535,18 +553,106 @@ def get_internal_status_value(latest_server: LatestServer, internal_status_field
 
     return get_internal_status_value_for_button 
 
+def _momentary_timing(button_id: str) -> tuple[tuple[str, float, float], ...]:
+    config = GSE2V1_COMMAND_BUTTONS[button_id]
+    seconds = config.get("momentary_seconds")
+    if seconds is None:
+        return ()
+    fields = _field_names(config.get("command_field"))
+    offsets = config.get("offsets_from_press", [0.0] * len(fields))
+    if (
+        not fields
+        or not isinstance(seconds, (list, tuple))
+        or not isinstance(offsets, (list, tuple))
+        or len(seconds) != len(fields)
+        or len(offsets) != len(fields)
+    ):
+        raise ValueError(
+            f"{button_id}: offsets_from_press and momentary_seconds must be arrays "
+            "with one entry per command_field"
+        )
+    for offset, duration in zip(offsets, seconds):
+        if (
+            not isinstance(offset, (int, float))
+            or not math.isfinite(offset)
+            or offset < 0.0
+            or not isinstance(duration, (int, float))
+            or not math.isfinite(duration)
+            or duration <= 0.0
+        ):
+            raise ValueError(
+                f"{button_id}: offsets must be finite and nonnegative; "
+                "momentary durations must be finite and positive"
+            )
+    return tuple(zip(fields, offsets, seconds))
+
+
+def _set_momentary_state(client: GseCommandClient, button_id: str, state: bool) -> None:
+    """Replace this button's sequence; OFF also cancels delayed activations."""
+    timing = _momentary_timing(button_id)
+    client._momentary_pulses.pop(button_id, None)
+    now = time.monotonic()
+    for field, _, _ in timing:
+        client.row[GSE2V1_COMMAND_FIELD_NAMES.index(field)] = 0.0
+    if state:
+        client._momentary_pulses[button_id] = [
+            _MomentaryPulse(GSE2V1_COMMAND_FIELD_NAMES.index(field), now + offset, seconds)
+            for field, offset, seconds in timing
+        ]
+    button = GSE2V1_COMMAND_BUTTONS[button_id]["button"]
+    button.set_state(state)
+    _sync_button_status(button)
+
+
+def update_gse2v1_momentary_buttons(
+    client: GseCommandClient, *, force_send: bool = False,
+) -> None:
+    """Advance per-field pulses once per GUI frame and send due changes together."""
+    now = time.monotonic()
+    started = []
+    changed = False
+    for button_id, pulses in list(client._momentary_pulses.items()):
+        remaining = []
+        for pulse in pulses:
+            if pulse.off_at is None and now >= pulse.starts_at:
+                client.row[pulse.field_index] = 1.0
+                started.append(pulse)
+                changed = True
+            elif pulse.off_at is not None and now >= pulse.off_at:
+                client.row[pulse.field_index] = 0.0
+                changed = True
+                continue
+            remaining.append(pulse)
+        if remaining:
+            client._momentary_pulses[button_id] = remaining
+        else:
+            del client._momentary_pulses[button_id]
+            button = GSE2V1_COMMAND_BUTTONS[button_id]["button"]
+            button.set_state(False)
+            _sync_button_status(button)
+    if changed or force_send:
+        client.send()
+        # Count a full pulse from dispatch, even if this frame or send was late.
+        dispatched_at = time.monotonic()
+        for pulse in started:
+            pulse.off_at = dispatched_at + pulse.seconds
+
+
 def _handle_button_click(
     client: GseCommandClient,
     button_id: str,
     button: Button,
 ) -> None:
-    _sync_button_to_client_row(client, button_id)
-    _sync_button_status(button)
+    if GSE2V1_COMMAND_BUTTONS[button_id].get("momentary_seconds") is not None:
+        _set_momentary_state(client, button_id, True)
+    else:
+        _sync_button_to_client_row(client, button_id)
+        _sync_button_status(button)
 
     if button_id in TABLE_BUTTONS.keys() and button.state:
         _apply_table_state(client, TABLE_BUTTONS[button_id]["table_states"])
 
-    client.send()
+    update_gse2v1_momentary_buttons(client, force_send=True)
 
 def _apply_table_state(client: GseCommandClient, table: dict[str, bool]) -> None:
     for button_id, config in GSE2V1_COMMAND_BUTTONS.items():
@@ -555,16 +661,11 @@ def _apply_table_state(client: GseCommandClient, table: dict[str, bool]) -> None
         button = config.get("button")
         if not isinstance(button, Button):
             continue
-        button.set_state(table.get(button_id, False))
-        if button_id in table:
-            table_state = table[button_id]
-            button.set_state(table_state)
-            if button.momentary_seconds is not None:
-                button.momentary_until = (
-                    time.monotonic() + button.momentary_seconds
-                    if table_state
-                    else None
-                )
+        table_state = table.get(button_id, False)
+        if config.get("momentary_seconds") is not None:
+            _set_momentary_state(client, button_id, table_state)
+            continue
+        button.set_state(table_state)
         _sync_button_status(button)
         _sync_button_to_client_row(client, button_id)
 
@@ -598,6 +699,8 @@ def sync_gse2v1_command_buttons_from_echo(
     client._last_echo_generation = echo_server.latest_generation
     if connected:
         client._next_connect_attempt_at = 0.0
+    else:
+        client._momentary_pulses.clear()
 
     for button_id, config in GSE2V1_COMMAND_BUTTONS.items():
         button = config.get("button")
@@ -609,7 +712,7 @@ def sync_gse2v1_command_buttons_from_echo(
             continue
 
         if connected and (
-            button.momentary_until is not None
+            button_id in client._momentary_pulses
             or time.monotonic() < client._ignore_echo_until
         ):
             continue
@@ -621,9 +724,14 @@ def sync_gse2v1_command_buttons_from_echo(
             else False
         )
         button.set_state(state)
-        button.momentary_until = None
         _sync_button_status(button)
-        _sync_button_to_client_row(client, button_id)
+        if config.get("momentary_seconds") is not None:
+            for field in command_fields:
+                client.row[GSE2V1_COMMAND_FIELD_NAMES.index(field)] = (
+                    float(float(latest.get(field, 0.0)) > 0.5) if connected else 0.0
+                )
+        else:
+            _sync_button_to_client_row(client, button_id)
 
 def _internal_status_to_button(button, internal_status_value: int | str):
     if internal_status_value is NAN:
@@ -645,12 +753,12 @@ def _button_state(button_id: str) -> bool:
 
 def make_gse2v1_command_buttons(client: GseCommandClient, latest_server: LatestServer) -> tuple[Button, ...]:
     for button_id, config in GSE2V1_COMMAND_BUTTONS.items():
+        _momentary_timing(button_id)
         button = Button(
             button_id,
             config["display_name"],
             width=BUTTON_WIDTH,
             toggle_on_click=config.get("momentary_seconds") is None,
-            momentary_seconds=config.get("momentary_seconds"),
             status_color=BUTTON_STATUS_OFF_COLOR,
             enabled=config.get("enabled", True),
             status_text = get_status_text(latest_server, config.get("status_value")),

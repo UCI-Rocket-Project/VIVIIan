@@ -29,6 +29,7 @@ from gui_gse2v1 import (
     GseCommandClient,
     make_gse2v1_command_buttons,
     sync_gse2v1_command_buttons_from_echo,
+    update_gse2v1_momentary_buttons,
 )
 
 BUTTON_STATES = {} #dictionary of all button states
@@ -226,6 +227,7 @@ def run_imgui(servers: tuple[LatestServer, ...], test_name_control: TestNameCont
         imgui.text_unformatted(f"FPS: {imgui.get_io().framerate:.1f}")
         imgui.separator()
         sync_gse2v1_command_buttons_from_echo(gse_command_client, echo_server)
+        update_gse2v1_momentary_buttons(gse_command_client)
         draw_command_buttons(imgui, command_buttons, valve_states)
         imgui.separator()
         mvas_state.render(imgui)
